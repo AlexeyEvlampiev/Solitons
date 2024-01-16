@@ -1,0 +1,317 @@
+﻿using System.Data;
+using System.Data.Common;
+using System.Diagnostics;
+using System.Text.RegularExpressions;
+using Microsoft.Data.Sqlite;
+using Solitons.Reactive;
+using Solitons.Security;
+using Solitons.Security.Common;
+
+namespace Solitons.SQLite;
+
+/// <summary>
+/// Provides an SQLite-based implementation of a secrets repository.
+/// This class allows for storing, retrieving, and managing secrets such as passwords, tokens,
+/// or API keys in an SQLite database. It supports basic CRUD operations and scope-based secret management.
+/// </summary>
+// ReSharper disable once InconsistentNaming
+public class SQLiteSecretsRepository : SecretsRepository
+{
+    public const string DefaultScopeName = "$default";
+    private readonly string _connectionString;
+    private readonly string _scopeName;
+    private static readonly Regex ScopeRegex;
+
+
+    static SQLiteSecretsRepository()
+    {
+        ScopeRegex = "(?xim)^(?<path>@path)(?:[|]scope=(?<scope>@scope))?$"
+            .Replace("@path", @".+?\.(?:db|sqlite)\b")
+            .Replace("@scope", ".{1,250}")
+            .Convert(p => new Regex(p));
+    }
+
+    sealed class SecretNotFoundException : KeyNotFoundException
+    {
+    }
+
+    /// <summary>
+    /// Creates an instance of SQLiteSecretsRepository from a given connection string.
+    /// The connection string should follow the format 'file_path|scope=scope_name'.
+    /// </summary>
+    /// <param name="connectionString">The connection string to parse.</param>
+    /// <returns>An instance of SQLiteSecretsRepository.</returns>
+    /// <exception cref="FormatException">Thrown when the connection string does not match the expected format.</exception>
+
+    public static ISecretsRepository FromConnectionString(string connectionString)
+    {
+        if (IsScopeConnectionString(connectionString, out var filePath, out var scopeName))
+        {
+            return new SQLiteSecretsRepository(filePath, scopeName);
+        }
+
+        throw new FormatException("The provided connection string is not in the expected format. Please ensure it follows the pattern 'file_path|scope=scope_name'.");
+    }
+
+
+    /// <summary>
+    /// Initializes a new instance of the SQLiteSecretsRepository class with the specified file path and scope name.
+    /// </summary>
+    /// <param name="filePath">The file path of the SQLite database.</param>
+    /// <param name="scopeName">The scope name for secrets.</param>
+    /// <exception cref="ArgumentException">Throws when the provided file path does not end with the .db extension.</exception>
+    protected SQLiteSecretsRepository(string filePath, string scopeName)
+    {
+        _scopeName = scopeName;
+        var extension = Path.GetExtension(filePath);
+        if (false == ".db".Equals(extension, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException($"Provided file path '{filePath}' does not end with the .db extension.");
+        }
+        _connectionString = $"Data Source={filePath};";
+        using var connection = new SqliteConnection(_connectionString);
+        using var command = connection.CreateCommand();
+        command.CommandText = $@"
+
+        CREATE TABLE IF NOT EXISTS secret (
+            scope VARCHAR(150),
+            key VARCHAR(150),
+            value TEXT,
+            created_utc DATETIME DEFAULT (datetime('now','utc')),
+            updated_utc DATETIME DEFAULT (datetime('now','utc')),
+            PRIMARY KEY (scope, key)
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_secret_scope_key ON secret (scope, key);";
+        connection.Open();
+        command.ExecuteNonQuery();
+    }
+
+    /// <summary>
+    /// Asynchronously retrieves a list of all secret names within the specified scope.
+    /// This method queries the SQLite database to fetch the names of all secrets stored under the current scope.
+    /// </summary>
+    /// <param name="cancellation">A CancellationToken to observe while waiting for the task to complete.</param>
+    /// <returns>A Task representing the asynchronous operation, resulting in an array of secret names.</returns>
+    protected override async Task<string[]> ListSecretNamesAsync(CancellationToken cancellation)
+    {
+        await using var connection = new SqliteConnection(_connectionString);
+        await using var command = connection.CreateCommand();
+        command.CommandText = @"SELECT key FROM secret WHERE scope = @scope;";
+        var scopeParameter = command.CreateParameter();
+        scopeParameter.ParameterName = "@scope";
+        scopeParameter.DbType = DbType.String;
+        scopeParameter.Value = _scopeName;
+        command.Parameters.Add(scopeParameter);
+
+        await connection.OpenAsync(cancellation);
+        await using var reader = await command.ExecuteReaderAsync(cancellation);
+        var list = new List<string>();
+        while (await reader.ReadAsync(cancellation))
+        {
+            list.Add(reader.GetString(0));
+        }
+
+        return list.ToArray();
+    }
+
+    /// <summary>
+    /// Asynchronously gets the value of a secret with the specified name.
+    /// </summary>
+    /// <param name="secretName">The name of the secret.</param>
+    /// <param name="cancellation">A CancellationToken to observe while waiting for the task to complete.</param>
+    /// <returns>A Task representing the asynchronous operation. The Task's result is the value of the secret.</returns>
+    /// <exception cref="SecretNotFoundException">Throws when the secret does not exist.</exception>
+    protected override async Task<string> GetSecretAsync(string secretName, CancellationToken cancellation)
+    {
+        var value = await GetSecretIfExistsAsync(secretName, cancellation);
+        return (value.IsPrintable() ? value : throw new SecretNotFoundException())!;
+    }
+
+    /// <summary>
+    /// Asynchronously gets the value of a secret if it exists.
+    /// </summary>
+    /// <param name="secretName">The name of the secret.</param>
+    /// <param name="cancellation">A CancellationToken to observe while waiting for the task to complete.</param>
+    /// <returns>A Task representing the asynchronous operation. The Task's result is the value of the secret, or null if the secret does not exist.</returns>
+    protected override async Task<string?> GetSecretIfExistsAsync(string secretName, CancellationToken cancellation)
+    {
+        await using var connection = new SqliteConnection(_connectionString);
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT value FROM secret WHERE scope = @scope AND key = @key;";
+        var scopeParameter = command.CreateParameter();
+        var keyParameter = command.CreateParameter();
+
+        scopeParameter.ParameterName = "@scope";
+        scopeParameter.DbType = DbType.String;
+        scopeParameter.Value = _scopeName;
+
+        keyParameter.ParameterName = "@key";
+        keyParameter.DbType = DbType.String;
+        keyParameter.Value = secretName;
+
+        command.Parameters.Add(scopeParameter);
+        command.Parameters.Add(keyParameter);
+
+        await connection.OpenAsync(cancellation);
+        var result = await command.ExecuteScalarAsync(cancellation);
+        if (result is DBNull || result == null)
+        {
+            return null;
+        }
+
+        return result.ToString() ?? "";
+    }
+
+    /// <summary>
+    /// Asynchronously gets the value of a secret with the specified name. If the secret does not exist, sets the secret with a provided default value.
+    /// </summary>
+    /// <param name="secretName">The name of the secret.</param>
+    /// <param name="defaultValue">The default value to set if the secret does not exist.</param>
+    /// <param name="cancellation">A CancellationToken to observe while waiting for the task to complete.</param>
+    /// <returns>A Task representing the asynchronous operation. The Task's result is the value of the secret, or the default value if the secret did not exist.</returns>
+    protected override async Task<string> GetOrSetSecretAsync(string secretName, string defaultValue, CancellationToken cancellation)
+    {
+        await using var connection = new SqliteConnection(_connectionString);
+        await connection.OpenAsync(cancellation);
+        await using var transaction = await connection.BeginTransactionAsync(cancellation);
+        Debug.Assert(transaction is SqliteTransaction);
+
+        // Check if secret already exists
+        var command = connection.CreateCommand();
+        command.CommandText = "SELECT value FROM secret WHERE scope = @scope AND key = @key;";
+        var scopeParameter = command.CreateParameter();
+        var keyParameter = command.CreateParameter();
+
+        scopeParameter.ParameterName = "@scope";
+        scopeParameter.DbType = DbType.String;
+        scopeParameter.Value = _scopeName;
+
+        keyParameter.ParameterName = "@key";
+        keyParameter.DbType = DbType.String;
+        keyParameter.Value = secretName;
+
+        command.Parameters.Add(scopeParameter);
+        command.Parameters.Add(keyParameter);
+
+        command.Transaction = (SqliteTransaction)transaction;
+
+        var result = await command.ExecuteScalarAsync(cancellation);
+        if (result != null && !(result is DBNull))
+        {
+            // Secret exists, so return it
+            await transaction.CommitAsync(cancellation);
+            return result.ToString()!;
+        }
+
+        
+        // Secret does not exist, so set it
+        command.Parameters.Clear();
+        command.CommandText = @"
+        INSERT INTO secret (scope, key, value, updated_utc) 
+        VALUES (@scope, @key, @defaultValue, datetime('now','utc'));";
+
+        var defaultValueParameter = command.CreateParameter();
+
+        defaultValueParameter.ParameterName = "@defaultValue";
+        defaultValueParameter.DbType = DbType.String;
+        defaultValueParameter.Value = defaultValue;
+
+        command.Parameters.Add(scopeParameter);
+        command.Parameters.Add(keyParameter);
+        command.Parameters.Add(defaultValueParameter);
+
+        command.Transaction = (SqliteTransaction)transaction;
+
+        await command.ExecuteNonQueryAsync(cancellation);
+
+        await transaction.CommitAsync(cancellation);
+
+        return defaultValue;
+    }
+
+    /// <summary>
+    /// Asynchronously sets the value of the secret with the specified name.
+    /// </summary>
+    /// <param name="secretName">The name of the secret to be set.</param>
+    /// <param name="secretValue">The value to be set for the specified secret.</param>
+    /// <param name="cancellation">A CancellationToken to observe while waiting for the task to complete.</param>
+    /// <returns>A Task representing the asynchronous operation.</returns>
+    protected override async Task SetSecretAsync(string secretName, string secretValue, CancellationToken cancellation)
+    {
+        await using var connection = new SqliteConnection(_connectionString);
+        await using var command = connection.CreateCommand();
+        command.CommandText = @"
+        INSERT OR REPLACE INTO secret (scope, key, value, updated_utc) 
+        VALUES (@scope, @key, @value, datetime('now','utc'));";
+
+        var scopeIdParameter = command.CreateParameter();
+        var keyParameter = command.CreateParameter();
+        var valueParameter = command.CreateParameter();
+
+        scopeIdParameter.ParameterName = "@scope";
+        scopeIdParameter.DbType = DbType.String;
+        scopeIdParameter.Value = _scopeName;
+
+        keyParameter.ParameterName = "@key";
+        keyParameter.DbType = DbType.String;
+        keyParameter.Value = secretName;
+
+        valueParameter.ParameterName = "@value";
+        valueParameter.DbType = DbType.String;
+        valueParameter.Value = secretValue;
+
+        command.Parameters.Add(scopeIdParameter);
+        command.Parameters.Add(keyParameter);
+        command.Parameters.Add(valueParameter);
+
+        await connection.OpenAsync(cancellation);
+        await command.ExecuteNonQueryAsync(cancellation);
+    }
+
+    /// <summary>
+    /// Checks whether the provided exception is a "secret not found" error.
+    /// </summary>
+    /// <param name="exception">The exception to check.</param>
+    /// <returns>
+    /// <c>true</c> if the exception is a "secret not found" error; otherwise, <c>false</c>.
+    /// </returns>
+    protected override bool IsSecretNotFoundError(Exception exception)
+    {
+        return exception is SecretNotFoundException;
+    }
+
+
+    /// <inheritdoc />
+    protected override bool ShouldRetry(RetryPolicyArgs args)
+    {
+        return args.Exception is DbException {IsTransient: true};
+    }
+
+    /// <summary>
+    /// Checks if the provided string is a valid scope connection string.
+    /// The method parses the string to extract the file path and scope name.
+    /// A valid scope connection string should be in the format: 'file_path|scope=scope_name'.
+    /// Here, 'file_path' is a path to an SQLite database file (with .db or .sqlite extension),
+    /// and 'scope_name' is an optional scope identifier (up to 250 characters).
+    /// </summary>
+    /// <param name="scopeConnectionString">The string to be checked for scope connection string validity.</param>
+    /// <param name="filePath">Outputs the file path from the connection string if it is valid, otherwise an empty string.</param>
+    /// <param name="scopeName">Outputs the scope name from the connection string if it is valid, otherwise an empty string.</param>
+    /// <returns>Returns true if the provided string is a valid scope connection string, otherwise false.</returns>
+
+    public static bool IsScopeConnectionString(string scopeConnectionString, out string filePath, out string scopeName)
+    {
+        var match = ScopeRegex.Match(scopeConnectionString);
+        if (match.Success == false)
+        {
+            filePath = string.Empty;
+            scopeName = string.Empty;
+            return false;
+        }
+        filePath = match.Groups["path"].Value;
+        scopeName = match.Groups["scope"].Value
+            .DefaultIfNullOrWhiteSpace(DefaultScopeName);
+        return true;
+    }
+
+}
