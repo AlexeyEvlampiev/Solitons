@@ -1,4 +1,5 @@
-﻿namespace Solitons.SQLite;
+﻿// ReSharper disable All
+namespace Solitons.SQLite;
 
 public class SQLiteSecretsRepository_ListSecretNamesAsync_Should
 {
