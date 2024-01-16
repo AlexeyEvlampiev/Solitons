@@ -1,7 +1,6 @@
 ﻿using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
-using System.Text.RegularExpressions;
 using Microsoft.Data.Sqlite;
 using Solitons.Reactive;
 using Solitons.Security;
@@ -19,56 +18,64 @@ public class SQLiteSecretsRepository : SecretsRepository
 {
     public const string DefaultScopeName = "$default";
     private readonly string _connectionString;
-    private readonly string _scopeName;
-    private static readonly Regex ScopeRegex;
 
+    sealed class SecretNotFoundException : KeyNotFoundException { }
 
-    static SQLiteSecretsRepository()
+    /// <summary>
+    /// Creates an instance of the SQLiteSecretsRepository from a file path.
+    /// </summary>
+    /// <param name="filePath">The file path of the SQLite database.</param>
+    /// <param name="scopeName">Optional. The scope name for the secrets. If not provided or whitespace, the default scope name is used.</param>
+    /// <returns>An instance of ISecretsRepository configured to use the specified SQLite database file.</returns>
+    /// <remarks>
+    /// This method constructs a connection string using the provided file path and initializes a new SQLiteSecretsRepository instance with the specified scope.
+    /// If the scope name is null or whitespace, the default scope name is used.
+    /// </remarks>
+    public static ISecretsRepository FromFile(
+        string filePath, 
+        string? scopeName = null)
     {
-        ScopeRegex = "(?xim)^(?<path>@path)(?:[|]scope=(?<scope>@scope))?$"
-            .Replace("@path", @".+?\.(?:db|sqlite)\b")
-            .Replace("@scope", ".{1,250}")
-            .Convert(p => new Regex(p));
-    }
-
-    sealed class SecretNotFoundException : KeyNotFoundException
-    {
+        return new SQLiteSecretsRepository(
+            $"Data Source={filePath};", 
+            scopeName
+                .DefaultIfNullOrWhiteSpace(DefaultScopeName)
+                .Trim());
     }
 
     /// <summary>
-    /// Creates an instance of SQLiteSecretsRepository from a given connection string.
-    /// The connection string should follow the format 'file_path|scope=scope_name'.
+    /// Creates an instance of the SQLiteSecretsRepository from a given connection string.
     /// </summary>
-    /// <param name="connectionString">The connection string to parse.</param>
-    /// <returns>An instance of SQLiteSecretsRepository.</returns>
-    /// <exception cref="FormatException">Thrown when the connection string does not match the expected format.</exception>
-
-    public static ISecretsRepository FromConnectionString(string connectionString)
+    /// <param name="connectionString">The connection string to the SQLite database.</param>
+    /// <param name="scopeName">Optional. The scope name for the secrets. If not provided or whitespace, the default scope name is used.</param>
+    /// <returns>An instance of ISecretsRepository configured to use the SQLite database specified by the connection string.</returns>
+    /// <remarks>
+    /// This method initializes a new SQLiteSecretsRepository instance with the provided connection string and scope name.
+    /// If the scope name is null or whitespace, the default scope name is used.
+    /// The method allows for more flexibility by enabling the specification of various connection string parameters.
+    /// </remarks>
+    public static ISecretsRepository FromConnectionString(
+        string connectionString, 
+        string? scopeName = null)
     {
-        if (IsScopeConnectionString(connectionString, out var filePath, out var scopeName))
-        {
-            return new SQLiteSecretsRepository(filePath, scopeName);
-        }
-
-        throw new FormatException("The provided connection string is not in the expected format. Please ensure it follows the pattern 'file_path|scope=scope_name'.");
+        return new SQLiteSecretsRepository(
+            connectionString,
+            scopeName
+                .DefaultIfNullOrWhiteSpace(DefaultScopeName)
+                .Trim());
     }
 
 
     /// <summary>
     /// Initializes a new instance of the SQLiteSecretsRepository class with the specified file path and scope name.
     /// </summary>
-    /// <param name="filePath">The file path of the SQLite database.</param>
+    /// <param name="connectionString"></param>
     /// <param name="scopeName">The scope name for secrets.</param>
     /// <exception cref="ArgumentException">Throws when the provided file path does not end with the .db extension.</exception>
-    protected SQLiteSecretsRepository(string filePath, string scopeName)
+    protected SQLiteSecretsRepository(string connectionString, string scopeName)
     {
-        _scopeName = scopeName;
-        var extension = Path.GetExtension(filePath);
-        if (false == ".db".Equals(extension, StringComparison.OrdinalIgnoreCase))
-        {
-            throw new ArgumentException($"Provided file path '{filePath}' does not end with the .db extension.");
-        }
-        _connectionString = $"Data Source={filePath};";
+        ScopeName = scopeName;
+
+        _connectionString = connectionString;
         using var connection = new SqliteConnection(_connectionString);
         using var command = connection.CreateCommand();
         command.CommandText = $@"
@@ -87,6 +94,14 @@ public class SQLiteSecretsRepository : SecretsRepository
     }
 
     /// <summary>
+    /// Gets the name of the scope associated with the repository.
+    /// </summary>
+    /// <value>
+    /// The name of the scope used for segregating secrets within the repository.
+    /// </value>
+    public string ScopeName { get; }
+
+    /// <summary>
     /// Asynchronously retrieves a list of all secret names within the specified scope.
     /// This method queries the SQLite database to fetch the names of all secrets stored under the current scope.
     /// </summary>
@@ -100,7 +115,7 @@ public class SQLiteSecretsRepository : SecretsRepository
         var scopeParameter = command.CreateParameter();
         scopeParameter.ParameterName = "@scope";
         scopeParameter.DbType = DbType.String;
-        scopeParameter.Value = _scopeName;
+        scopeParameter.Value = ScopeName;
         command.Parameters.Add(scopeParameter);
 
         await connection.OpenAsync(cancellation);
@@ -143,7 +158,7 @@ public class SQLiteSecretsRepository : SecretsRepository
 
         scopeParameter.ParameterName = "@scope";
         scopeParameter.DbType = DbType.String;
-        scopeParameter.Value = _scopeName;
+        scopeParameter.Value = ScopeName;
 
         keyParameter.ParameterName = "@key";
         keyParameter.DbType = DbType.String;
@@ -184,7 +199,7 @@ public class SQLiteSecretsRepository : SecretsRepository
 
         scopeParameter.ParameterName = "@scope";
         scopeParameter.DbType = DbType.String;
-        scopeParameter.Value = _scopeName;
+        scopeParameter.Value = ScopeName;
 
         keyParameter.ParameterName = "@key";
         keyParameter.DbType = DbType.String;
@@ -250,7 +265,7 @@ public class SQLiteSecretsRepository : SecretsRepository
 
         scopeIdParameter.ParameterName = "@scope";
         scopeIdParameter.DbType = DbType.String;
-        scopeIdParameter.Value = _scopeName;
+        scopeIdParameter.Value = ScopeName;
 
         keyParameter.ParameterName = "@key";
         keyParameter.DbType = DbType.String;
@@ -286,32 +301,4 @@ public class SQLiteSecretsRepository : SecretsRepository
     {
         return args.Exception is DbException {IsTransient: true};
     }
-
-    /// <summary>
-    /// Checks if the provided string is a valid scope connection string.
-    /// The method parses the string to extract the file path and scope name.
-    /// A valid scope connection string should be in the format: 'file_path|scope=scope_name'.
-    /// Here, 'file_path' is a path to an SQLite database file (with .db or .sqlite extension),
-    /// and 'scope_name' is an optional scope identifier (up to 250 characters).
-    /// </summary>
-    /// <param name="scopeConnectionString">The string to be checked for scope connection string validity.</param>
-    /// <param name="filePath">Outputs the file path from the connection string if it is valid, otherwise an empty string.</param>
-    /// <param name="scopeName">Outputs the scope name from the connection string if it is valid, otherwise an empty string.</param>
-    /// <returns>Returns true if the provided string is a valid scope connection string, otherwise false.</returns>
-
-    public static bool IsScopeConnectionString(string scopeConnectionString, out string filePath, out string scopeName)
-    {
-        var match = ScopeRegex.Match(scopeConnectionString);
-        if (match.Success == false)
-        {
-            filePath = string.Empty;
-            scopeName = string.Empty;
-            return false;
-        }
-        filePath = match.Groups["path"].Value;
-        scopeName = match.Groups["scope"].Value
-            .DefaultIfNullOrWhiteSpace(DefaultScopeName);
-        return true;
-    }
-
 }

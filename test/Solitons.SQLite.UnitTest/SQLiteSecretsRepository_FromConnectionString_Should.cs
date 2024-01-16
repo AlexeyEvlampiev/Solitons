@@ -1,58 +1,68 @@
-// ReSharper disable All
+﻿// ReSharper disable All
+
+using Microsoft.Data.Sqlite;
+
 namespace Solitons.SQLite;
 
 public class SQLiteSecretsRepository_FromConnectionString_Should
 {
     [Fact]
-    public async Task ReturnValidRepository()
+    public void ReturnValidRepositoryWithValidConnectionString()
     {
-        // Arrange
-        string validConnectionString = "test.db|scope=testScope";
+        var connectionString = $"Data Source={Guid.NewGuid()}.db;";
+        var repository = SQLiteSecretsRepository.FromConnectionString(connectionString);
 
-        // Act
-        var repository = SQLiteSecretsRepository
-            .FromConnectionString(validConnectionString);
-
-        await repository.SetSecretAsync("test-secret", "test-value");
-        var actualValue = await repository.GetSecretAsync("test-secret");
-        Assert.Equal("test-value", actualValue);
+        Assert.IsType<SQLiteSecretsRepository>(repository);
     }
 
-    [Fact]
-    public void UseDefaultScope_WhenScopeIsMissing()
+    [Theory]
+    [InlineData("Data Source=:memory:;")]
+    [InlineData("Data Source=temp.db;Mode=Memory;Cache=Shared;")]
+    public void SupportInMemoryDatabase(string connectionString)
     {
-        // Arrange
-        string connectionStringWithoutScope = "test.db";
-
-        // Act
-        var repository = SQLiteSecretsRepository
-            .FromConnectionString(connectionStringWithoutScope);
-
-        // Assert - Add necessary assertions to check if the default scope is used
+        var repository = SQLiteSecretsRepository.FromConnectionString(connectionString);
+        Assert.IsType<SQLiteSecretsRepository>(repository);
     }
 
 
-    [Fact]
-    public void ThrowFormatException_ForInvalidFormat()
-    {
-        // Arrange
-        string invalidConnectionString = "invalid_format_string";
 
-        // Act & Assert
-        Assert.Throws<FormatException>(() =>
+    [Fact]
+    public void ThrowArgumentExceptionForInvalidConnectionString()
+    {
+        var invalidConnectionString = "InvalidConnectionString";
+        var exception = Assert.Throws<ArgumentException>(() =>
             SQLiteSecretsRepository.FromConnectionString(invalidConnectionString));
+
     }
 
     [Fact]
-    public void ThrowArgumentException_ForInvalidFilePath()
+    public void UseDefaultScopeNameIfNotProvided()
     {
-        // Arrange
-        string connectionStringWithInvalidPath = "test.sqlite|scope=testScope";
+        var connectionString = $"Data Source={Guid.NewGuid()}.db;";
+        var repository = SQLiteSecretsRepository.FromConnectionString(connectionString) as SQLiteSecretsRepository;
 
-        // Act & Assert
-        Assert.Throws<ArgumentException>(() =>
-            SQLiteSecretsRepository.FromConnectionString(connectionStringWithInvalidPath));
+        Assert.Equal(SQLiteSecretsRepository.DefaultScopeName, repository?.ScopeName);
     }
 
+    [Fact]
+    public void AcceptCustomScopeName()
+    {
+        var connectionString = $"Data Source={Guid.NewGuid()}.db;";
+        string customScope = "custom-scope";
+        var repository = SQLiteSecretsRepository.FromConnectionString(connectionString, customScope) as SQLiteSecretsRepository;
 
+        Assert.Equal(customScope, repository?.ScopeName);
+    }
+
+    [Fact]
+    public void HandleInvalidScopeNameGracefully()
+    {
+        var connectionString = $"Data Source={Guid.NewGuid()}.db;";
+        string invalidScope = string.Empty; // or use other invalid scope names to test
+
+        var exception = Record.Exception(() =>
+            SQLiteSecretsRepository.FromConnectionString(connectionString, invalidScope));
+
+        Assert.Null(exception); // Assuming the implementation gracefully handles invalid scopes
+    }
 }
