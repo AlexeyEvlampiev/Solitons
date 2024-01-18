@@ -4,11 +4,31 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+
+    <!-- NuGet Package Metadata -->
+    <PackageId>Solitons.SQLite</PackageId>
+    <Version>1.0.0</Version>
+    <!-- Project version -->
+    <Authors>Alexey Evlampiev</Authors>
+    <Company>Solitons</Company>
+    <Description>
+      Solitons.SQLite is a specialized .NET library providing robust SQLite implementations for the abstract classes in Solitons.Core. Designed to seamlessly integrate with the Solitons framework, it offers efficient and scalable solutions for database management and operations using SQLite.
+
+      This library simplifies the process of leveraging the power of SQLite within the Solitons ecosystem, ensuring a consistent and optimized experience. Key features include advanced data handling, secure and efficient data storage, and easy integration with existing Solitons.Core functionalities.
+    </Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageTags>.NET;SQLite;Database;DataStorage;Solitons;Integration;Efficiency;Scalability;SolitonsCore;DataHandling</PackageTags>
+    <Title>Solitons SQLite Provider</Title>
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Dependencies -->
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.1" />
     <PackageReference Include="Solitons.Core" Version="1.0.6" />
+    <!-- Ensure correct version of Solitons.Core -->
   </ItemGroup>
+
+  <!-- Include additional configurations and package references as necessary -->
 
 </Project>
