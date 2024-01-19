@@ -1,5 +1,6 @@
 ﻿// ReSharper disable All
 
+using System.Reactive.Linq;
 using Microsoft.Data.Sqlite;
 
 namespace Solitons.SQLite;
@@ -10,7 +11,8 @@ public class SQLiteSecretsRepository_FromConnectionString_Should
     public void ReturnValidRepositoryWithValidConnectionString()
     {
         var connectionString = $"Data Source={Guid.NewGuid()}.db;";
-        var repository = SQLiteSecretsRepository.FromConnectionString(connectionString);
+        var repository = SQLiteSecretsRepository
+            .FromConnectionString(connectionString);
 
         Assert.IsType<SQLiteSecretsRepository>(repository);
     }
