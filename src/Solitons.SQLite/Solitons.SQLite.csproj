@@ -8,6 +8,7 @@
     <!-- NuGet Package Metadata -->
     <PackageId>Solitons.SQLite</PackageId>
     <Version>1.0.0</Version>
+    <VersionSuffix>$(VersionSuffix)</VersionSuffix>
     <!-- Project version -->
     <Authors>Alexey Evlampiev</Authors>
     <Company>Solitons</Company>
