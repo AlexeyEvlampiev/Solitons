@@ -12,9 +12,12 @@ jobs:
     env:
       solutionpath: ./solitons.sln
       sqlitecsproj: ./src/Solitons.SQLite/Solitons.SQLite.csproj
+      commandlinecsproj: ./src/Solitons.SQLite/Solitons.CommandLine.csproj
+      azurecsproj: ./src/Solitons.SQLite/Solitons.Azure.csproj
       buildconfiguration: release
       outputpath: pkgout
       runId: ${{github.run_id}}
+      versionsuffix: 'alpha.${{github.run_id}}'
       nugetsource: https://api.nuget.org/v3/index.json
     steps:
     - name: Checkout
@@ -41,10 +44,15 @@ jobs:
     - name: Test
       run: dotnet test ${{env.solutionpath}} --no-build --verbosity normal
 
-    - name: Pack
-      env:
-        versionsuffix: 'alpha.${{env.runId}}'
+    - name: Pack Solitons.SQLite
       run: dotnet pack ${{env.sqlitecsproj}} --configuration ${{env.buildconfiguration}} --output ${{env.outputpath}} --version-suffix ${{env.versionsuffix}} --no-build --no-restore
+
+    - name: Pack Solitons.CommandLine
+      run: dotnet pack ${{env.commandlinecsproj}} --configuration ${{env.buildconfiguration}} --output ${{env.outputpath}} --version-suffix ${{env.versionsuffix}} --no-build --no-restore
+
+    - name: Pack Solitons.Azure
+      run: dotnet pack ${{env.azurecsproj}} --configuration ${{env.buildconfiguration}} --output ${{env.outputpath}} --version-suffix ${{env.versionsuffix}} --no-build --no-restore
+
 
     - name: Push to NuGet
       env:
