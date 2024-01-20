@@ -16,7 +16,23 @@ namespace Solitons.SQLite;
 // ReSharper disable once InconsistentNaming
 public class SQLiteSecretsRepository : SecretsRepository
 {
+    /// <summary>
+    /// The default scope name for the secrets repository.
+    /// </summary>
+    /// <remarks>
+    /// This constant defines the default scope name used in the secrets repository. A scope in this context 
+    /// is a way to segregate or categorize secrets. For instance, different applications or different parts 
+    /// of an application might use different scopes to ensure separation of concerns.
+    ///
+    /// If no scope name is provided when creating an instance of the SQLiteSecretsRepository, 
+    /// this default value is used. It helps in managing secrets more effectively by providing 
+    /// a basic level of organization without the need for explicit scope specification in simple scenarios.
+    ///
+    /// The default scope name is "$default", indicating a general or common scope used 
+    /// for secrets that do not require a specific categorization.
+    /// </remarks>
     public const string DefaultScopeName = "$default";
+
     private readonly string _connectionString;
 
     sealed class SecretNotFoundException : KeyNotFoundException { }
