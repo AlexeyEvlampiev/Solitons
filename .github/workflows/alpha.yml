@@ -12,8 +12,8 @@ jobs:
     env:
       solutionpath: ./solitons.sln
       sqlitecsproj: ./src/Solitons.SQLite/Solitons.SQLite.csproj
-      commandlinecsproj: ./src/Solitons.SQLite/Solitons.CommandLine.csproj
-      azurecsproj: ./src/Solitons.SQLite/Solitons.Azure.csproj
+      commandlinecsproj: ./src/Solitons.CommandLine/Solitons.CommandLine.csproj
+      azurecsproj: ./src/Solitons.Azure/Solitons.Azure.csproj
       buildconfiguration: release
       outputpath: pkgout
       runId: ${{github.run_id}}
