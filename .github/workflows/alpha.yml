@@ -10,7 +10,7 @@ jobs:
   build-and-publish:
     runs-on: ubuntu-latest
     env:
-      solutionpath: ./Solitons.sln
+      solutionpath: ./solitons.sln
       sqlitecsproj: ./src/Solitons.SQLite/Solitons.SQLite.csproj
       buildconfiguration: release
       outputpath: pkgout
