@@ -7,7 +7,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Solitons.SQLite", "src\Soli
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{A58C4F20-0FBA-4482-930D-A441E16E6F2C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Solitons.SQLite.UnitTest", "test\Solitons.SQLite.UnitTest\Solitons.SQLite.UnitTest.csproj", "{56843F8F-E852-4731-9127-5524711E944E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Solitons.SQLite.UnitTest", "test\Solitons.SQLite.UnitTest\Solitons.SQLite.UnitTest.csproj", "{56843F8F-E852-4731-9127-5524711E944E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Solitons.CommandLine", "src\Solitons.CommandLine\Solitons.CommandLine.csproj", "{FE637F32-08A2-4A89-B9DD-2839C1621693}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Solitons.Azure", "src\Solitons.Azure\Solitons.Azure.csproj", "{1CF9F81C-C5BF-4E99-85ED-4B63F041D2A6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,6 +27,14 @@ Global
 		{56843F8F-E852-4731-9127-5524711E944E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{56843F8F-E852-4731-9127-5524711E944E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{56843F8F-E852-4731-9127-5524711E944E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FE637F32-08A2-4A89-B9DD-2839C1621693}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FE637F32-08A2-4A89-B9DD-2839C1621693}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FE637F32-08A2-4A89-B9DD-2839C1621693}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FE637F32-08A2-4A89-B9DD-2839C1621693}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1CF9F81C-C5BF-4E99-85ED-4B63F041D2A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1CF9F81C-C5BF-4E99-85ED-4B63F041D2A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1CF9F81C-C5BF-4E99-85ED-4B63F041D2A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1CF9F81C-C5BF-4E99-85ED-4B63F041D2A6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

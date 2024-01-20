@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!-- NuGet Package Metadata -->
+    <PackageId>Solitons.CommandLine</PackageId>
+    <VersionPrefix>1.0.0</VersionPrefix>
+    <VersionSuffix>$(VersionSuffix)</VersionSuffix>
+    <!-- Project version -->
+    <Authors>Alexey Evlampiev</Authors>
+    <Company>Solitons</Company>
+    <Description></Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageTags>.NET;SQLite;Database;DataStorage;Solitons;Integration;Efficiency;Scalability;SolitonsCore;DataHandling</PackageTags>
+    <Title>Solitons CommandLine Provider</Title>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Solitons.Core" Version="1.0.7" />
+  </ItemGroup>
+
+</Project>

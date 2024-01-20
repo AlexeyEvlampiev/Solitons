@@ -1,0 +1,153 @@
+﻿using System.Diagnostics;
+using System.Net;
+using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
+using Azure;
+using Azure.Core;
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
+using Solitons.Management.Azure;
+using Solitons.Security;
+using Solitons.Security.Common;
+
+namespace Solitons.Azure;
+
+public sealed class KeyVaultSecretsRepository : SecretsRepository, ISecretsRepository
+{
+    private readonly SecretClient _nativeClient;
+
+    private KeyVaultSecretsRepository(SecretClient nativeClient)
+    {
+        _nativeClient = nativeClient ?? throw new ArgumentNullException(nameof(nativeClient));
+    }
+
+
+    [DebuggerNonUserCode]
+    public static ISecretsRepository Create(SecretClient nativeClient) => new KeyVaultSecretsRepository(nativeClient);
+
+    private KeyVaultSecretsRepository(Uri vaultUri, TokenCredential credential)
+    {
+        if (vaultUri == null) throw new ArgumentNullException(nameof(vaultUri));
+        if (credential == null) throw new ArgumentNullException(nameof(credential));
+        _nativeClient = new SecretClient(vaultUri, credential);
+    }
+
+    private KeyVaultSecretsRepository(string keyVaultUrl, string tenantId, string clientId, string clientSecret)
+    {
+        if (false == Uri.IsWellFormedUriString(keyVaultUrl, UriKind.Absolute))
+            throw new ArgumentException($"'{keyVaultUrl}' is not a valid uri.");
+        _nativeClient = new SecretClient(vaultUri:
+            new Uri(keyVaultUrl), credential: new ClientSecretCredential(tenantId, clientId, clientSecret));
+    }
+
+    [DebuggerStepThrough]
+    public static ISecretsRepository Create(
+        Uri uri,
+        string tenantId,
+        string clientId,
+        string secret)
+    {
+        return new KeyVaultSecretsRepository(
+            uri.ToString(),
+            tenantId,
+            clientId,
+            secret);
+    }
+
+    [DebuggerStepThrough]
+    public static ISecretsRepository Create(
+        Uri uri,
+        IAzureClientSecretCredentials credentials)
+    {
+        return new KeyVaultSecretsRepository(
+            uri.ToString(),
+            credentials.TenantId,
+            credentials.ClientId,
+            credentials.ClientSecret);
+    }
+
+    protected override Task<string[]> ListSecretNamesAsync(CancellationToken cancellation)
+    {
+        return AsyncFunc
+            .Wrap(async () =>
+            {
+                var names = new List<string>();
+                var properties = _nativeClient
+                    .GetPropertiesOfSecretsAsync(cancellation);
+                await foreach (var property in properties)
+                {
+                    names.Add(property.Name);
+                }
+                return names.ToArray();
+            })
+            .WithRetryOnError(exceptions => exceptions
+                .OfType<RequestFailedException>()
+                .Take(3)
+                .SelectMany((ex, attempt) => Observable
+                    .Timer(++attempt * TimeSpan.FromMilliseconds(100))
+                    .Select(_ => ex))
+                .Where(ex => ex.Status != (int)HttpStatusCode.Unauthorized)
+            )
+            .Invoke();
+    }
+
+    protected override async Task<string> GetSecretAsync(string secretName, CancellationToken cancellation)
+    {
+        var secret = await _nativeClient.GetSecretAsync(secretName, cancellationToken: cancellation);
+        return secret.Value.Value;
+    }
+
+    protected override async Task<string?> GetSecretIfExistsAsync(string secretName, CancellationToken cancellation)
+    {
+        try
+        {
+            var response = await Observable
+                .FromAsync(() => _nativeClient
+                    .GetSecretAsync(secretName, cancellationToken: cancellation))
+                .Select(r => r.Value)
+                .WithRetryPolicy(args => args
+                    .SignalNextAttempt(args.AttemptNumber < 5)
+                    .Delay(attempt => TimeSpan
+                        .FromMilliseconds(50)
+                        .ScaleByFactor(1.1, attempt)))
+                .ToTask(cancellation);
+
+            return response.Value;
+        }
+        catch (Exception ex) when (IsSecretNotFoundError(ex))
+        {
+            return null;
+        }
+    }
+
+    protected override async Task<string> GetOrSetSecretAsync(string secretName, string defaultValue, CancellationToken cancellation)
+    {
+        try
+        {
+            var bundle = await _nativeClient.GetSecretAsync(secretName, cancellationToken: cancellation);
+            return bundle.Value.Value;
+        }
+        catch (Exception ex) when (IsSecretNotFoundError(ex))
+        {
+            var bundle = await _nativeClient.SetSecretAsync(secretName, defaultValue, cancellation);
+            return bundle.Value.Value;
+        }
+    }
+
+    protected override Task SetSecretAsync(string secretName, string secretValue, CancellationToken cancellation)
+    {
+        return _nativeClient.SetSecretAsync(secretName, secretValue, cancellation);
+    }
+
+    protected override bool IsSecretNotFoundError(Exception exception)
+    {
+        if (exception is RequestFailedException ex)
+        {
+            return ex.Status == (int)HttpStatusCode.NotFound;
+        }
+
+        return false;
+    }
+
+    public override string ToString() => _nativeClient.VaultUri.ToString();
+}
