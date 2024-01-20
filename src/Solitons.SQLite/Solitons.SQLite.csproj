@@ -21,7 +21,15 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageTags>.NET;SQLite;Database;DataStorage;Solitons;Integration;Efficiency;Scalability;SolitonsCore;DataHandling</PackageTags>
     <Title>Solitons SQLite Provider</Title>
+    <PackageIcon>Solitons.png</PackageIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\Solitons.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <!-- Dependencies -->
