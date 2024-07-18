@@ -1,0 +1,86 @@
+﻿using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using System;
+using System.Linq;
+
+namespace Solitons.CommandLine;
+
+/// <summary>
+/// Represents a single CLI subcommand, encapsulating its aliases and providing pattern matching functionality.
+/// </summary>
+internal sealed class CliSubCommand : ICliCommandSegment
+{
+    private static readonly Regex ValidCommandOptionsRegex;
+    private static readonly Regex ValidCommandSegmentRegex = new(@"^\w*$");
+
+    internal const string ArgumentExceptionMessage =
+        "Command pattern format is invalid. Ensure it is a pipe-separated list of valid command names.";
+
+
+
+    static CliSubCommand()
+    {
+        var pattern = @"^(?:$cmd(?:\|$cmd)*)?$"
+            .Replace("$cmd", @"\w+");
+        ValidCommandOptionsRegex = new Regex(pattern);
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CliSubCommand"/> class with a specific command pattern.
+    /// </summary>
+    /// <param name="commandPattern">A pipe-separated string containing different aliases for the command.</param>
+    /// <exception cref="ArgumentException">Thrown when any alias in the pattern does not match the allowed command name format.</exception>
+    public CliSubCommand(string commandPattern)
+    {
+        if (!ValidCommandOptionsRegex.IsMatch(commandPattern) &&
+            !commandPattern.IsNullOrWhiteSpace())
+        {
+            throw new ArgumentException(ArgumentExceptionMessage);
+        }
+
+        Aliases = commandPattern
+            .DefaultIfNullOrEmpty(String.Empty)
+            .Split("|")
+            .Select(o => o.Trim())
+            .Distinct()
+            .OrderBy(o => o, StringComparer.Ordinal)
+            .ToArray();
+
+        foreach (var name in Aliases)
+        {
+            if (!ValidCommandSegmentRegex.IsMatch(name) &&
+                !name.IsNullOrWhiteSpace())
+                throw new ArgumentException($"Invalid CLI command name: {name}");
+        }
+
+        SubCommandPattern = Aliases
+            .Join("|")
+            .DefaultIfNullOrEmpty("(?=.|$)");
+        PrimaryName = Aliases.FirstOrDefault(string.Empty);
+    }
+
+
+    /// <summary>
+    /// Gets the primary name of the CLI subcommand, usually the first listed alias.
+    /// </summary>
+    public string PrimaryName { get; }
+
+    /// <summary>
+    /// Gets the regular expression pattern derived from all aliases, used to match the subcommand in a CLI context.
+    /// </summary>
+    public string SubCommandPattern { get; }
+
+    /// <summary>
+    /// Gets a read-only list of all aliases for the subcommand.
+    /// </summary>
+    public IReadOnlyList<string> Aliases { get; }
+
+    /// <summary>
+    /// Returns a string representation of the primary name of the subcommand.
+    /// </summary>
+    /// <returns>A string that represents the primary name of the subcommand.</returns>
+    public override string ToString() => PrimaryName;
+
+    public string BuildPattern() => SubCommandPattern;
+    public string GetExpressionGroup() => PrimaryName.DefaultIfNullOrWhiteSpace("empty");
+}
