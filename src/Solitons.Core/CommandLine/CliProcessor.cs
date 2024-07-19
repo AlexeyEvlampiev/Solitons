@@ -52,15 +52,15 @@ public sealed class CliProcessor
     public interface IOptions
     {
         [DebuggerStepThrough]
-        public sealed IOptions UseCliHandlersFrom<T>(BindingFlags binding = BindingFlags.Static | BindingFlags.Public) => 
-            UseCliHandlersFrom(typeof(T), binding);
+        public sealed IOptions UseCommands<T>(BindingFlags binding = BindingFlags.Static | BindingFlags.Public) => 
+            UseCommands(typeof(T), binding);
 
         [DebuggerStepThrough]
-        public sealed IOptions UseCliHandlersFrom(Type declaringType,
+        public sealed IOptions UseCommands(Type declaringType,
             BindingFlags binding = BindingFlags.Static | BindingFlags.Public) =>
-            UseCliHandlersFrom(declaringType, [], binding);
+            UseCommands(declaringType, [], binding);
 
-        IOptions UseCliHandlersFrom(Type declaringType, CliCommandAttribute[] rootCommands, BindingFlags binding = BindingFlags.Static | BindingFlags.Public);
+        IOptions UseCommands(Type declaringType, CliCommandAttribute[] rootCommands, BindingFlags binding = BindingFlags.Static | BindingFlags.Public);
     }
 
 
@@ -75,7 +75,7 @@ public sealed class CliProcessor
 
 
         [DebuggerStepThrough]
-        public IOptions UseCliHandlersFrom(
+        public IOptions UseCommands(
             Type declaringType, 
             CliCommandAttribute[] rootCommands, 
             BindingFlags binding)
