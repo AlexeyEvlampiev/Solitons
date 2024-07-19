@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -21,7 +22,23 @@ internal partial class ZapCliActionRegexRtt
         Mode = mode;
         _action = action;
         SubCommands = _action.CommandSegments.OfType<CliSubCommand>();
-        CommandSegments = _action.CommandSegments;
+        CommandSegments = _action
+            .CommandSegments
+            .Where(segment =>
+            {
+                if (segment is CliArgument)
+                {
+                    return true;
+                }
+
+                if (segment is CliSubCommand cmd)
+                {
+                    return cmd.PrimaryName.IsPrintable();
+                }
+
+                throw new InvalidOperationException();
+            })
+            .ToArray();
     }
     
     

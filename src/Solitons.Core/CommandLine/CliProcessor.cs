@@ -33,7 +33,10 @@ public sealed class CliProcessor
         {
             foreach (var mi in source.DeclaringType.GetMethods(source.BindingFlags))
             {
-                if (false == mi.GetCustomAttributes().OfType<CliCommandAttribute>().Any())
+                if (false == mi
+                        .GetCustomAttributes()
+                        .OfType<CliCommandAttribute>()
+                        .Any())
                 {
                     Debug.WriteLine($"Not an action: {mi.Name}");
                     continue;
@@ -49,15 +52,15 @@ public sealed class CliProcessor
     public interface IOptions
     {
         [DebuggerStepThrough]
-        public sealed IOptions UseHandlersFrom<T>(BindingFlags binding = BindingFlags.Static | BindingFlags.Public) => 
-            UseHandlersFrom(typeof(T), binding);
+        public sealed IOptions UseCliHandlersFrom<T>(BindingFlags binding = BindingFlags.Static | BindingFlags.Public) => 
+            UseCliHandlersFrom(typeof(T), binding);
 
         [DebuggerStepThrough]
-        public sealed IOptions UseHandlersFrom(Type declaringType,
+        public sealed IOptions UseCliHandlersFrom(Type declaringType,
             BindingFlags binding = BindingFlags.Static | BindingFlags.Public) =>
-            UseHandlersFrom(declaringType, [], binding);
+            UseCliHandlersFrom(declaringType, [], binding);
 
-        IOptions UseHandlersFrom(Type declaringType, CliCommandAttribute[] rootCommands, BindingFlags binding = BindingFlags.Static | BindingFlags.Public);
+        IOptions UseCliHandlersFrom(Type declaringType, CliCommandAttribute[] rootCommands, BindingFlags binding = BindingFlags.Static | BindingFlags.Public);
     }
 
 
@@ -72,7 +75,7 @@ public sealed class CliProcessor
 
 
         [DebuggerStepThrough]
-        public IOptions UseHandlersFrom(
+        public IOptions UseCliHandlersFrom(
             Type declaringType, 
             CliCommandAttribute[] rootCommands, 
             BindingFlags binding)

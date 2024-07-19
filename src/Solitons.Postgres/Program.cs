@@ -8,7 +8,7 @@ internal class Program
     {
         return CliProcessor
             .Setup(config => config
-                .UseHandlersFrom<Program>())
+                .UseCliHandlersFrom<Program>())
             .Process(Environment.CommandLine);
     }
 
