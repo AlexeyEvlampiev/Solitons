@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace Solitons.CommandLine.ZapCli;
+namespace Solitons.CommandLine;
 
 public class CliMasterOptionBundle : CliOptionBundle
 {

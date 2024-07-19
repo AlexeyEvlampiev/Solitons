@@ -1,11 +1,12 @@
 ﻿using System.Diagnostics;
 using System.Linq;
+using Solitons.CommandLine.ZapCli;
 
-namespace Solitons.CommandLine.ZapCli;
+namespace Solitons.CommandLine;
 
 internal sealed class CliTraceMasterOptionsBundle : CliMasterOptionBundle
 {
-    [CliOption("--trace-level|-trace")] 
+    [CliOption("--trace-level|-trace")]
     public TraceLevel TraceLevel { get; set; } = TraceLevel.Off;
 
     public override void OnExecutingAction(string commandLine)

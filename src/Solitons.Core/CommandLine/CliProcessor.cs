@@ -1,29 +1,98 @@
-﻿using Solitons.CommandLine.Common;
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
 
-public abstract class CliProcessor
+public sealed class CliProcessor
 {
+    private sealed record Source(
+        Type DeclaringType,
+        object? Instance,
+        CliCommandAttribute[] RootCommands,
+        BindingFlags BindingFlags);
+
+    private readonly List<Source> _sources = new();
+    private readonly CliAction[] _actions;
+
+    private CliProcessor(Action<IOptions> config)
+    {
+        var masterOptionBundles = new CliMasterOptionBundle[]
+        {
+            new CliHelpMasterOptionBundle(),
+            new CliTraceMasterOptionsBundle()
+        };
+
+
+        var options = new Options(this);
+        config.Invoke(options);
+        var actions = new List<CliAction>();
+        foreach (var source in _sources)
+        {
+            foreach (var mi in source.DeclaringType.GetMethods(source.BindingFlags))
+            {
+                if (false == mi.GetCustomAttributes().OfType<CliCommandAttribute>().Any())
+                {
+                    Debug.WriteLine($"Not an action: {mi.Name}");
+                    continue;
+                }
+
+                actions.Add(new CliAction(source.Instance, mi, masterOptionBundles));
+            }
+        }
+
+        _actions = actions.ToArray();
+    }
+
     public interface IOptions
     {
-        IOptions UseCommandHandlersFrom<T>(BindingFlags binding = BindingFlags.Static | BindingFlags.Public);
-        void OnNoArguments(CliHelpMessageHandler handler);
+        [DebuggerStepThrough]
+        public sealed IOptions UseHandlersFrom<T>(BindingFlags binding = BindingFlags.Static | BindingFlags.Public) => 
+            UseHandlersFrom(typeof(T), binding);
+
+        [DebuggerStepThrough]
+        public sealed IOptions UseHandlersFrom(Type declaringType,
+            BindingFlags binding = BindingFlags.Static | BindingFlags.Public) =>
+            UseHandlersFrom(declaringType, [], binding);
+
+        IOptions UseHandlersFrom(Type declaringType, CliCommandAttribute[] rootCommands, BindingFlags binding = BindingFlags.Static | BindingFlags.Public);
     }
 
 
-    public static CliProcessor Setup(Action<IOptions> config)
+    sealed class Options : IOptions
     {
-        var options = new CliConfigurations();
-        config.Invoke(options);
-        return new CliProcessorImpl(options);
+        private readonly CliProcessor _processor;
+
+        public Options(CliProcessor processor)
+        {
+            _processor = processor;
+        }
+
+
+        [DebuggerStepThrough]
+        public IOptions UseHandlersFrom(
+            Type declaringType, 
+            CliCommandAttribute[] rootCommands, 
+            BindingFlags binding)
+        {
+            object? instance = null;
+            if (binding.HasFlag(BindingFlags.Instance))
+            {
+                instance = Activator.CreateInstance(declaringType);
+                if (instance == null)
+                {
+                    throw new NotImplementedException();
+                }
+            }
+            _processor._sources.Add(new Source(declaringType, instance, rootCommands, binding));
+            return this;
+        }
     }
+
+    [DebuggerStepThrough]
+    public static CliProcessor Setup(Action<IOptions> config) => new(config);
 
     [DebuggerStepThrough]
     public int Process() => Process(Environment.CommandLine);
@@ -31,11 +100,10 @@ public abstract class CliProcessor
     public int Process(string commandLine)
     {
         commandLine = commandLine.Trim();
-        var actions = LoadActions();
         
         try
         {
-            var selectedActions = actions
+            var selectedActions = _actions
                 .Where(a => a.IsMatch(commandLine))
                 .GroupBy(a => a.CalcSimilarity(commandLine))
                 .OrderByDescending(similarMatchedActions => similarMatchedActions.Key)
@@ -46,17 +114,9 @@ public abstract class CliProcessor
             if (selectedActions.Count != 1)
             {
                 Trace.TraceInformation($"Found {selectedActions.Count} actions that matched the given command line.");
-                var help = BuildHelpMessage(commandLine, actions);
-                var x = TokenSubstitutionPreprocessor.SubstituteTokens(commandLine, out _);
-                var empty = Regex.IsMatch(x, @"\s");
-                if (empty)
-                {
-                    OnNoArguments();
-                }
+                ShowHelp(commandLine);
                 return 1;
             }
-
-
 
             var action = selectedActions[0];
 
@@ -67,9 +127,9 @@ public abstract class CliProcessor
 
             return result;
         }
-        catch (Exception e) when(IsHelpRequestException(e))
+        catch (CliHelpRequestedException e) 
         {
-            BuildHelpMessage(commandLine, actions);
+            ShowHelp(commandLine);
             return 1;
         }
         catch (Exception e)
@@ -79,21 +139,6 @@ public abstract class CliProcessor
             return 1;
         }
 
-    }
-
-    protected abstract void OnNoArguments(string message);
-
-    protected abstract IAction[] LoadActions();
-
-    protected abstract bool IsHelpRequestException(Exception ex);
-
-
-    public interface IAction
-    {
-        bool IsMatch(string commandLine);
-        int Execute(string commandLine);
-        Similarity CalcSimilarity(string commandLine);
-        string BuildHelpMessage();
     }
 
 
@@ -117,20 +162,15 @@ public abstract class CliProcessor
 
 
 
-    protected string BuildHelpMessage(string commandLine, IAction[] actions)
+    public void ShowHelp(string commandLine)
     {
-        var matchesFound = actions.Any(a => a.IsMatch(commandLine));
-        var help = new StringBuilder();
-        actions
+        var matchesFound = _actions.Any(a => a.IsMatch(commandLine));
+        _actions
             .Where(a => false == matchesFound || a.IsMatch(commandLine))
             .GroupBy(a => a.CalcSimilarity(commandLine))
             .OrderByDescending(similarActions => similarActions.Key)
             .Take(1)
             .SelectMany(similarActions => similarActions)
-            .ForEach((action) =>
-            {
-                help.AppendLine(action.BuildHelpMessage());
-            });
-        return help.ToString();
+            .ForEach((action) =>action.ShowHelp());
     }
 }

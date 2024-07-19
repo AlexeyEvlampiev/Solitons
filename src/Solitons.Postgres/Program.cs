@@ -8,15 +8,14 @@ internal class Program
     {
         return CliProcessor
             .Setup(config => config
-                .UseCommandHandlersFrom<Program>()
-                .OnNoArguments(ShowHelp))
-            .Process();
+                .UseHandlersFrom<Program>())
+            .Process(Environment.CommandLine);
     }
 
 
-    public static void ShowHelp(string helpMessage)
+    [CliCommand("")]
+    public static void Hello()
     {
-        Console.WriteLine(Resources.Title);
-        Console.WriteLine(helpMessage);
+        Console.WriteLine(@"Hello world!");
     }
 }

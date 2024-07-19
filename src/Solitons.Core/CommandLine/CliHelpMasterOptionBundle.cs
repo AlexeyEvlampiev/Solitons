@@ -1,9 +1,9 @@
 ﻿using System.Diagnostics;
 using System.Reactive;
 
-namespace Solitons.CommandLine.ZapCli;
+namespace Solitons.CommandLine;
 
-internal sealed class CliHelpOption : CliMasterOptionBundle
+internal sealed class CliHelpMasterOptionBundle : CliMasterOptionBundle
 {
     [CliOption("--help|-h|-?")]
     public Unit? Help { get; set; }
@@ -13,7 +13,7 @@ internal sealed class CliHelpOption : CliMasterOptionBundle
     {
         if (Help.HasValue)
         {
-            throw new ZapCliHelpRequestedException();
+            throw new CliHelpRequestedException();
         }
     }
 }
