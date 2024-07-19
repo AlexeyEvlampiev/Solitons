@@ -34,4 +34,13 @@ public sealed class TokenSubstitutionPreprocessor
     }
 
     public string GetSubstitution(string key) => _substitutions.GetValueOrDefault(key, key);
+
+    public static IEnumerable<string> Parse(string commandLine)
+    {
+        commandLine = SubstituteTokens(commandLine.Trim(), out var preProcessor);
+        foreach (var key in Regex.Split(commandLine, @"\s+"))
+        {
+            yield return preProcessor.GetSubstitution(key);
+        }
+    }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using Solitons.CommandLine.Common;
 
 namespace Solitons.CommandLine;
 
@@ -14,8 +15,13 @@ public sealed class CliProcessor
         CliCommandAttribute[] RootCommands,
         BindingFlags BindingFlags);
 
+    private sealed record AsciiHeaderConfig(string Text, CliAsciiHeaderCondition When);
+
     private readonly List<Source> _sources = new();
     private readonly CliAction[] _actions;
+    private AsciiHeaderConfig _headerConfig = new("", CliAsciiHeaderCondition.Always);
+
+
 
     private CliProcessor(Action<IOptions> config)
     {
@@ -61,6 +67,7 @@ public sealed class CliProcessor
             UseCommands(declaringType, [], binding);
 
         IOptions UseCommands(Type declaringType, CliCommandAttribute[] rootCommands, BindingFlags binding = BindingFlags.Static | BindingFlags.Public);
+        IOptions ShowAsciiHeader(string asciiHeaderText, CliAsciiHeaderCondition condition);
     }
 
 
@@ -92,6 +99,12 @@ public sealed class CliProcessor
             _processor._sources.Add(new Source(declaringType, instance, rootCommands, binding));
             return this;
         }
+
+        public IOptions ShowAsciiHeader(string text, CliAsciiHeaderCondition condition)
+        {
+            _processor._headerConfig = new AsciiHeaderConfig(text, condition);
+            return this;
+        }
     }
 
     [DebuggerStepThrough]
@@ -117,6 +130,12 @@ public sealed class CliProcessor
             if (selectedActions.Count != 1)
             {
                 Trace.TraceInformation($"Found {selectedActions.Count} actions that matched the given command line.");
+
+                if (_headerConfig.Text.IsPrintable() && 
+                    TokenSubstitutionPreprocessor.Parse(commandLine).Count() == 1)
+                {
+                    Console.WriteLine(_headerConfig.Text);
+                }
                 ShowHelp(commandLine);
                 return 1;
             }

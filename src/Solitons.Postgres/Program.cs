@@ -1,4 +1,5 @@
-﻿using Solitons.CommandLine;
+﻿using System.ComponentModel;
+using Solitons.CommandLine;
 
 namespace Solitons.Postgres;
 
@@ -8,14 +9,23 @@ internal class Program
     {
         return CliProcessor
             .Setup(config => config
-                .UseCommands<Program>())
+                .UseCommands<Program>()
+                .ShowAsciiHeader(Resources.Title, CliAsciiHeaderCondition.NoArguments))
             .Process();
     }
 
+    [CliCommand("init|initialize")]
+    [CliArgument("directory", "File directory where to initialize the new pgup project.")]
+    [Description("Creates a new pgup project structure in the specified directory.")]
+    public static int InitializePgUpProject(
 
-    [CliCommand("")]
-    public static void Hello()
+            string directory,
+
+            [CliOption("--template|-t", "Description goes here")]
+            string projectTemplate = "basic"
+        )
     {
-        Console.WriteLine(@"Hello world!");
+        return 0;
     }
+
 }
