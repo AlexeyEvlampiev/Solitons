@@ -6,10 +6,11 @@ using Solitons.CommandLine.ZapCli;
 
 namespace Solitons.CommandLine;
 
-internal sealed class CliConfigurations : CommandLineInterface.IOptions
+internal sealed class CliConfigurations : CliProcessor.IOptions
 {
     private IServiceProvider _serviceProvider = new ActivatorServiceProvider();
     private ActivationSource _activationSource;
+    private CliHelpMessageHandler _onNoArgumentsHandler;
 
     sealed record ActivationSource(
         Type ActivationSourceType,
@@ -31,15 +32,15 @@ internal sealed class CliConfigurations : CommandLineInterface.IOptions
     internal CliConfigurations()
     {
         _activationSource = new ActivationSource(GetType(), this, BindingFlags.Static);
+        _onNoArgumentsHandler = Console.WriteLine;
     }
-
 
 
 
     public List<CliCommandAttribute> RootCommands { get; private set; } = new();
 
 
-    public CommandLineInterface.IOptions AddHandler(
+    public CliProcessor.IOptions AddHandler(
         Type type,
         CliCommandAttribute[] rootCommands,
         BindingFlags binding = BindingFlags.Static | BindingFlags.Public)
@@ -59,13 +60,23 @@ internal sealed class CliConfigurations : CommandLineInterface.IOptions
     }
 
     [DebuggerStepThrough]
-    public CommandLineInterface.IOptions Include<T>(BindingFlags binding)
+    public CliProcessor.IOptions UseCommandHandlersFrom<T>(BindingFlags binding)
     {
         return AddHandler(typeof(T), Array.Empty<CliCommandAttribute>(), binding);
     }
 
+    public void OnNoArguments(CliHelpMessageHandler handler)
+    {
+        _onNoArgumentsHandler = handler;
+    }
+
+    internal void OnNoArguments(string message)
+    {
+        _onNoArgumentsHandler.Invoke(message);
+    }
+
     [DebuggerStepThrough]
-    public CommandLineInterface.IOptions AddHandler<T>(
+    public CliProcessor.IOptions AddHandler<T>(
         CliCommandAttribute[] rootCommands,
         BindingFlags binding = BindingFlags.Static | BindingFlags.Public)
     {
@@ -74,7 +85,7 @@ internal sealed class CliConfigurations : CommandLineInterface.IOptions
 
 
     [DebuggerStepThrough]
-    public CommandLineInterface.IOptions AddHandler(
+    public CliProcessor.IOptions AddHandler(
         Type type,
         BindingFlags binding = BindingFlags.Static | BindingFlags.Public)
     {
@@ -83,7 +94,7 @@ internal sealed class CliConfigurations : CommandLineInterface.IOptions
 
 
     [DebuggerStepThrough]
-    public CommandLineInterface.IOptions AddHandler(
+    public CliProcessor.IOptions AddHandler(
         object instance,
         CliCommandAttribute[] rootCommands,
         BindingFlags binding = BindingFlags.Instance | BindingFlags.Public)

@@ -10,7 +10,7 @@ using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
 
-public sealed class CliAction : CommandLineInterface.IAction, IComparable<CliAction>
+public sealed class CliAction : CliProcessor.IAction, IComparable<CliAction>
 {
     private readonly object? _instance;
     private readonly MethodInfo _method;
@@ -183,13 +183,13 @@ public sealed class CliAction : CommandLineInterface.IAction, IComparable<CliAct
 
     }
 
-    public CommandLineInterface.Similarity CalcSimilarity(string commandLine)
+    public CliProcessor.Similarity CalcSimilarity(string commandLine)
     {
         var match = _similarityRegex.Match(commandLine);
         return new ZapCliActionSimilarity(match);
     }
 
-    public void PrintHelp()
+    public string BuildHelpMessage()
     {
         var args = Environment.GetCommandLineArgs();
         var tool = args[0];
@@ -198,7 +198,7 @@ public sealed class CliAction : CommandLineInterface.IAction, IComparable<CliAct
             tool = Path.GetFileName(tool);
         }
 
-        Console.WriteLine(ZapCliActionHelpRtt.Build(tool, this));
+        return ZapCliActionHelpRtt.Build(tool, this);
     }
 
     public int Similarity(string commandLine)

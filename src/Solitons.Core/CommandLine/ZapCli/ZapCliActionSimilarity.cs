@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine.ZapCli;
 
-internal sealed class ZapCliActionSimilarity : CommandLineInterface.Similarity
+internal sealed class ZapCliActionSimilarity : CliProcessor.Similarity
 {
     private readonly int _matchedGroupsCount;
 
@@ -20,7 +20,7 @@ internal sealed class ZapCliActionSimilarity : CommandLineInterface.Similarity
             .Count(g => g.Success);
     }
 
-    protected override int CompareTo(CommandLineInterface.Similarity other)
+    protected override int CompareTo(CliProcessor.Similarity other)
     {
         var x = (ZapCliActionSimilarity)other;
         return x._matchedGroupsCount - this._matchedGroupsCount;

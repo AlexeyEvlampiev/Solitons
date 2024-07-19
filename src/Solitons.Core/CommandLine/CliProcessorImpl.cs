@@ -5,22 +5,22 @@ using Solitons.CommandLine.ZapCli;
 
 namespace Solitons.CommandLine;
 
-internal sealed class Cli : CommandLineInterface
+internal sealed class CliProcessorImpl : CliProcessor
 {
     private readonly CliConfigurations _configurations;
 
 
     [DebuggerNonUserCode]
-    internal Cli(CliConfigurations configurations)
+    internal CliProcessorImpl(CliConfigurations configurations)
     {
         _configurations = configurations;
     }
 
 
-
-
-
-
+    protected override void OnNoArguments(string message)
+    {
+        _configurations.OnNoArguments(message);
+    }
 
     [DebuggerStepThrough]
     protected override IAction[] LoadActions() => _configurations

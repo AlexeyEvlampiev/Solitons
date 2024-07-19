@@ -1,29 +1,34 @@
-﻿using System;
+﻿using Solitons.CommandLine.Common;
+using System;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
 
-public abstract class CommandLineInterface
+public abstract class CliProcessor
 {
     public interface IOptions
     {
-        IOptions Include<T>(BindingFlags binding = BindingFlags.Static | BindingFlags.Public);
+        IOptions UseCommandHandlersFrom<T>(BindingFlags binding = BindingFlags.Static | BindingFlags.Public);
+        void OnNoArguments(CliHelpMessageHandler handler);
     }
 
 
-    public static CommandLineInterface Build(Action<IOptions> config)
+    public static CliProcessor Setup(Action<IOptions> config)
     {
         var options = new CliConfigurations();
         config.Invoke(options);
-        return new Cli(options);
+        return new CliProcessorImpl(options);
     }
 
     [DebuggerStepThrough]
-    public int Execute() => Execute(Environment.CommandLine);
+    public int Process() => Process(Environment.CommandLine);
 
-    public int Execute(string commandLine)
+    public int Process(string commandLine)
     {
         commandLine = commandLine.Trim();
         var actions = LoadActions();
@@ -41,9 +46,17 @@ public abstract class CommandLineInterface
             if (selectedActions.Count != 1)
             {
                 Trace.TraceInformation($"Found {selectedActions.Count} actions that matched the given command line.");
-                PrintHelp(commandLine, actions);
+                var help = BuildHelpMessage(commandLine, actions);
+                var x = TokenSubstitutionPreprocessor.SubstituteTokens(commandLine, out _);
+                var empty = Regex.IsMatch(x, @"\s");
+                if (empty)
+                {
+                    OnNoArguments();
+                }
                 return 1;
             }
+
+
 
             var action = selectedActions[0];
 
@@ -56,7 +69,7 @@ public abstract class CommandLineInterface
         }
         catch (Exception e) when(IsHelpRequestException(e))
         {
-            PrintHelp(commandLine, actions);
+            BuildHelpMessage(commandLine, actions);
             return 1;
         }
         catch (Exception e)
@@ -68,6 +81,8 @@ public abstract class CommandLineInterface
 
     }
 
+    protected abstract void OnNoArguments(string message);
+
     protected abstract IAction[] LoadActions();
 
     protected abstract bool IsHelpRequestException(Exception ex);
@@ -78,7 +93,7 @@ public abstract class CommandLineInterface
         bool IsMatch(string commandLine);
         int Execute(string commandLine);
         Similarity CalcSimilarity(string commandLine);
-        void PrintHelp();
+        string BuildHelpMessage();
     }
 
 
@@ -102,23 +117,20 @@ public abstract class CommandLineInterface
 
 
 
-    protected void PrintHelp(string commandLine, IAction[] actions)
+    protected string BuildHelpMessage(string commandLine, IAction[] actions)
     {
         var matchesFound = actions.Any(a => a.IsMatch(commandLine));
+        var help = new StringBuilder();
         actions
             .Where(a => false == matchesFound || a.IsMatch(commandLine))
             .GroupBy(a => a.CalcSimilarity(commandLine))
             .OrderByDescending(similarActions => similarActions.Key)
             .Take(1)
             .SelectMany(similarActions => similarActions)
-            .ForEach((action, index) =>
+            .ForEach((action) =>
             {
-                if (index > 0)
-                {
-                    Console.WriteLine();
-                }
-
-                action.PrintHelp();
+                help.AppendLine(action.BuildHelpMessage());
             });
+        return help.ToString();
     }
 }

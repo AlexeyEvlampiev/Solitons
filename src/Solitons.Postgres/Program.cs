@@ -6,15 +6,17 @@ internal class Program
 {
     static int Main()
     {
-        return CommandLineInterface
-            .Build(options => options
-                .Include<Program>())
-            .Execute();
+        return CliProcessor
+            .Setup(config => config
+                .UseCommandHandlersFrom<Program>()
+                .OnNoArguments(ShowHelp))
+            .Process();
     }
 
-    [CliCommand("")]
-    public static int Home()
+
+    public static void ShowHelp(string helpMessage)
     {
-        return -1;
+        Console.WriteLine(Resources.Title);
+        Console.WriteLine(helpMessage);
     }
 }

@@ -59,5 +59,20 @@ namespace Solitons.Postgres {
                 resourceCulture = value;
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 
+        ///  ___      _   _      
+        /// | _ \__ _| | | |_ __ 
+        /// |  _/ _` | |_| | &apos;_ \
+        /// |_| \__, |\___/| .__/
+        ///     |___/      |_|   
+        ///.
+        /// </summary>
+        internal static string Title {
+            get {
+                return ResourceManager.GetString("Title", resourceCulture);
+            }
+        }
     }
 }
