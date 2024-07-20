@@ -4,10 +4,14 @@ using Solitons.CommandLine;
 using Solitons.Postgres.PgUp;
 
 namespace Solitons.Postgres;
-using static PgUpConstants;
+
 
 internal class Program
 {
+    public const string InitializeProjectCommand = "init|initialize";
+    public const string ProjectDirectoryArgumentDescription = "File directory where to initialize the new pgup project.";
+    public const string InitializeProjectCommandDescription = "Creates a new pgup project structure in the specified directory.";
+    public const string TemplateParameterDescription = "The project template to be used.";
 
     static int Main()
     {
@@ -19,15 +23,15 @@ internal class Program
     }
 
     [CliCommand(InitializeProjectCommand)]
-    [CliArgument(nameof(directoryArg), ProjectDirectoryArgumentDescription)]
+    [CliArgument(nameof(directory), ProjectDirectoryArgumentDescription)]
     [Description(InitializeProjectCommandDescription)]
     public static int InitializePgUpProject(
-        PgUpProjectDirectory directoryArg,
-        PgUpProjectTemplate templateOpt)
+        string directory = ".",
+        [CliOption("--template|-t", TemplateParameterDescription)] string template = "basic")
     {
         IPgUpTemplateRepository repository = new PgUpFileSystemTemplateRepository();
-        DirectoryInfo di = directoryArg;
-        string template = templateOpt;
+        var di = new DirectoryInfo(directory);
+
         if (false == repository.Exists(template))
         {
             Console.Error.WriteLine($"Specified template not found");
