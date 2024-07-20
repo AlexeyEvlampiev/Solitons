@@ -27,7 +27,7 @@ internal partial class CliActionRegexRtt
             .CommandSegments
             .Where(segment =>
             {
-                if (segment is CliArgument)
+                if (segment is CliArgumentInfo)
                 {
                     return true;
                 }
@@ -64,7 +64,7 @@ internal partial class CliActionRegexRtt
 
     private IEnumerable<Option> Options => _action
         .Operands
-        .Where(operand => operand is not CliArgument)
+        .Where(operand => operand is not CliArgumentInfo)
         .Select(operand => new Option(operand.Name, operand.NamedGroupPattern));
 
 

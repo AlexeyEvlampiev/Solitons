@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 namespace Solitons.CommandLine;
 
 [method: DebuggerStepThrough]
-internal sealed class CliBundleOption(PropertyInfo propertyInfo) : CliOperand(propertyInfo)
+internal sealed class CliBundleOption(PropertyInfo propertyInfo) : CliOperandInfo(propertyInfo)
 {
     private readonly PropertyInfo _propertyInfo = propertyInfo;
 

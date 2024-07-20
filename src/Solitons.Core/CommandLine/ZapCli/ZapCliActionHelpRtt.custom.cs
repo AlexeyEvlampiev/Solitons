@@ -17,7 +17,7 @@ internal partial class ZapCliActionHelpRtt
 
         Arguments = action
             .Operands
-            .OfType<CliArgument>()
+            .OfType<CliArgumentInfo>()
             .Select(o =>
             {
                 return o
@@ -31,7 +31,7 @@ internal partial class ZapCliActionHelpRtt
 
         Options = action
             .Operands
-            .Where(o => o is not CliArgument)
+            .Where(o => o is not CliArgumentInfo)
             .Select(o =>
             {
                 var option = o.CustomAttributes
@@ -70,7 +70,7 @@ internal partial class ZapCliActionHelpRtt
             }
         }
 
-        if (segment is CliArgument argument)
+        if (segment is CliArgumentInfo argument)
         {
             foreach (var rhs in rhsOptions)
             {

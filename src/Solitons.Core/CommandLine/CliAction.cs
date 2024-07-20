@@ -17,7 +17,7 @@ public sealed class CliAction : IComparable<CliAction>
     private readonly CliMasterOptionBundle[] _masterOptions;
 
     private readonly ICliCommandSegment[] _commandSegments;
-    private readonly List<CliOperand> _operands = new();
+    private readonly List<CliOperandInfo> _operands = new();
     private readonly CliOptionBundle[] _bundles;
     private readonly ParameterInfo[] _parameters;
     private readonly Dictionary<ParameterInfo, object> _parameterMetadata = new();
@@ -49,7 +49,7 @@ public sealed class CliAction : IComparable<CliAction>
                         .FirstOrDefault(p => argument.References(p))
                         ?? throw new InvalidOperationException("Target parameter not found.");
 
-                    var operand = new CliArgument(targetParameter, this, argument);
+                    var operand = new CliArgumentInfo(targetParameter, this, argument);
                     commandSegments.Add(operand);
                     _operands.Add(operand);
                     _parameterMetadata.Add(targetParameter, operand);
@@ -69,7 +69,7 @@ public sealed class CliAction : IComparable<CliAction>
             
             if (_parameterMetadata.TryGetValue(pi, out var argument))
             {
-                Debug.Assert(argument is CliArgument);
+                Debug.Assert(argument is CliArgumentInfo);
                 Debug.Assert(_operands.Contains(argument));
                 continue;
             }
@@ -84,7 +84,7 @@ public sealed class CliAction : IComparable<CliAction>
             }
             else
             {
-                var metadata = new CliOption(pi);
+                var metadata = new CliOptionInfo(pi);
                 _operands.Add(metadata);
                 _parameterMetadata.Add(pi, metadata);
             }
@@ -108,7 +108,7 @@ public sealed class CliAction : IComparable<CliAction>
 
     internal IEnumerable<ICliCommandSegment> CommandSegments => _commandSegments;
 
-    internal IEnumerable<CliOperand> Operands => _operands;
+    internal IEnumerable<CliOperandInfo> Operands => _operands;
 
 
     public bool IsMatch(string commandLine) => _regex.IsMatch(commandLine);
@@ -142,7 +142,7 @@ public sealed class CliAction : IComparable<CliAction>
             }
             else if (_parameterMetadata.TryGetValue(parameter, out var metadata))
             {
-                if (metadata is CliParameter option)
+                if (metadata is CliParameterInfo option)
                 {
                     args[i] = option.GetValue(match);
                 }

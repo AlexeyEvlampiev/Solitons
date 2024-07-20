@@ -3,12 +3,12 @@ using System.Reflection;
 
 namespace Solitons.CommandLine;
 
-internal sealed class CliArgument : CliParameter, ICliCommandSegment
+internal sealed class CliArgumentInfo : CliParameterInfo, ICliCommandSegment
 {
     private readonly CliAction _action;
     private readonly CliArgumentAttribute _attribute;
 
-    public CliArgument(ParameterInfo parameter, CliAction action, CliArgumentAttribute attribute) 
+    public CliArgumentInfo(ParameterInfo parameter, CliAction action, CliArgumentAttribute attribute) 
         : base(parameter)
     {
         ParameterInfo = parameter;

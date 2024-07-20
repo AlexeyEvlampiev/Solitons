@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
 
-internal abstract class CliParameter(ParameterInfo parameter) : CliOperand(parameter)
+internal abstract class CliParameterInfo(ParameterInfo parameter) : CliOperandInfo(parameter)
 {
     public bool HasDefaultValue(out object defaultValue)
     {

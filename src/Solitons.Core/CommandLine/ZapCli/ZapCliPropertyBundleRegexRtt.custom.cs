@@ -5,19 +5,19 @@ namespace Solitons.CommandLine.ZapCli;
 
 internal partial class ZapCliPropertyBundleRegexRtt
 {
-    private readonly IEnumerable<CliOperand> _parameters;
+    private readonly IEnumerable<CliOperandInfo> _parameters;
 
     sealed record Parameter(string Name, string Pattern);
 
 
-    private ZapCliPropertyBundleRegexRtt(IEnumerable<CliOperand> parameters)
+    private ZapCliPropertyBundleRegexRtt(IEnumerable<CliOperandInfo> parameters)
     {
         _parameters = parameters;
     }
 
     private IEnumerable<Parameter> Parameters => _parameters.Select(pi => new Parameter(pi.Name, pi.RegularExpression));
 
-    public static string From(IEnumerable<CliOperand> operands)
+    public static string From(IEnumerable<CliOperandInfo> operands)
     {
         var rtt = new ZapCliPropertyBundleRegexRtt(operands);
         return rtt.ToString();

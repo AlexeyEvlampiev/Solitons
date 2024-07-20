@@ -14,13 +14,13 @@ using Solitons.CommandLine.ZapCli;
 
 namespace Solitons.CommandLine;
 
-internal abstract class CliOperand : IFormattable
+internal abstract class CliOperandInfo : IFormattable
 {
     private readonly TypeConverter _typeConverter;
     private readonly MetadataCollection _metadata = new();
     private readonly object _attribute;
 
-    protected CliOperand(
+    protected CliOperandInfo(
         ICustomAttributeProvider source)
     {
         using var ctorCallback = Disposable.Create(Validate);
