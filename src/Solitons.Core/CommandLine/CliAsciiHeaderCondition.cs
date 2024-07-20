@@ -6,5 +6,5 @@ namespace Solitons.CommandLine;
 public enum CliAsciiHeaderCondition
 {
     Always = -1,
-    NoArguments = 1
+    OnNoArguments = 1
 }

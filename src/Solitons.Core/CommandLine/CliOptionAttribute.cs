@@ -9,7 +9,7 @@ namespace Solitons.CommandLine;
 /// Attribute to define command line options for a method or property.
 /// </summary>
 [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)]
-public sealed class CliOptionAttribute : Attribute
+public class CliOptionAttribute : Attribute
 {
     private static readonly Regex SpecificationRegex;
     private static readonly Regex OptionRegex;
