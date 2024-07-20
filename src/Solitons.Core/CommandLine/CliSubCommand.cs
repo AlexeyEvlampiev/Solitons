@@ -11,7 +11,7 @@ namespace Solitons.CommandLine;
 internal sealed class CliSubCommand : ICliCommandSegment
 {
     private static readonly Regex ValidCommandOptionsRegex;
-    private static readonly Regex ValidCommandSegmentRegex = new(@"^\w*$");
+    private static readonly Regex ValidCommandSegmentRegex = new(@"^(?:\w+(?:-\w+)*)?$");
 
     internal const string ArgumentExceptionMessage =
         "Command pattern format is invalid. Ensure it is a pipe-separated list of valid command names.";
@@ -21,7 +21,7 @@ internal sealed class CliSubCommand : ICliCommandSegment
     static CliSubCommand()
     {
         var pattern = @"^(?:$cmd(?:\|$cmd)*)?$"
-            .Replace("$cmd", @"\w+");
+            .Replace("$cmd", @"\w+(?:-\w+)*");
         ValidCommandOptionsRegex = new Regex(pattern);
     }
 

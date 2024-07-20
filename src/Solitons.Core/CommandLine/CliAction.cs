@@ -97,8 +97,8 @@ public sealed class CliAction : IComparable<CliAction>
         }
 
 
-        DefaultPattern = ZapCliActionRegexRtt.Build(this, ZapCliActionRegexRttMode.Default);
-        SimilarityPattern = ZapCliActionRegexRtt.Build(this, ZapCliActionRegexRttMode.Similarity);
+        DefaultPattern = CliActionRegexRtt.Build(this, ZapCliActionRegexRttMode.Default);
+        SimilarityPattern = CliActionRegexRtt.Build(this, ZapCliActionRegexRttMode.Similarity);
         _regex = new Regex(DefaultPattern, RegexOptions.Compiled);
         _similarityRegex = new Regex(SimilarityPattern, RegexOptions.Compiled);
     }
@@ -121,7 +121,7 @@ public sealed class CliAction : IComparable<CliAction>
             throw new InvalidOperationException();
         }
 
-        var unrecognizedParameterGroup = ZapCliActionRegexRtt.GetUnmatchedParameterGroup(match);
+        var unrecognizedParameterGroup = CliActionRegexRtt.GetUnmatchedParameterGroup(match);
         if (unrecognizedParameterGroup.Success)
         {
             throw new NotImplementedException();

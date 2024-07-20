@@ -30,7 +30,7 @@
 # --- COMMANDS ---
 (?: 
   \s+ 
-  (?: <# foreach(var command in Commands){ #> 
+  (?: <# foreach(var command in SubCommands){ #> 
     (?<<#= GetSegmentGroupName(command) #>><#= GetSegmentPattern(command) #>)|<# } #> 
     \S+ 
   )

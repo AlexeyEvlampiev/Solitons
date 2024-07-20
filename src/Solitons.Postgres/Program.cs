@@ -14,7 +14,7 @@ internal class Program
             .Process();
     }
 
-    [CliCommand("init|initialize")]
+    [CliCommand("init|initialize|do-it-here")]
     [CliArgument("directory", "File directory where to initialize the new pgup project.")]
     [Description("Creates a new pgup project structure in the specified directory.")]
     public static int InitializePgUpProject(

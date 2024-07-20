@@ -90,15 +90,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="CommandLine\CliActionRegexRtt.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CliActionRegexRtt.tt</DependentUpon>
+    </Compile>
     <Compile Update="CommandLine\ZapCli\ZapCliActionHelpRtt.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>ZapCliActionHelpRtt.tt</DependentUpon>
-    </Compile>
-    <Compile Update="CommandLine\ZapCli\ZapCliActionRegexRtt.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>ZapCliActionRegexRtt.tt</DependentUpon>
     </Compile>
     <Compile Update="CommandLine\ZapCli\ZapCliPropertyBundleRegexRtt.cs">
       <DesignTime>True</DesignTime>
@@ -147,9 +147,9 @@
       <Generator>TextTemplatingFilePreprocessor</Generator>
       <LastGenOutput>ZapCliActionHelpRtt.cs</LastGenOutput>
     </None>
-    <None Update="CommandLine\ZapCli\ZapCliActionRegexRtt.tt">
+    <None Update="CommandLine\CliActionRegexRtt.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>
-      <LastGenOutput>ZapCliActionRegexRtt.cs</LastGenOutput>
+      <LastGenOutput>CliActionRegexRtt.cs</LastGenOutput>
     </None>
     <None Update="CommandLine\ZapCli\ZapCliPropertyBundleRegexRtt.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>

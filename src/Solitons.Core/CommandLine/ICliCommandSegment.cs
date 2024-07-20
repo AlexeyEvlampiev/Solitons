@@ -3,5 +3,4 @@
 internal interface ICliCommandSegment
 {
     string BuildPattern();
-    string GetExpressionGroup();
 }

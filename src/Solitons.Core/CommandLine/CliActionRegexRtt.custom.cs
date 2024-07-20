@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Solitons.CommandLine.ZapCli;
 
-namespace Solitons.CommandLine.ZapCli;
+namespace Solitons.CommandLine;
 
-internal partial class ZapCliActionRegexRtt
+internal partial class CliActionRegexRtt
 {
     private const string ProgramGroupName = "ID382292c985c64db183d4382216a195ef";
     private const string UnrecognizedCommandTokenName = "ID49ac98816b734782bcf61665cc0e53f0";
@@ -17,7 +18,7 @@ internal partial class ZapCliActionRegexRtt
 
 
     //[DebuggerNonUserCode]
-    private ZapCliActionRegexRtt(CliAction action, ZapCliActionRegexRttMode mode)
+    private CliActionRegexRtt(CliAction action, ZapCliActionRegexRttMode mode)
     {
         Mode = mode;
         _action = action;
@@ -40,11 +41,11 @@ internal partial class ZapCliActionRegexRtt
             })
             .ToArray();
     }
-    
-    
 
 
-    internal static string Build(CliAction action, ZapCliActionRegexRttMode mode) => new ZapCliActionRegexRtt(action, mode)
+
+
+    internal static string Build(CliAction action, ZapCliActionRegexRttMode mode) => new CliActionRegexRtt(action, mode)
         .ToString()
 #if DEBUG
         .Convert(p => Regex.Replace(p, @"((?<=\n)[^\S\n]+\n+)+", ""))
@@ -56,7 +57,7 @@ internal partial class ZapCliActionRegexRtt
 
     private IEnumerable<ICliCommandSegment> CommandSegments { get; }
 
-    private IEnumerable<ICliCommandSegment> SubCommands { get; } 
+    private IEnumerable<CliSubCommand> SubCommands { get; }
 
     public bool IsDefaultMode => Mode == ZapCliActionRegexRttMode.Default;
     public bool IsSimilarityMode => Mode == ZapCliActionRegexRttMode.Similarity;
@@ -67,13 +68,18 @@ internal partial class ZapCliActionRegexRtt
         .Select(operand => new Option(operand.Name, operand.NamedGroupPattern));
 
 
+
     public static Group GetProgramGroup(Match match) => match.Groups[ProgramGroupName];
 
     public static Group GetUnmatchedParameterGroup(Match match) => match.Groups[UnrecognizedCommandTokenName];
 
     private string GetSegmentPattern(ICliCommandSegment segment) => segment.BuildPattern();
 
-    private string GetSegmentGroupName(ICliCommandSegment segment) => segment.GetExpressionGroup();
+    private string GetSegmentGroupName(CliSubCommand cmd)
+    {
+        var guid = Guid.NewGuid().ToString("N");
+        return $"id{guid}";
+    }
 
 
     [Conditional("DEBUG")]
