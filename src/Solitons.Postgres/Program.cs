@@ -13,26 +13,33 @@ internal class Program
     public const string InitializeProjectCommandDescription = "Creates a new pgup project structure in the specified directory.";
     public const string TemplateParameterDescription = "The project template to be used.";
 
+    private readonly IPgUpTemplateRepository _templates = new PgUpFileSystemTemplateRepository();
+
+
     static int Main()
     {
+        var program = new Program();
         return CliProcessor
             .Setup(config => config
-                .UseCommands<Program>()
-                .ShowAsciiHeader(Resources.Title, CliAsciiHeaderCondition.OnNoArguments))
+                .UseCommands(program)
+                .UseAsciiHeader(Resources.Title, CliAsciiHeaderCondition.OnNoArguments))
             .Process();
     }
 
     [CliCommand(InitializeProjectCommand)]
     [CliArgument(nameof(directory), ProjectDirectoryArgumentDescription)]
     [Description(InitializeProjectCommandDescription)]
-    public static int InitializePgUpProject(
+    public int Initialize(
         string directory = ".",
         [CliOption("--template|-t", TemplateParameterDescription)] string template = "basic")
     {
-        IPgUpTemplateRepository repository = new PgUpFileSystemTemplateRepository();
-        var di = new DirectoryInfo(directory);
+        if (false == IsValidDirectory(directory, out var di))
+        {
+            Console.Error.WriteLine("Invalid directory path");
+            return 1;
+        }
 
-        if (false == repository.Exists(template))
+        if (false == _templates.Exists(template))
         {
             Console.Error.WriteLine($"Specified template not found");
             return 1;
@@ -68,9 +75,25 @@ internal class Program
             return -1;
         }
 
-        repository.Copy(template, di.FullName);
+        _templates.Copy(template, di.FullName);
+
 
         return 0;
+    }
+
+    private bool IsValidDirectory(string directory, out DirectoryInfo info)
+    {
+        try
+        {
+            info = new DirectoryInfo(directory);
+            return true;
+        }
+        catch (Exception e)
+        {
+            Debug.WriteLine(e.Message);
+            info = new DirectoryInfo(".");
+            return false;
+        }
     }
 
 }

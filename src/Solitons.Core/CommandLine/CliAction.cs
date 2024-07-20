@@ -10,7 +10,7 @@ using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
 
-public sealed class CliAction : IComparable<CliAction>
+internal sealed class CliAction : IComparable<CliAction>
 {
     private readonly object? _instance;
     private readonly MethodInfo _method;

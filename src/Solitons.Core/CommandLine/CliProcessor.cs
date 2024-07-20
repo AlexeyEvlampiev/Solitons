@@ -66,8 +66,14 @@ public sealed class CliProcessor
             BindingFlags binding = BindingFlags.Static | BindingFlags.Public) =>
             UseCommands(declaringType, [], binding);
 
+        [DebuggerStepThrough]
+        public sealed IOptions UseCommands(object target,
+            BindingFlags binding = BindingFlags.Instance | BindingFlags.Public) =>
+            UseCommands(target, [], binding);
+
         IOptions UseCommands(Type declaringType, CliCommandAttribute[] rootCommands, BindingFlags binding = BindingFlags.Static | BindingFlags.Public);
-        IOptions ShowAsciiHeader(string asciiHeaderText, CliAsciiHeaderCondition condition);
+        IOptions UseCommands(object target, CliCommandAttribute[] rootCommands, BindingFlags binding = BindingFlags.Instance | BindingFlags.Public);
+        IOptions UseAsciiHeader(string asciiHeaderText, CliAsciiHeaderCondition condition);
     }
 
 
@@ -80,17 +86,34 @@ public sealed class CliProcessor
             _processor = processor;
         }
 
+        [DebuggerStepThrough]
+        public IOptions UseCommands(
+            object target,
+            CliCommandAttribute[] rootCommands,
+            BindingFlags binding)
+        {
+            return UseCommands(target, target.GetType(), rootCommands, binding);
+        }
 
         [DebuggerStepThrough]
         public IOptions UseCommands(
+            Type declaringType,
+            CliCommandAttribute[] rootCommands,
+            BindingFlags binding)
+        {
+            return UseCommands(null, declaringType, rootCommands, binding);
+        }
+
+        [DebuggerStepThrough]
+        private IOptions UseCommands(
+            object? instance,
             Type declaringType, 
             CliCommandAttribute[] rootCommands, 
             BindingFlags binding)
         {
-            object? instance = null;
             if (binding.HasFlag(BindingFlags.Instance))
             {
-                instance = Activator.CreateInstance(declaringType);
+                instance ??= Activator.CreateInstance(declaringType);
                 if (instance == null)
                 {
                     throw new NotImplementedException();
@@ -100,7 +123,7 @@ public sealed class CliProcessor
             return this;
         }
 
-        public IOptions ShowAsciiHeader(string text, CliAsciiHeaderCondition condition)
+        public IOptions UseAsciiHeader(string text, CliAsciiHeaderCondition condition)
         {
             _processor._headerConfig = new AsciiHeaderConfig(text, condition);
             return this;
