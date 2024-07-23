@@ -26,6 +26,18 @@ internal class Program
             .Process();
     }
 
+    [CliCommand("deploy")]
+    [CliArgument(nameof(projectFile), "PgUp project file.")]
+    public int Deploy(
+        string projectFile,
+        [CliOption("--host")]string host,
+        [CliOption("--user")]string user,
+        [CliOption("--password")]string password,
+        [CliOption("--parameter|-p")] Dictionary<string, string>? parameters = null)
+    {
+        return 0;
+    }
+
     [CliCommand(InitializeProjectCommand)]
     [CliArgument(nameof(directory), ProjectDirectoryArgumentDescription)]
     [Description(InitializeProjectCommandDescription)]
