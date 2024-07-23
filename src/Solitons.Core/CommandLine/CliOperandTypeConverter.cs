@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Reactive;
 using System.Text.RegularExpressions;
 
@@ -73,23 +75,32 @@ internal sealed class CliMapOperandTypeConverter : CliOperandTypeConverter
     private readonly Type _type;
     private readonly string _keyGroup;
     private readonly string _valueGroup;
+    private readonly TypeConverter _valueTypeConverter;
 
     public CliMapOperandTypeConverter(
-        Type type, 
-        string optionName) 
+        Type type,
+        string optionName)
         : base(type)
     {
         _type = type;
-        //TODO: initialize ValueType to be the dictionary value type
+        ValueType = type.GetGenericArguments()[1];
+        _valueTypeConverter = TypeDescriptor.GetConverter(ValueType);
+        if (!_valueTypeConverter.CanConvertFrom(typeof(string)))
+        {
+            throw new InvalidOperationException(
+                $"Cannot convert from string to {ValueType}");
+        }
         _keyGroup = $"{optionName}_KEY";
         _valueGroup = $"{optionName}_VALUE";
     }
 
     public static bool IsMap(Type type)
     {
-        //TODO: return true if the type is Dictionary<string, T>
-        // or IDictionary<string, T>
-        throw new NotImplementedException();
+        if (!type.IsGenericType) return false;
+
+        var genericTypeDefinition = type.GetGenericTypeDefinition();
+        return genericTypeDefinition == typeof(Dictionary<,>) &&
+               type.GetGenericArguments()[0] == typeof(string);
     }
 
     public Type ValueType { get; }
@@ -103,14 +114,21 @@ internal sealed class CliMapOperandTypeConverter : CliOperandTypeConverter
             throw new InvalidOperationException();
         }
 
-        //TODO: Create the resulting Dictionary object
+        var dictionaryType = typeof(Dictionary<,>).MakeGenericType(typeof(string), ValueType);
+        var result = (IDictionary)Activator.CreateInstance(dictionaryType)!;
+
         for (int i = 0; i < keys.Count; ++i)
         {
-            var key = keys[i];
-            var value = values[i];
-            //TODO: Parse the value to the ValueType 
-            // add the key value pair to the resulting collection
+            var key = keys[i].Value;
+            var value = ConvertValue(values[i].Value);
+            result.Add(key, value);
         }
-        throw new NotImplementedException();
+
+        return result;
+    }
+
+    private object ConvertValue(string value)
+    {
+        return _valueTypeConverter.ConvertFromInvariantString(value);
     }
 }
