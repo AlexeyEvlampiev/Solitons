@@ -11,7 +11,7 @@ public sealed class CliMapOperandTypeConverter_FromMatch_Should
     [Theory]
     [InlineData("--map.A 3", "A", 3)]
     [InlineData("--map[A] 3", "A", 3)]
-    public void Work(string input, string key, int expectedValue)
+    public void HandleIntValues(string input, string key, int expectedValue)
     {
         var target = new CliMapOperandTypeConverter(typeof(Dictionary<string, int>), "test");
         var pattern = target.ToMatchPattern("--map");

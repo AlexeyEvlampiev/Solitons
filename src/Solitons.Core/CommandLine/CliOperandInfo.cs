@@ -174,7 +174,7 @@ internal abstract class CliOperandInfo : IFormattable
         if (group.Success)
         {
             var captures = group.Captures;
-            if (captures.Count > 1)
+            if (captures.Count > 1 && Converter.AllowsMultipleValues == false)
             {
                 throw new NotImplementedException();
             }

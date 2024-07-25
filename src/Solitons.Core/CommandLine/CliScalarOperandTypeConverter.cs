@@ -12,7 +12,7 @@ internal sealed class CliScalarOperandTypeConverter : CliOperandTypeConverter
     private readonly TypeConverter _typeConverter;
 
     public CliScalarOperandTypeConverter(Type type, string parameterName)
-        : base(type)
+        : base(false)
     {
         if (!IsScalar(type))
         {

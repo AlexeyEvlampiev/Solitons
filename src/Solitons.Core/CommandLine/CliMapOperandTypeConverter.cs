@@ -14,7 +14,7 @@ internal sealed class CliMapOperandTypeConverter : CliOperandTypeConverter
     public CliMapOperandTypeConverter(
         Type type,
         string optionName)
-        : base(type)
+        : base(true)
     {
         _optionName = optionName;
         ValueType = type.GetGenericArguments()[1];

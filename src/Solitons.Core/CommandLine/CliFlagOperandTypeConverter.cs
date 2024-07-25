@@ -16,7 +16,7 @@ internal sealed class CliFlagOperandTypeConverter : CliOperandTypeConverter
     };
 
     public CliFlagOperandTypeConverter(Type type, string parameterName) 
-        : base(type)
+        : base(false)
     {
         if (false == SupportedTypes.ContainsKey(type))
         {

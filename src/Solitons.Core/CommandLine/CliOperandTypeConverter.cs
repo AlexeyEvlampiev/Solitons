@@ -3,12 +3,9 @@ using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
 
-internal abstract class CliOperandTypeConverter
+internal abstract class CliOperandTypeConverter(bool allowsMultipleValues)
 {
-    protected CliOperandTypeConverter(Type type)
-    {
-        
-    }
+    public bool AllowsMultipleValues { get;  } = allowsMultipleValues;
 
     public object FromMatch(Match match)
     {
