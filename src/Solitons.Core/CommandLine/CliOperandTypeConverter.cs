@@ -128,9 +128,7 @@ internal sealed class CliScalarOperandTypeConverter : CliOperandTypeConverter
 
 internal sealed class CliMapOperandTypeConverter : CliOperandTypeConverter
 {
-    private readonly Type _type;
-    private readonly string _keyGroup;
-    private readonly string _valueGroup;
+    private readonly string _optionName;
     private readonly TypeConverter _valueTypeConverter;
 
     public CliMapOperandTypeConverter(
@@ -138,7 +136,7 @@ internal sealed class CliMapOperandTypeConverter : CliOperandTypeConverter
         string optionName)
         : base(type)
     {
-        _type = type;
+        _optionName = optionName;
         ValueType = type.GetGenericArguments()[1];
         _valueTypeConverter = TypeDescriptor.GetConverter(ValueType);
         if (!_valueTypeConverter.CanConvertFrom(typeof(string)))
@@ -146,8 +144,6 @@ internal sealed class CliMapOperandTypeConverter : CliOperandTypeConverter
             throw new InvalidOperationException(
                 $"Cannot convert from string to {ValueType}");
         }
-        _keyGroup = $"{optionName}_KEY";
-        _valueGroup = $"{optionName}_VALUE";
     }
 
     public static bool IsMap(Type type)
@@ -163,21 +159,22 @@ internal sealed class CliMapOperandTypeConverter : CliOperandTypeConverter
 
     protected override object Convert(Match match)
     {
-        var keys = match.Groups[_keyGroup].Captures;
-        var values = match.Groups[_valueGroup].Captures;
-        if (keys.Count != values.Count)
-        {
-            throw new InvalidOperationException();
-        }
-
         var dictionaryType = typeof(Dictionary<,>).MakeGenericType(typeof(string), ValueType);
         var result = (IDictionary)Activator.CreateInstance(dictionaryType)!;
 
-        for (int i = 0; i < keys.Count; ++i)
+        var keyValuePairs = match.Groups[_optionName].Captures;
+        foreach (Capture capture in keyValuePairs)
         {
-            var key = keys[i].Value;
-            var value = _valueTypeConverter
-                .ConvertFromInvariantString(values[i].Value);
+            var pair = ThrowIf
+                .NullOrWhiteSpace(capture.Value)
+                .Convert(s => Regex.Split(s, @"\s+"));
+            if (pair.Length != 2)
+            {
+                throw new NotImplementedException();
+            }
+
+            var (key, valueText) = (pair[0], pair[1]);
+            var value = _valueTypeConverter.ConvertFromInvariantString(valueText);
             result.Add(key, value);
         }
 
