@@ -7,6 +7,10 @@
     "init .": {
       "commandName": "Project",
       "commandLineArgs": "init ."
+    },
+    "deploy .": {
+      "commandName": "Project",
+      "commandLineArgs": "deploy database.pgup --host localhost --user postgres --password postgres -p.DbName mydb"
     }
   }
 }

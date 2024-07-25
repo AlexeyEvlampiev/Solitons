@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel;
 using System.Linq;
-using System.Reactive;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System;
@@ -10,13 +9,11 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Reactive.Disposables;
 using System.Globalization;
-using Solitons.CommandLine.ZapCli;
 
 namespace Solitons.CommandLine;
 
 internal abstract class CliOperandInfo : IFormattable
 {
-    private readonly TypeConverter _typeConverter;
     private readonly MetadataCollection _metadata = new();
     private readonly object _attribute;
 
@@ -79,38 +76,7 @@ internal abstract class CliOperandInfo : IFormattable
         Description = _metadata.Descriptions.FirstOrDefault(Name);
 
 
-        Cardinality = ZapCliParameterCardinality.Scalar;
-
-        UnderlyingType = ParameterType!;
-        if (UnderlyingType.IsValueType)
-        {
-            UnderlyingType = Nullable.GetUnderlyingType(UnderlyingType) ?? UnderlyingType;
-            Cardinality = ZapCliParameterCardinality.Scalar;
-            if (UnderlyingType == typeof(Unit))
-            {
-                Cardinality = ZapCliParameterCardinality.Flag;
-            }
-        }
-
-        _typeConverter = CustomAttributes
-            .OfType<TypeConverterAttribute>()
-            .Select(a => Type
-                .GetType(a.ConverterTypeName)
-                .Convert(type => ThrowIf.NullReference(type, $""))
-                .Convert(type => (TypeConverter?)Activator.CreateInstance(type))
-                .Convert(converter => ThrowIf.NullReference(converter, $"")))
-            .SingleOrDefault(TypeDescriptor.GetConverter(UnderlyingType));
-
-        if (UnderlyingType.IsEnum)
-        {
-            _typeConverter = new EnumConverter(UnderlyingType);
-        }
-
-        if (Cardinality != ZapCliParameterCardinality.Flag &&
-            false == _typeConverter.CanConvertFrom(typeof(string)))
-        {
-            throw new InvalidOperationException();
-        }
+        Converter = CliOperandTypeConverter.Create(ParameterType, Name);
     }
 
 
@@ -144,9 +110,14 @@ internal abstract class CliOperandInfo : IFormattable
     {
         get
         {
-            if (Cardinality == ZapCliParameterCardinality.Flag)
+            if (Converter is CliFlagOperandTypeConverter)
             {
                 return $"(?<{Name}>(?:{RegularExpression}))";
+            }
+
+            if (Converter is CliMapOperandTypeConverter)
+            {
+                return $@"(?:(?:{RegularExpression})\.(?<{Name}>\S+\s*\S*))";
             }
 
             return $@"(?:(?:{RegularExpression})\s+(?<{Name}>\S*))";
@@ -159,18 +130,7 @@ internal abstract class CliOperandInfo : IFormattable
 
     protected bool IsArgument => _metadata.Arguments.Any();
 
-    internal Type UnderlyingType { get; }
-
-    internal ZapCliParameterCardinality Cardinality { get; }
-
-    public virtual object? Convert(string token)
-    {
-        return _typeConverter.ConvertFromString(token);
-    }
-
-
-
-
+    internal CliOperandTypeConverter Converter { get; }
 
     public override string ToString() => ToString("G", CultureInfo.CurrentCulture);
 
@@ -219,12 +179,7 @@ internal abstract class CliOperandInfo : IFormattable
                 throw new NotImplementedException();
             }
 
-            if (Cardinality == ZapCliParameterCardinality.Flag)
-            {
-                value = Unit.Default;
-                return true;
-            }
-            value = Convert(group.Value);
+            value = Converter.FromMatch(match);
             return true;
         }
 
