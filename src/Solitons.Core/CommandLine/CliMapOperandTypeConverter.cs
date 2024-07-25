@@ -47,7 +47,7 @@ internal sealed class CliMapOperandTypeConverter : CliOperandTypeConverter
         {
             var pair = ThrowIf
                 .NullOrWhiteSpace(capture.Value)
-                .Convert(s => Regex.Replace(s, @"^\.|\[\]", ""))
+                .Convert(s => Regex.Replace(s, @"^\.|\[|\]", ""))
                 .Convert(s => Regex.Split(s, @"\s+"));
             if (pair.Length != 2)
             {
@@ -65,7 +65,7 @@ internal sealed class CliMapOperandTypeConverter : CliOperandTypeConverter
     public override string ToMatchPattern(string keyPattern)
     {
         var pattern = @$"{keyPattern}(?<{_optionName}>$pair)"
-            .Replace("$pair", @"(?:\.$key|\[$key\])(?:\s+[^-]\S+)?")
+            .Replace("$pair", @"(?:\.$key|\[$key\])(?:\s+[^-]\S*)?")
             .Replace("$key", @"\w+");
         return pattern;
     }
