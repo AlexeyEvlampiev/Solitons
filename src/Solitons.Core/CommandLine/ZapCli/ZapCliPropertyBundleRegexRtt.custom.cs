@@ -15,7 +15,7 @@ internal partial class ZapCliPropertyBundleRegexRtt
         _parameters = parameters;
     }
 
-    private IEnumerable<Parameter> Parameters => _parameters.Select(pi => new Parameter(pi.Name, pi.RegularExpression));
+    private IEnumerable<Parameter> Parameters => _parameters.Select(pi => new Parameter(pi.Name, pi.OperandKeyPattern));
 
     public static string From(IEnumerable<CliOperandInfo> operands)
     {

@@ -68,7 +68,7 @@ internal abstract class CliOperandInfo : IFormattable
             .FirstOrDefault(new CliOptionAttribute($"--{Name}".ToLower(), _metadata.Descriptions.FirstOrDefault(Name)));
 
 
-        RegularExpression = _metadata
+        OperandKeyPattern = _metadata
             .OfType<CliOptionAttribute>()
             .Select(o => o.OptionSpecification)
             .FirstOrDefault("^");
@@ -104,7 +104,7 @@ internal abstract class CliOperandInfo : IFormattable
 
     public string Description { get; protected set; }
 
-    public string RegularExpression { get; }
+    public string OperandKeyPattern { get; }
 
     public string NamedGroupPattern
     {
@@ -112,15 +112,15 @@ internal abstract class CliOperandInfo : IFormattable
         {
             if (Converter is CliFlagOperandTypeConverter)
             {
-                return $"(?<{Name}>(?:{RegularExpression}))";
+                return $"(?<{Name}>(?:{OperandKeyPattern}))";
             }
 
             if (Converter is CliMapOperandTypeConverter)
             {
-                return $@"(?:(?:{RegularExpression})\.(?<{Name}>\S+\s*\S*))";
+                return Converter.ToMatchPattern(OperandKeyPattern);
             }
 
-            return $@"(?:(?:{RegularExpression})\s+(?<{Name}>\S*))";
+            return $@"(?:(?:{OperandKeyPattern})\s+(?<{Name}>\S*))";
         }
     }
 
