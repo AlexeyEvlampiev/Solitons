@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using Npgsql;
 
-namespace Solitons.Postgres.PgUp.PgUp;
+namespace Solitons.Postgres.PgUp.Management;
 
 internal sealed class PgUpDeploymentHandler
 {

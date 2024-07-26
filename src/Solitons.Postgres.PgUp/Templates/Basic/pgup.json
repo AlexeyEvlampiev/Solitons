@@ -6,13 +6,41 @@
     "dbManager": { "default": "${dbName}_manager" },
     "dbManagerPwd": { "default": "postgres" }
   },
-  "dbName": "${dbName}",
-  "dbOwner": "${dbOwner}",
-  "stages": [
+  "databaseName": "${dbName}",
+  "databaseOwner": "${dbOwner}",
+  "transactions": [
     {
-      "title": "provisioning",
-      "workdir": "provisioning",
-      "scripts": [ "init.sql" ]
+      "stages": [
+        {
+          "workdir": "pre-deployment",
+          "scripts": [ "script-1.sql" ]
+        }
+      ]      
+    },
+    {
+      "stages": [
+        {
+          "workdir": "migrations",
+          "customExecutor": {
+            "filePath": "path",
+            "fileContent": "sql",
+            "command": "SELECT system.migration_script_execute(@path, @sql);"
+          },
+          "scripts": [ "00-00-00.sql" ]
+        },
+        {
+          "workdir": "upgrade",
+          "scripts": [ "script-1.sql" ]
+        }
+      ]
+    },
+    {
+      "stages": [
+        {
+          "workdir": "post-deployment",
+          "scripts": [ "post-deployment.sql" ]
+        }
+      ]
     }
   ]
 }

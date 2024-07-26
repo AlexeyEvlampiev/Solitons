@@ -1,9 +1,9 @@
-﻿
-
-using System.Reflection;
+﻿using System.Reflection;
+using System.Text.RegularExpressions;
 using Solitons.Data;
+using Solitons.Postgres.PgUp.Management.Models;
 
-namespace Solitons.Postgres.PgUp.PgUp;
+namespace Solitons.Postgres.PgUp.Management;
 
 internal sealed class PgUpSerializer
 {
@@ -16,7 +16,7 @@ internal sealed class PgUpSerializer
                 .GetEntryAssembly()));
     }
 
-    public static object Deserialize(
+    public static IProject Deserialize(
         string pgUpJson, 
         Dictionary<string, string> parameters)
     {
@@ -50,7 +50,19 @@ internal sealed class PgUpSerializer
             pgUpJson = pgUpJson.Replace(placeholder, parameter.Value);
         }
 
-        throw new NotImplementedException();
+        var regex = new Regex($@"\${{(\S+?)}}");
+        var unresolvedParametersCsv = regex
+            .Matches(pgUpJson)
+            .Select(m => m.Groups[1].Value)
+            .Join(", ");
+
+        if (unresolvedParametersCsv.IsPrintable())
+        {
+            throw new InvalidOperationException(
+                $"Unresolved parameters: {unresolvedParametersCsv}");
+        }
+        project = _serializer.Deserialize<PgUpProjectJson>(pgUpJson, "application/json");
+        return project;
     }
 
 

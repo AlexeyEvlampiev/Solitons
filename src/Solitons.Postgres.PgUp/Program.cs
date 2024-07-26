@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using Npgsql;
 using Solitons.CommandLine;
-using Solitons.Postgres.PgUp.PgUp;
+using Solitons.Postgres.PgUp.Management;
 
 namespace Solitons.Postgres.PgUp;
 

@@ -1,4 +1,4 @@
-﻿namespace Solitons.Postgres.PgUp.PgUp;
+﻿namespace Solitons.Postgres.PgUp.Management;
 
 public interface IPgUpTemplateRepository
 {
