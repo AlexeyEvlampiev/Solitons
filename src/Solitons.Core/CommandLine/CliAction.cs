@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Solitons.CommandLine;
 
@@ -165,6 +166,15 @@ internal sealed class CliAction : IComparable<CliAction>
         try
         {
             var result = _method.Invoke(_instance, args);
+            if (result is Task task)
+            {
+                task.GetAwaiter().GetResult();
+                var resultProperty = task.GetType().GetProperty("Result");
+                if (resultProperty != null)
+                {
+                    result = resultProperty.GetValue(task); 
+                }
+            }
             _masterOptions.ForEach(bundle => bundle.OnActionExecuted(commandLine));
             if (result is int code)
             {

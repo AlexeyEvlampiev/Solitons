@@ -1,0 +1,18 @@
+{
+  "parameters": {
+    "dbPrefix": { "default": "" },
+    "dbName": { "default": "${dbPrefix}mypgupdb" },
+    "dbOwner": { "default": "${dbName}" },
+    "dbManager": { "default": "${dbName}_manager" },
+    "dbManagerPwd": { "default": "postgres" }
+  },
+  "dbName": "${dbName}",
+  "dbOwner": "${dbOwner}",
+  "stages": [
+    {
+      "title": "provisioning",
+      "workdir": "provisioning",
+      "scripts": [ "init.sql" ]
+    }
+  ]
+}
