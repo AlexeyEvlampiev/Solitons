@@ -34,7 +34,6 @@ internal class Program
         [CliOption("--user")]string user,
         [CliOption("--password")]string password,
         [CliOption("--parameter|-p")] Dictionary<string, string>? parameters = null,
-
         [CliOption("--timeout")] CancellationToken cancellation = default)
     {
         return 0;

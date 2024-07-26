@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using Solitons.CommandLine.Common;
 
 namespace Solitons.CommandLine;
 
@@ -14,7 +13,7 @@ internal sealed class CliBundleOptionInfo(PropertyInfo propertyInfo)
 
     public static implicit operator PropertyInfo(CliBundleOptionInfo optionInfo) => optionInfo._propertyInfo;
 
-    public void SetValues(CliOptionBundle bundle, Match match, TokenSubstitutionPreprocessor preprocessor)
+    public void SetValues(CliOptionBundle bundle, Match match, CliTokenSubstitutionPreprocessor preprocessor)
     {
         if (FindValue(match, preprocessor, out var value))
         {

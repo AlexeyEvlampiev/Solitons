@@ -1,7 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using Solitons.CommandLine.Common;
 using Xunit;
 
 namespace Solitons.CommandLine;
@@ -14,7 +13,7 @@ public sealed class CliMapOperandTypeConverter_FromMatch_Should
     [InlineData("--map[A] 3", "A", 3)]
     public void HandleIntValues(string input, string key, int expectedValue)
     {
-        input = TokenSubstitutionPreprocessor.SubstituteTokens(input, out var preprocessor);
+        input = CliTokenSubstitutionPreprocessor.SubstituteTokens(input, out var preprocessor);
         var target = new CliMapOperandTypeConverter(typeof(Dictionary<string, int>), "test", null);
         var pattern = target.ToMatchPattern("--map");
         var match = Regex.Match(input, pattern);

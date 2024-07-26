@@ -10,7 +10,6 @@ using System.Diagnostics;
 using System.Reactive.Disposables;
 using System.Globalization;
 using System.Threading;
-using Solitons.CommandLine.Common;
 
 namespace Solitons.CommandLine;
 
@@ -175,7 +174,7 @@ internal abstract class CliOperandInfo : IFormattable
     }
 
 
-    protected bool FindValue(Match match, TokenSubstitutionPreprocessor preprocessor, out object? value)
+    protected bool FindValue(Match match, CliTokenSubstitutionPreprocessor preprocessor, out object? value)
     {
         value = false;
         if (false == match.Success)

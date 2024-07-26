@@ -1,5 +1,4 @@
-﻿using Solitons.CommandLine.Common;
-using Solitons.CommandLine.ZapCli;
+﻿using Solitons.CommandLine.ZapCli;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -114,7 +113,7 @@ internal sealed class CliAction : IComparable<CliAction>
     public bool IsMatch(string commandLine) => _regex.IsMatch(commandLine);
     public int Execute(string commandLine)
     {
-        commandLine = TokenSubstitutionPreprocessor.SubstituteTokens(commandLine, out var preprocessor);
+        commandLine = CliTokenSubstitutionPreprocessor.SubstituteTokens(commandLine, out var preprocessor);
         var match = _regex.Match(commandLine);
         if (match.Success == false)
         {

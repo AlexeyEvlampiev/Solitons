@@ -1,5 +1,4 @@
-﻿using Solitons.CommandLine.Common;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -38,7 +37,7 @@ internal sealed class CliMapOperandTypeConverter : CliOperandTypeConverter
 
     public Type ValueType { get; }
 
-    protected override object Convert(Match match, TokenSubstitutionPreprocessor preprocessor)
+    protected override object Convert(Match match, CliTokenSubstitutionPreprocessor preprocessor)
     {
         var dictionaryType = typeof(Dictionary<,>).MakeGenericType(typeof(string), ValueType);
         var result = (IDictionary)Activator.CreateInstance(dictionaryType)!;

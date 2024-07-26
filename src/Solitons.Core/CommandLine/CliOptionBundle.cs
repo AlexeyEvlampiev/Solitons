@@ -1,5 +1,4 @@
-﻿using Solitons.CommandLine.Common;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,7 +28,7 @@ public abstract class CliOptionBundle
             .AsEnumerable();
     }
 
-    public void Populate(Match match, TokenSubstitutionPreprocessor preprocessor)
+    public void Populate(Match match, CliTokenSubstitutionPreprocessor preprocessor)
     {
         foreach (var parameter in GetOptions(GetType()))
         {

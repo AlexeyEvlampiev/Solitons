@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using Solitons.CommandLine.Common;
 
 namespace Solitons.CommandLine;
 
@@ -14,7 +13,7 @@ internal abstract class CliParameterInfo( ParameterInfo parameter)
         return parameter.HasDefaultValue;
     }
 
-    public object? GetValue(Match match, TokenSubstitutionPreprocessor preprocessor)
+    public object? GetValue(Match match, CliTokenSubstitutionPreprocessor preprocessor)
     {
         if (FindValue(match, preprocessor, out var value))
         {

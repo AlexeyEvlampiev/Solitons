@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using Solitons.CommandLine.Common;
 
 namespace Solitons.CommandLine;
 
@@ -155,7 +154,7 @@ public sealed class CliProcessor
                 Trace.TraceInformation($"Found {selectedActions.Count} actions that matched the given command line.");
 
                 if (_headerConfig.Text.IsPrintable() && 
-                    TokenSubstitutionPreprocessor.Parse(commandLine).Count() == 1)
+                    CliTokenSubstitutionPreprocessor.Parse(commandLine).Count() == 1)
                 {
                     Console.WriteLine(_headerConfig.Text);
                 }

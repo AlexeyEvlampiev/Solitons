@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Reactive;
 using System.Text.RegularExpressions;
-using Solitons.CommandLine.Common;
 
 namespace Solitons.CommandLine;
 
@@ -31,7 +30,7 @@ internal sealed class CliFlagOperandTypeConverter : CliOperandTypeConverter
     public static bool IsFlag(Type type) => SupportedTypes.ContainsKey(type);
 
 
-    protected override object Convert(Match match, TokenSubstitutionPreprocessor preprocessor)
+    protected override object Convert(Match match, CliTokenSubstitutionPreprocessor preprocessor)
     {
         return SupportedTypes[_type];
     }

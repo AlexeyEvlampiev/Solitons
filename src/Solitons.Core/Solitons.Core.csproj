@@ -185,4 +185,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="CommandLine\Common\" />
+  </ItemGroup>
+
 </Project>

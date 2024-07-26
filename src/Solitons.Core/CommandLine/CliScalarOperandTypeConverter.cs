@@ -2,7 +2,6 @@
 using System.Collections;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
-using Solitons.CommandLine.Common;
 
 namespace Solitons.CommandLine;
 
@@ -33,7 +32,7 @@ internal sealed class CliScalarOperandTypeConverter : CliOperandTypeConverter
                !typeof(IEnumerable).IsAssignableFrom(type);
     }
 
-    protected override object Convert(Match match, TokenSubstitutionPreprocessor preprocessor)
+    protected override object Convert(Match match, CliTokenSubstitutionPreprocessor preprocessor)
     {
         // Retrieve the value from the match using the parameter name
         var valueString = match.Groups[_parameterName].Value;

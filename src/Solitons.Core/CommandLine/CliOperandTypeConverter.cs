@@ -1,7 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
-using Solitons.CommandLine.Common;
 
 namespace Solitons.CommandLine;
 
@@ -11,7 +10,7 @@ internal abstract class CliOperandTypeConverter(bool allowsMultipleValues)
 
     public object FromMatch(
         Match match,
-        TokenSubstitutionPreprocessor preprocessor)
+        CliTokenSubstitutionPreprocessor preprocessor)
     {
         if (false == match.Success)
         {
@@ -24,7 +23,7 @@ internal abstract class CliOperandTypeConverter(bool allowsMultipleValues)
 
     protected abstract object Convert(
         Match match,
-        TokenSubstitutionPreprocessor preprocessor);
+        CliTokenSubstitutionPreprocessor preprocessor);
 
     public abstract string ToMatchPattern(string keyPattern);
 
