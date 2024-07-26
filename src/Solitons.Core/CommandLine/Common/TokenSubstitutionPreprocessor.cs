@@ -9,11 +9,11 @@ namespace Solitons.CommandLine.Common;
 public sealed class TokenSubstitutionPreprocessor
 {
     [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
-    private readonly FrozenDictionary<string,string> _substitutions;
+    private readonly Dictionary<string,string> _substitutions;
 
     private TokenSubstitutionPreprocessor(Dictionary<string, string> substitutions)
     {
-        _substitutions = substitutions.ToFrozenDictionary();
+        _substitutions = substitutions;
     }
 
     public static string SubstituteTokens(string commandLine, out TokenSubstitutionPreprocessor tokenSubstitutionPreprocessor)

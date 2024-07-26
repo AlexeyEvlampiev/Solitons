@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using Solitons.CommandLine.Common;
 
 namespace Solitons.CommandLine;
 
-internal abstract class CliParameterInfo(ParameterInfo parameter) : CliOperandInfo(parameter)
+internal abstract class CliParameterInfo( ParameterInfo parameter) 
+    : CliOperandInfo(parameter)
 {
     public bool HasDefaultValue(out object defaultValue)
     {
@@ -12,9 +14,9 @@ internal abstract class CliParameterInfo(ParameterInfo parameter) : CliOperandIn
         return parameter.HasDefaultValue;
     }
 
-    public object? GetValue(Match match)
+    public object? GetValue(Match match, TokenSubstitutionPreprocessor preprocessor)
     {
-        if (FindValue(match, out var value))
+        if (FindValue(match, preprocessor, out var value))
         {
             return value;
         }

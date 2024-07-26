@@ -35,9 +35,7 @@ internal class Program
         [CliOption("--password")]string password,
         [CliOption("--parameter|-p")] Dictionary<string, string>? parameters = null,
 
-        [CliOption("--timeout")]
-        [TypeConverter(typeof(CliCancellationTokenTypeConverter))]
-        CancellationToken cancellation = default)
+        [CliOption("--timeout")] CancellationToken cancellation = default)
     {
         return 0;
     }

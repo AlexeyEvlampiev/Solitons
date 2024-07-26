@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.Threading;
 using System.Xml;
@@ -8,6 +9,7 @@ namespace Solitons.CommandLine;
 
 public sealed class CliCancellationTokenTypeConverter : TypeConverter
 {
+    [DebuggerStepThrough]
     public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
     {
         return Parse(value.ToString() ?? throw new InvalidOperationException("Invalid timeout text"));
@@ -22,11 +24,13 @@ public sealed class CliCancellationTokenTypeConverter : TypeConverter
 
         try
         {
-            if (TimeSpan.TryParse(timeoutText, out var timeout))
+            if (TimeSpan.TryParse(timeoutText, out var timeout) ||
+                HumanizedTimeSpanTypeConverter.TryParse(timeoutText, out timeout))
             {
                 // .NET TimeSpan format
                 return new CancellationTokenSource(timeout).Token;
             }
+
 
             // ISO 8601 duration format
             timeout = XmlConvert.ToTimeSpan(timeoutText);

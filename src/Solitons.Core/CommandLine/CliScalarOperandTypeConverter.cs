@@ -2,6 +2,7 @@
 using System.Collections;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
+using Solitons.CommandLine.Common;
 
 namespace Solitons.CommandLine;
 
@@ -11,8 +12,10 @@ internal sealed class CliScalarOperandTypeConverter : CliOperandTypeConverter
     private readonly Type _type;
     private readonly TypeConverter _typeConverter;
 
-    public CliScalarOperandTypeConverter(Type type, string parameterName, TypeConverter? customTypeConverter)
-        : base(false)
+    public CliScalarOperandTypeConverter(
+        Type type, 
+        string parameterName,
+        TypeConverter? customTypeConverter) : base(false)
     {
         if (!IsScalar(type))
         {
@@ -30,7 +33,7 @@ internal sealed class CliScalarOperandTypeConverter : CliOperandTypeConverter
                !typeof(IEnumerable).IsAssignableFrom(type);
     }
 
-    protected override object Convert(Match match)
+    protected override object Convert(Match match, TokenSubstitutionPreprocessor preprocessor)
     {
         // Retrieve the value from the match using the parameter name
         var valueString = match.Groups[_parameterName].Value;
@@ -41,6 +44,7 @@ internal sealed class CliScalarOperandTypeConverter : CliOperandTypeConverter
         }
 
         // Convert the string value to the desired type using TypeConverter
+        valueString = preprocessor.GetSubstitution(valueString);
         var convertedValue = _typeConverter.ConvertFromInvariantString(valueString);
         if (convertedValue == null)
         {

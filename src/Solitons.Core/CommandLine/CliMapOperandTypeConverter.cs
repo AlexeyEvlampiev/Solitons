@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Solitons.CommandLine.Common;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -13,7 +14,7 @@ internal sealed class CliMapOperandTypeConverter : CliOperandTypeConverter
 
     public CliMapOperandTypeConverter(
         Type type,
-        string optionName, 
+        string optionName,
         TypeConverter? customTypeConverter) : base(true)
     {
         _optionName = optionName;
@@ -37,7 +38,7 @@ internal sealed class CliMapOperandTypeConverter : CliOperandTypeConverter
 
     public Type ValueType { get; }
 
-    protected override object Convert(Match match)
+    protected override object Convert(Match match, TokenSubstitutionPreprocessor preprocessor)
     {
         var dictionaryType = typeof(Dictionary<,>).MakeGenericType(typeof(string), ValueType);
         var result = (IDictionary)Activator.CreateInstance(dictionaryType)!;
@@ -55,6 +56,7 @@ internal sealed class CliMapOperandTypeConverter : CliOperandTypeConverter
             }
 
             var (key, valueText) = (pair[0], pair[1]);
+            valueText = preprocessor.GetSubstitution(valueText);
             var value = _valueTypeConverter.ConvertFromInvariantString(valueText);
             result.Add(key, value);
         }

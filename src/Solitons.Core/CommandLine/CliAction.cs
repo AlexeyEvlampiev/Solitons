@@ -114,7 +114,7 @@ internal sealed class CliAction : IComparable<CliAction>
     public bool IsMatch(string commandLine) => _regex.IsMatch(commandLine);
     public int Execute(string commandLine)
     {
-        commandLine = TokenSubstitutionPreprocessor.SubstituteTokens(commandLine, out var tsp);
+        commandLine = TokenSubstitutionPreprocessor.SubstituteTokens(commandLine, out var preprocessor);
         var match = _regex.Match(commandLine);
         if (match.Success == false)
         {
@@ -138,13 +138,13 @@ internal sealed class CliAction : IComparable<CliAction>
                     .Convert(o => ThrowIf.NullReference(o))
                     .Convert(o => (CliOptionBundle)o);
                 args[i] = bundle;
-                bundle.Populate(match);
+                bundle.Populate(match, preprocessor);
             }
             else if (_parameterMetadata.TryGetValue(parameter, out var metadata))
             {
                 if (metadata is CliParameterInfo option)
                 {
-                    args[i] = option.GetValue(match);
+                    args[i] = option.GetValue(match, preprocessor);
                 }
                 else
                 {
@@ -159,7 +159,7 @@ internal sealed class CliAction : IComparable<CliAction>
 
         foreach (var bundle in _masterOptions)
         {
-            bundle.Populate(match);
+            bundle.Populate(match, preprocessor);
         }
 
         _masterOptions.ForEach(bundle => bundle.OnExecutingAction(commandLine));

@@ -9,6 +9,8 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Reactive.Disposables;
 using System.Globalization;
+using System.Threading;
+using Solitons.CommandLine.Common;
 
 namespace Solitons.CommandLine;
 
@@ -82,7 +84,10 @@ internal abstract class CliOperandInfo : IFormattable
             .Select(Activator.CreateInstance!)
             .OfType<TypeConverter>()
             .FirstOrDefault();
-
+        if (ParameterType == typeof(CancellationToken))
+        {
+            customTypeConverter ??= new CliCancellationTokenTypeConverter();
+        }
         Converter = CliOperandTypeConverter.Create(ParameterType, Name, customTypeConverter);
     }
 
@@ -170,7 +175,7 @@ internal abstract class CliOperandInfo : IFormattable
     }
 
 
-    protected bool FindValue(Match match, out object? value)
+    protected bool FindValue(Match match, TokenSubstitutionPreprocessor preprocessor, out object? value)
     {
         value = false;
         if (false == match.Success)
@@ -186,7 +191,7 @@ internal abstract class CliOperandInfo : IFormattable
                 throw new NotImplementedException();
             }
 
-            value = Converter.FromMatch(match);
+            value = Converter.FromMatch(match, preprocessor);
             return true;
         }
 
