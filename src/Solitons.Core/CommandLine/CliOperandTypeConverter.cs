@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
@@ -24,7 +25,7 @@ internal abstract class CliOperandTypeConverter(bool allowsMultipleValues)
 
     
 
-    public static CliOperandTypeConverter Create(Type type, string parameterType)
+    public static CliOperandTypeConverter Create(Type type, string parameterType, TypeConverter? customTypeConverter)
     {
         if (CliFlagOperandTypeConverter.IsFlag(type))
         {
@@ -33,12 +34,12 @@ internal abstract class CliOperandTypeConverter(bool allowsMultipleValues)
 
         if (CliScalarOperandTypeConverter.IsScalar(type))
         {
-            return new CliScalarOperandTypeConverter(type, parameterType);
+            return new CliScalarOperandTypeConverter(type, parameterType, customTypeConverter);
         }
 
         if (CliMapOperandTypeConverter.IsMap(type))
         {
-            return new CliMapOperandTypeConverter(type, parameterType);
+            return new CliMapOperandTypeConverter(type, parameterType, customTypeConverter);
         }
 
         //TODO: if type is Dictionary<string, T> return CliMapOperandTypeConverter

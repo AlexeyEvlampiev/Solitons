@@ -33,7 +33,11 @@ internal class Program
         [CliOption("--host")]string host,
         [CliOption("--user")]string user,
         [CliOption("--password")]string password,
-        [CliOption("--parameter|-p")] Dictionary<string, string>? parameters = null)
+        [CliOption("--parameter|-p")] Dictionary<string, string>? parameters = null,
+
+        [CliOption("--timeout")]
+        [TypeConverter(typeof(CliCancellationTokenTypeConverter))]
+        CancellationToken cancellation = default)
     {
         return 0;
     }

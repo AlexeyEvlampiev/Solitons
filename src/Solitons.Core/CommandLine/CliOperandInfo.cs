@@ -75,8 +75,15 @@ internal abstract class CliOperandInfo : IFormattable
 
         Description = _metadata.Descriptions.FirstOrDefault(Name);
 
+        var customTypeConverter = CustomAttributes
+            .OfType<TypeConverterAttribute>()
+            .Select(att => Type.GetType(att.ConverterTypeName))
+            .Where(type => type != null)
+            .Select(Activator.CreateInstance!)
+            .OfType<TypeConverter>()
+            .FirstOrDefault();
 
-        Converter = CliOperandTypeConverter.Create(ParameterType, Name);
+        Converter = CliOperandTypeConverter.Create(ParameterType, Name, customTypeConverter);
     }
 
 

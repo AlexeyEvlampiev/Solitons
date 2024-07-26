@@ -10,7 +10,7 @@
     },
     "deploy .": {
       "commandName": "Project",
-      "commandLineArgs": "deploy database.pgup --host localhost --user postgres --password postgres -p.DbName mydb -p[tier] production"
+      "commandLineArgs": "deploy database.pgup --host localhost --user postgres --password postgres -p.DbName MyDatabase --timeout 00:00:30"
     }
   }
 }

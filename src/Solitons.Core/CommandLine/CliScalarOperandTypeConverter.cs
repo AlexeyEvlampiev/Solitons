@@ -11,7 +11,7 @@ internal sealed class CliScalarOperandTypeConverter : CliOperandTypeConverter
     private readonly Type _type;
     private readonly TypeConverter _typeConverter;
 
-    public CliScalarOperandTypeConverter(Type type, string parameterName)
+    public CliScalarOperandTypeConverter(Type type, string parameterName, TypeConverter? customTypeConverter)
         : base(false)
     {
         if (!IsScalar(type))
@@ -21,7 +21,7 @@ internal sealed class CliScalarOperandTypeConverter : CliOperandTypeConverter
 
         _type = type;
         _parameterName = parameterName;
-        _typeConverter = TypeDescriptor.GetConverter(_type);
+        _typeConverter = customTypeConverter ?? TypeDescriptor.GetConverter(_type);
     }
 
     public static bool IsScalar(Type type)

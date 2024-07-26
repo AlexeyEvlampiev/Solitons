@@ -13,12 +13,12 @@ internal sealed class CliMapOperandTypeConverter : CliOperandTypeConverter
 
     public CliMapOperandTypeConverter(
         Type type,
-        string optionName)
-        : base(true)
+        string optionName, 
+        TypeConverter? customTypeConverter) : base(true)
     {
         _optionName = optionName;
         ValueType = type.GetGenericArguments()[1];
-        _valueTypeConverter = TypeDescriptor.GetConverter(ValueType);
+        _valueTypeConverter = customTypeConverter ?? TypeDescriptor.GetConverter(ValueType);
         if (!_valueTypeConverter.CanConvertFrom(typeof(string)))
         {
             throw new InvalidOperationException(
