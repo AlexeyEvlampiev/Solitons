@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using Npgsql;
+using Solitons.Postgres.PgUp.Management.Models;
 
 namespace Solitons.Postgres.PgUp.Management;
 
@@ -44,6 +45,13 @@ internal sealed class PgUpDeploymentHandler
             Trace.WriteLine($"Project file: {projectFile.FullName}");
             var pgUpJson = await File.ReadAllTextAsync(projectFile.FullName, cancellation);
             var project = PgUpSerializer.Deserialize(pgUpJson, _parameters);
+
+            var workingDir = projectFile.Directory?.FullName ?? ".";
+            var preProcessor = new PgUpScriptPreprocessor(_parameters);
+            var pgUpAssembly = await PgUpAssembly.LoadAsync(
+                project, 
+                new DirectoryInfo(workingDir), 
+                preProcessor);
 
             await using var connection = new NpgsqlConnection(_connectionString);
             await connection.OpenAsync(cancellation);

@@ -1,5 +1,8 @@
-﻿namespace Solitons.Postgres.PgUp.Management;
+﻿using Solitons.Postgres.PgUp.Management.Models;
 
-internal interface IProject
+namespace Solitons.Postgres.PgUp.Management;
+
+public interface IProject
 {
+    IEnumerable<PgUpTransaction> GetTransactions();
 }

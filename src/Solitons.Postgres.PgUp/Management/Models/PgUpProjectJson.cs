@@ -17,12 +17,35 @@ public sealed class PgUpProjectJson : BasicJsonDataTransferObject, IProject
     [JsonPropertyName("databaseOwner")]
     public string DatabaseOwner { get; set; } = string.Empty;
 
+    [JsonPropertyName("transactions")]
+    public Transaction[] Transactions { get; set; } = [];
+
     [DebuggerDisplay("{Default}")]
     public sealed class ParameterData
     {
         [JsonPropertyName("default")]
         public string? Default { get; set; }
     }
+
+    [DebuggerDisplay("Stages: {Stages.Length}")]
+    public sealed class Transaction
+    {
+        [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
+        [JsonPropertyName("stages")]
+        public Stage[] Stages { get; set; } = [];
+
+    }
+
+    [DebuggerDisplay("{WorkingDirectory}")]
+    public sealed class Stage : IPgUpStage
+    {
+        [JsonPropertyName("workdir")] public string WorkingDirectory { get; set; } = ".";
+        [JsonPropertyName("scripts")] public string[] ScriptFiles { get; set; } = [];
+        IEnumerable<string> IPgUpStage.GetScriptFiles() => ScriptFiles;
+        string IPgUpStage.GetWorkingDirectory() => WorkingDirectory;
+    }
+
+
 
 
     public void SetDefaultParameterValue(string key, string value)
@@ -39,5 +62,17 @@ public sealed class PgUpProjectJson : BasicJsonDataTransferObject, IProject
             };
         }
 
+    }
+
+    public IEnumerable<PgUpTransaction> GetTransactions()
+    {
+        foreach (var transaction in Transactions)
+        {
+            var stages = transaction
+                .Stages
+                .Select(s => new PgUpStage(s))
+                .ToArray();
+            yield return new PgUpTransaction(stages);
+        }
     }
 }

@@ -13,7 +13,7 @@
       "stages": [
         {
           "workdir": "pre-deployment",
-          "scripts": [ "script-1.sql" ]
+          "scripts": [ "pre-deployment.sql" ]
         }
       ]      
     },
@@ -26,11 +26,11 @@
             "fileContent": "sql",
             "command": "SELECT system.migration_script_execute(@path, @sql);"
           },
-          "scripts": [ "00-00-00.sql" ]
+          "scripts": [ "migration.sql" ]
         },
         {
-          "workdir": "upgrade",
-          "scripts": [ "script-1.sql" ]
+          "workdir": "setup",
+          "scripts": [ "setup.sql" ]
         }
       ]
     },
