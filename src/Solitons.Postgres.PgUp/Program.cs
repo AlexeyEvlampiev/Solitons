@@ -27,28 +27,28 @@ internal class Program
             .Process();
     }
 
-    [CliCommand("deploy")]
-    [CliArgument(nameof(projectFile), "PgUp project file.")]
-    public Task<int> Deploy(
-        string projectFile,
-        [CliOption("--host")]string host,
-        [CliOption("--user")]string username,
-        [CliOption("--password")]string password,
-        [CliOption("--parameter|-p")] Dictionary<string, string>? parameters = null,
-        [CliOption("--timeout")] CancellationToken cancellation = default)
-    {
-        var builder = new NpgsqlConnectionStringBuilder()
-        {
-            Host = host,
-            Username = username,
-            Password = password,
-        };
-        return PgUpDeploymentHandler.DeployAsync(
-            projectFile,
-            builder.ConnectionString,
-            parameters ?? new Dictionary<string, string>(),
-            cancellation);
-    }
+    //[CliCommand("deploy")]
+    //[CliArgument(nameof(projectFile), "PgUp project file.")]
+    //public Task<int> Deploy(
+    //    string projectFile,
+    //    [CliOption("--host")]string host,
+    //    [CliOption("--user")]string username,
+    //    [CliOption("--password")]string password,
+    //    [CliOption("--parameter|-p")] Dictionary<string, string>? parameters = null,
+    //    [CliOption("--timeout")] CancellationToken cancellation = default)
+    //{
+    //    var builder = new NpgsqlConnectionStringBuilder()
+    //    {
+    //        Host = host,
+    //        Username = username,
+    //        Password = password,
+    //    };
+    //    return PgUpDeploymentHandler.DeployAsync(
+    //        projectFile,
+    //        builder.ConnectionString,
+    //        parameters ?? new Dictionary<string, string>(),
+    //        cancellation);
+    //}
 
     
     [CliCommand("deploy")]

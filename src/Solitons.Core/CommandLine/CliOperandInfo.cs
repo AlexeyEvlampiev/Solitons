@@ -131,7 +131,7 @@ internal abstract class CliOperandInfo : IFormattable
                 return Converter.ToMatchPattern(OperandKeyPattern);
             }
 
-            return $@"(?:(?:{OperandKeyPattern})\s+(?<{Name}>\S*))";
+            return $@"(?:(?:{OperandKeyPattern})\s+(?<{Name}>[^-]\S*))";
         }
     }
 

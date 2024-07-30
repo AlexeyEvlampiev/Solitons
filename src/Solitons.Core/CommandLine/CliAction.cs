@@ -144,6 +144,7 @@ internal sealed class CliAction : IComparable<CliAction>
             {
                 if (metadata is CliParameterInfo option)
                 {
+                    Debug.WriteLine(option.Name);
                     args[i] = option.GetValue(match, preprocessor);
                 }
                 else

@@ -1,4 +1,6 @@
-﻿using System.Reflection;
+﻿using System.Data.Common;
+using System.Reflection;
+using System.Reflection.Metadata;
 using System.Text.RegularExpressions;
 using Solitons.Data;
 using Solitons.Postgres.PgUp.Management.Models;
@@ -20,19 +22,70 @@ internal sealed class PgUpSerializer
         string pgUpJson, 
         Dictionary<string, string> parameters)
     {
+        pgUpJson = PgUpScriptPreprocessor.Transform(pgUpJson, parameters);
+        var project = _serializer
+            .Deserialize<PgUpProjectJson>(pgUpJson, "application/json");
+        for (int i = 0; i < 1000; ++i)
+        {
+            int resolvedParametersCount = 0;
+            foreach (var key in project.Parameters.Keys)
+            {
+                var value = project.Parameters[key].Default;
+                if (parameters.ContainsKey(key) ||
+                    value is null ||
+                    Regex.IsMatch(value, @"\${([^\s{}]+)}"))
+                {
+                    continue;
+                }
+                parameters[key] = value!;
+                resolvedParametersCount++;
+            }
+
+            pgUpJson = project.ToString();
+            if (resolvedParametersCount == 0)
+            {
+                break;
+            }
+
+            pgUpJson = PgUpScriptPreprocessor.Transform(pgUpJson, parameters);
+            project = _serializer
+                .Deserialize<PgUpProjectJson>(pgUpJson, "application/json");
+        }
+
+        
+
+
+        pgUpJson = Regex.Replace(pgUpJson, @"\${([^\s{}]+)}", m =>
+        {
+            var key = m.Groups[1].Value;
+            if (parameters.TryGetValue(key, out var value))
+            {
+                return value;
+            }
+
+            return m.Value;
+        });
+
+        foreach (var parameter in parameters)
+        {
+            project.SetDefaultParameterValue(parameter.Key, parameter.Value);
+        }
+
         foreach (var parameter in parameters)
         {
             var placeholder = $"${{{parameter.Key}}}";
             pgUpJson = pgUpJson.Replace(placeholder, parameter.Value);
         }
 
-        var project = _serializer.Deserialize<PgUpProjectJson>(pgUpJson, "application/json");
+        project = _serializer.Deserialize<PgUpProjectJson>(pgUpJson, "application/json");
         foreach (var parameter in parameters)
         {
             project.SetDefaultParameterValue(parameter.Key, parameter.Value);
         }
 
         pgUpJson = _serializer.Serialize(project).Content;
+
+
         project
             .Parameters
             .Keys
@@ -44,16 +97,22 @@ internal sealed class PgUpSerializer
                     .Parameters[key].Default;
             });
 
-        foreach (var parameter in parameters)
+        while (parameters.Keys
+               .Any(key => pgUpJson.Contains($"${{{key}}}", StringComparison.OrdinalIgnoreCase)))
         {
-            var placeholder = $"${{{parameter.Key}}}";
-            pgUpJson = pgUpJson.Replace(placeholder, parameter.Value);
+            foreach (var parameter in parameters)
+            {
+                var placeholder = $"${{{parameter.Key}}}";
+                pgUpJson = pgUpJson.Replace(placeholder, parameter.Value, StringComparison.OrdinalIgnoreCase);
+            }
         }
+        
 
         var regex = new Regex($@"\${{(\S+?)}}");
         var unresolvedParametersCsv = regex
             .Matches(pgUpJson)
             .Select(m => m.Groups[1].Value)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase)
             .Join(", ");
 
         if (unresolvedParametersCsv.IsPrintable())

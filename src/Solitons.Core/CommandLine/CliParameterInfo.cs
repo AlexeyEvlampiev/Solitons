@@ -7,9 +7,14 @@ namespace Solitons.CommandLine;
 internal abstract class CliParameterInfo( ParameterInfo parameter) 
     : CliOperandInfo(parameter)
 {
-    public bool HasDefaultValue(out object defaultValue)
+    public bool HasDefaultValue(out object? defaultValue)
     {
-        defaultValue = parameter.DefaultValue ?? false;
+        if (parameter.HasDefaultValue)
+        {
+            defaultValue = parameter.DefaultValue;
+            return true;
+        }
+        defaultValue = false;
         return parameter.HasDefaultValue;
     }
 
