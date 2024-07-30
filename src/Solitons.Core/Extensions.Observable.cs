@@ -24,13 +24,13 @@ public static partial class Extensions
     /// <param name="trigger">A function that defines the retry policy in terms of an observable sequence.</param>
     /// <returns>A new Observable that applies the retry policy to the source Observable.</returns>
     [DebuggerStepThrough]
-    public static IObservable<T> WithRetryPolicy<T, TSignal>(
+    public static IObservable<T> WithRetryTrigger<T, TSignal>(
         this IObservable<T> source,
-        Func<RetryPolicyArgs, IObservable<TSignal>> trigger)
+        Func<RetryTrigger, IObservable<TSignal>> trigger)
     {
         return new RetryPolicyObservable<T>(source, Handler);
         [DebuggerStepThrough]
-        Task<bool> Handler(RetryPolicyArgs args) => 
+        Task<bool> Handler(RetryTrigger args) => 
             trigger(args)
                 .Any()
                 .ToTask();
@@ -44,9 +44,9 @@ public static partial class Extensions
     /// <param name="handler">The function to use as a retry policy handler.</param>
     /// <returns>A new Observable that applies the retry policy to the source Observable.</returns>
     [DebuggerNonUserCode]
-    public static IObservable<T> WithRetryPolicy<T>(
+    public static IObservable<T> WithRetryTrigger<T>(
         this IObservable<T> source,
-        Func<RetryPolicyArgs, Task<bool>> handler)
+        Func<RetryTrigger, Task<bool>> handler)
     {
         return new RetryPolicyObservable<T>(source, handler);
     }

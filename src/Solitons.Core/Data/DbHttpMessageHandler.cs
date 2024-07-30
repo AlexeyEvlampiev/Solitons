@@ -106,7 +106,7 @@ public abstract class DbHttpMessageHandler : HttpMessageHandler
 
             await Observable
                 .FromAsync([DebuggerStepThrough] () => _commandHandler(request, response, cancellation))
-                .WithRetryPolicy([DebuggerStepThrough](args) =>CanRetryAsync(args, cancellation));
+                .WithRetryTrigger([DebuggerStepThrough](args) =>CanRetryAsync(args, cancellation));
 
         }
         catch (Exception e) when(e is TimeoutException ||
@@ -151,7 +151,7 @@ public abstract class DbHttpMessageHandler : HttpMessageHandler
     /// <param name="args">Arguments related to the retry policy.</param>
     /// <param name="cancellation">The cancellation token to cancel the operation.</param>
     /// <returns>True if a retry should be attempted; otherwise, false.</returns>
-    protected virtual async Task<bool> CanRetryAsync(RetryPolicyArgs args, CancellationToken cancellation)
+    protected virtual async Task<bool> CanRetryAsync(RetryTrigger args, CancellationToken cancellation)
     {
         if (args is
             {

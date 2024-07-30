@@ -64,13 +64,15 @@ public sealed class PgUpProjectJson : BasicJsonDataTransferObject, IProject
 
     }
 
-    public IEnumerable<PgUpTransaction> GetTransactions()
+    public IEnumerable<PgUpTransaction> GetTransactions(
+        DirectoryInfo workDir,
+        PgUpScriptPreprocessor preProcessor)
     {
         foreach (var transaction in Transactions)
         {
             var stages = transaction
                 .Stages
-                .Select(s => new PgUpStage(s))
+                .Select(s => new PgUpStage(s, workDir, preProcessor))
                 .ToArray();
             yield return new PgUpTransaction(stages);
         }

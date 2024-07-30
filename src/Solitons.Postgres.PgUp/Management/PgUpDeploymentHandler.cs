@@ -1,6 +1,7 @@
-﻿using System.Diagnostics;
+﻿using System.Data.Common;
+using System.Diagnostics;
+using System.Reactive.Linq;
 using Npgsql;
-using Solitons.Postgres.PgUp.Management.Models;
 
 namespace Solitons.Postgres.PgUp.Management;
 
@@ -46,15 +47,38 @@ internal sealed class PgUpDeploymentHandler
             var pgUpJson = await File.ReadAllTextAsync(projectFile.FullName, cancellation);
             var project = PgUpSerializer.Deserialize(pgUpJson, _parameters);
 
-            var workingDir = projectFile.Directory?.FullName ?? ".";
+            var workingDir = new DirectoryInfo(projectFile.Directory?.FullName ?? ".");
             var preProcessor = new PgUpScriptPreprocessor(_parameters);
-            var pgUpAssembly = await PgUpAssembly.LoadAsync(
-                project, 
-                new DirectoryInfo(workingDir), 
-                preProcessor);
 
+            var pgUpTransactions = project.GetTransactions(workingDir, preProcessor);
             await using var connection = new NpgsqlConnection(_connectionString);
             await connection.OpenAsync(cancellation);
+            
+            foreach (var pgUpTrx in pgUpTransactions)
+            {
+                await using var transaction = await connection.BeginTransactionAsync(cancellation);
+                foreach (var stage in pgUpTrx.GetStages())
+                {
+                    var builder = new PgUpCommandBuilder();
+                    foreach (var script in stage.GetScripts())
+                    {
+                        var command = builder.Build(script.RelativePath, script.Content, connection);
+                        await Observable
+                            .FromAsync(() => command.ExecuteNonQueryAsync(cancellation))
+                            .Do(_ => Console.WriteLine())
+                            .WithRetryTrigger( (trigger) => trigger
+                                .Where(_ => trigger.Exception is DbException {IsTransient: true})
+                                .Where(_ => trigger.AttemptNumber < 100)
+                                .Do(_ => Trace.TraceWarning($"Command failed on attempt {trigger.AttemptNumber}"))
+                                .Delay(TimeSpan
+                                    .FromMilliseconds(200)
+                                    .ScaleByFactor(1.1, trigger.AttemptNumber)))
+                            .Finally(command.Dispose);
+                    }
+                }
+
+                await transaction.CommitAsync(cancellation);
+            }
             
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)

@@ -4,7 +4,7 @@ namespace Solitons.Postgres.PgUp.Management;
 
 public class PgUpScriptPreprocessor(IReadOnlyDictionary<string, string> parameters)
 {
-    public string Convert(string input)
+    public string Transform(string input)
     {
         foreach (var parameter in parameters)
         {

@@ -20,8 +20,8 @@ public class IObservable_WithRetryPolicy_Should
     {
         var actual = await FaultyObservable
             .Create(timesToThrow, expected)
-            .WithRetryPolicy(args => args
-                .SignalNextAttempt(args.AttemptNumber < timesToThrow));
+            .WithRetryTrigger(trigger => trigger
+                .Where(_ => trigger.AttemptNumber < timesToThrow));
 
         Assert.Equal(expected, actual);
     }
@@ -34,8 +34,8 @@ public class IObservable_WithRetryPolicy_Should
         {
             await FaultyObservable
                 .Create(3, "test")
-                .WithRetryPolicy(args => args
-                    .SignalNextAttempt(args.AttemptNumber < 2));
+                .WithRetryTrigger(trigger => trigger
+                    .Where(_ => trigger.AttemptNumber < 2));
         });
     }
 
@@ -45,8 +45,8 @@ public class IObservable_WithRetryPolicy_Should
     {
         var actual = await FaultyObservable
             .Create(3, "test")
-            .WithRetryPolicy(args => args
-                .SignalNextAttempt(args.AttemptNumber < 3));
+            .WithRetryTrigger(trigger => trigger
+                .Where(_ => trigger.AttemptNumber < 3));
         Assert.Equal("test", actual);
     }
 

@@ -20,7 +20,7 @@ sealed class RetryPolicyObservable<T> : ObservableBase<T>
     /// <param name="source">The Observable to apply the retry policy to.</param>
     /// <param name="handler">The handler that implements the retry policy.</param>
     [DebuggerStepThrough]
-    public RetryPolicyObservable(IObservable<T> source, Func<RetryPolicyArgs, Task<bool>> handler)
+    public RetryPolicyObservable(IObservable<T> source, Func<RetryTrigger, Task<bool>> handler)
     {
         _source = Observable.Create<T>([DebuggerStepThrough] async (observer, cancellation) =>
         {
@@ -42,7 +42,7 @@ sealed class RetryPolicyObservable<T> : ObservableBase<T>
                 }
                 catch (Exception e) 
                 {
-                    var attempt = new RetryPolicyArgs(e, counter, start);
+                    var attempt = new RetryTrigger(e, counter, start);
                     if (await handler.Invoke(attempt))
                     {
                         continue;

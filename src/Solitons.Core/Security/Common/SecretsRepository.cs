@@ -69,20 +69,20 @@ public abstract class SecretsRepository : ISecretsRepository
     /// <summary>
     /// Determines whether a retry attempt should be made for a failed operation.
     /// </summary>
-    /// <param name="args">The <see cref="RetryPolicyArgs"/> containing information about the failed operation and the current retry attempt.</param>
+    /// <param name="args">The <see cref="RetryTrigger"/> containing information about the failed operation and the current retry attempt.</param>
     /// <returns>
     /// <c>true</c> if a retry attempt should be made; otherwise, <c>false</c>.
     /// </returns>
-    protected virtual bool ShouldRetry(RetryPolicyArgs args) => false;
+    protected virtual bool ShouldRetry(RetryTrigger args) => false;
 
     /// <summary>
     /// Calculates the delay before the next retry attempt based on the retry policy arguments.
     /// </summary>
-    /// <param name="args">The <see cref="RetryPolicyArgs"/> containing information about the failed operation and the current retry attempt.</param>
+    /// <param name="args">The <see cref="RetryTrigger"/> containing information about the failed operation and the current retry attempt.</param>
     /// <returns>
     /// The <see cref="TimeSpan"/> representing the delay before the next retry attempt.
     /// </returns>
-    protected virtual TimeSpan CalcRetryDelay(RetryPolicyArgs args) => TimeSpan
+    protected virtual TimeSpan CalcRetryDelay(RetryTrigger args) => TimeSpan
         .FromMilliseconds(DefaultMinRetryMilliseconds)
         .ScaleByFactor(
             DefaultRetryDelayScaleFactor, 
@@ -103,9 +103,9 @@ public abstract class SecretsRepository : ISecretsRepository
         cancellation.ThrowIfCancellationRequested();
         return await Observable
             .FromAsync(()=> ListSecretNamesAsync(cancellation))
-            .WithRetryPolicy(args => args
-                .SignalNextAttempt(ShouldRetry(args))
-                .Delay(CalcRetryDelay(args), cancellation))
+            .WithRetryTrigger(trigger => trigger
+                .Where(_ => ShouldRetry(trigger))
+                .Delay(CalcRetryDelay(trigger), cancellation))
             .ToTask(cancellation);
     }
 
@@ -120,7 +120,8 @@ public abstract class SecretsRepository : ISecretsRepository
         cancellation.ThrowIfCancellationRequested();
         return await Observable
             .FromAsync(() => GetSecretAsync(secretName, cancellation))
-            .WithRetryPolicy(args => args.SignalNextAttempt(ShouldRetry(args)))
+            .WithRetryTrigger(trigger => trigger
+                .Where(_ => ShouldRetry(trigger)))
             .ToTask(cancellation);
     }
 
@@ -134,7 +135,7 @@ public abstract class SecretsRepository : ISecretsRepository
         }
         return await Observable
             .FromAsync(() => GetSecretIfExistsAsync(secretName, cancellation))
-            .WithRetryPolicy(args => args.SignalNextAttempt(ShouldRetry(args)))
+            .WithRetryTrigger(trigger => trigger.Where(_ => ShouldRetry(trigger)))
             .ToTask(cancellation);
     }
 
@@ -147,7 +148,7 @@ public abstract class SecretsRepository : ISecretsRepository
         defaultValue = ThrowIf.ArgumentNullOrWhiteSpace(defaultValue, nameof(defaultValue));
         return await Observable
             .FromAsync(() => GetOrSetSecretAsync(secretName, defaultValue, cancellation))
-            .WithRetryPolicy(args => args.SignalNextAttempt(ShouldRetry(args)))
+            .WithRetryTrigger(trigger => trigger.Where(_ => ShouldRetry(trigger)))
             .ToTask(cancellation);
     }
 
@@ -160,7 +161,7 @@ public abstract class SecretsRepository : ISecretsRepository
         cancellation.ThrowIfCancellationRequested();
         await Observable
             .FromAsync(() => SetSecretAsync(secretName, secretValue, cancellation))
-            .WithRetryPolicy(args => args.SignalNextAttempt(ShouldRetry(args)))
+            .WithRetryTrigger(trigger => trigger.Where(_ => ShouldRetry(trigger)))
             .ToTask(cancellation);
     }
 
