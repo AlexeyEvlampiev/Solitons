@@ -47,13 +47,25 @@ internal sealed class PgUpDeploymentHandler
             var pgUpJson = await File.ReadAllTextAsync(projectFile.FullName, cancellation);
             var project = PgUpSerializer.Deserialize(pgUpJson, _parameters);
 
+            await CreateDatabaseIfNotExists(project, cancellation);
+
             var workingDir = new DirectoryInfo(projectFile.Directory?.FullName ?? ".");
             var preProcessor = new PgUpScriptPreprocessor(_parameters);
 
             var pgUpTransactions = project.GetTransactions(workingDir, preProcessor);
             await using var connection = new NpgsqlConnection(_connectionString);
+            connection.Notice += (_, args) => Console.WriteLine(args.Notice);
             await connection.OpenAsync(cancellation);
-            
+            var databaseExists = await connection.ExecuteScalarAsync<bool>(
+                $"SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = '{project.DatabaseName}');", 
+                cancellation: cancellation);
+            if (false == databaseExists)
+            {
+                await connection.ExecuteNonQueryAsync(
+                    $"CREATE DATABASE {project.DatabaseName};", 
+                    cancellation);
+            }
+
             foreach (var pgUpTrx in pgUpTransactions)
             {
                 await using var transaction = await connection.BeginTransactionAsync(cancellation);
@@ -93,6 +105,37 @@ internal sealed class PgUpDeploymentHandler
         }
 
         return 0;
+    }
+
+    private async Task CreateDatabaseIfNotExists(
+        IProject project, 
+        CancellationToken cancellation)
+    {
+        await using var connection = new NpgsqlConnection(_connectionString);
+        connection.Notice += (_, args) => Console.WriteLine(args.Notice);
+        await connection.OpenAsync(cancellation);
+        bool databaseExists = await connection.ExecuteScalarAsync<bool>(@$"
+        DO $$
+        BEGIN
+            IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '{project.DatabaseOwner}') THEN
+                CREATE ROLE {project.DatabaseOwner} NOLOGIN;
+            END IF;
+        END $$;
+        GRANT {project.DatabaseOwner} TO CURRENT_USER;
+        SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = '{project.DatabaseName}');
+        ", cancellation);
+        if(databaseExists)
+        {
+            await connection.ExecuteNonQueryAsync(
+                $"ALTER DATABASE {project.DatabaseName} OWNER TO {project.DatabaseOwner};",
+                cancellation);
+        }
+        else
+        {
+            await connection.ExecuteNonQueryAsync(
+                $"CREATE DATABASE {project.DatabaseName} OWNER {project.DatabaseOwner};",
+                cancellation);
+        }
     }
 
     [DebuggerStepThrough]

@@ -5,7 +5,9 @@ using Solitons.Data;
 
 namespace Solitons.Postgres.PgUp.Management.Models;
 
+
 [Guid("2654b3b3-7603-453d-a43f-5d288e9491d5")]
+[PgUpVersion("1.0")]
 public sealed class PgUpProjectJson : BasicJsonDataTransferObject, IProject
 {
     [JsonPropertyName("parameters")]
@@ -46,7 +48,18 @@ public sealed class PgUpProjectJson : BasicJsonDataTransferObject, IProject
     }
 
 
+    bool IProject.HasDefaultParameterValue(string key, out string value)
+    {
+        if (Parameters.TryGetValue(key, out var data) && 
+            data.Default != null)
+        {
+            value = data.Default;
+            return true;
+        }
 
+        value = string.Empty;
+        return false;
+    }
 
     public void SetDefaultParameterValue(string key, string value)
     {
@@ -77,4 +90,6 @@ public sealed class PgUpProjectJson : BasicJsonDataTransferObject, IProject
             yield return new PgUpTransaction(stages);
         }
     }
+
+    IEnumerable<string> IProject.ParameterNames => Parameters.Keys;
 }

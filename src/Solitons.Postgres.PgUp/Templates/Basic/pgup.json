@@ -1,4 +1,5 @@
 {
+  "version": "1.0",
   "parameters": {
     "dbPrefix": { "default": "" },
     "dbName": { "default": "${dbPrefix}mypgupdb" },
@@ -15,7 +16,7 @@
           "workdir": "pre-deployment",
           "scripts": [ "pre-deployment.sql" ]
         }
-      ]      
+      ]
     },
     {
       "stages": [

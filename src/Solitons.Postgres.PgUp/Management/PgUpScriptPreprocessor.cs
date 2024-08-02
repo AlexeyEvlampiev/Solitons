@@ -4,21 +4,6 @@ namespace Solitons.Postgres.PgUp.Management;
 
 public class PgUpScriptPreprocessor(IReadOnlyDictionary<string, string> parameters)
 {
-    public static string Transform(
-        string input,
-        IReadOnlyDictionary<string, string> parameters)
-    {
-        return Regex.Replace(input, @"\${([^\s{}]+)}", m =>
-        {
-            var key = m.Groups[1].Value;
-            if (parameters.TryGetValue(key, out var value))
-            {
-                return value;
-            }
-
-            return m.Value;
-        });
-    }
     public string Transform(string input)
     {
         foreach (var parameter in parameters)
