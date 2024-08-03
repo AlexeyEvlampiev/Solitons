@@ -35,7 +35,6 @@ public sealed class PgUpProjectJson : BasicJsonDataTransferObject, IProject
         [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
         [JsonPropertyName("stages")]
         public Stage[] Stages { get; set; } = [];
-
     }
 
     [DebuggerDisplay("{WorkingDirectory}")]
@@ -43,10 +42,32 @@ public sealed class PgUpProjectJson : BasicJsonDataTransferObject, IProject
     {
         [JsonPropertyName("workdir")] public string WorkingDirectory { get; set; } = ".";
         [JsonPropertyName("scripts")] public string[] ScriptFiles { get; set; } = [];
+        [JsonPropertyName("customExecutor")] public CustomExecutor? CustomExecutor { get; set; }
         IEnumerable<string> IPgUpStage.GetScriptFiles() => ScriptFiles;
+
+        [DebuggerHidden]
         string IPgUpStage.GetWorkingDirectory() => WorkingDirectory;
+
+        public bool HasCustomExecutor(out IPgUpCustomExecutor? customExecutor)
+        {
+            customExecutor = CustomExecutor;
+            return customExecutor != null;
+        }
     }
 
+    [DebuggerDisplay("{CommandText}")]
+    public sealed class CustomExecutor : IPgUpCustomExecutor
+    {
+        [JsonPropertyName("filePathParameter")] public string FilePathParameterName { get; set; }
+        [JsonPropertyName("fileContentParameter")] public string FileContentParameterName { get; set; }
+        [JsonPropertyName("command")] public string CommandText { get; set; }
+
+        string IPgUpCustomExecutor.GetFilePathParameterName() => FilePathParameterName;
+
+        string IPgUpCustomExecutor.GetFileContentParameterName() => FileContentParameterName;
+
+        string IPgUpCustomExecutor.GetCommandText() => CommandText;
+    }
 
     bool IProject.HasDefaultParameterValue(string key, out string value)
     {
@@ -91,5 +112,6 @@ public sealed class PgUpProjectJson : BasicJsonDataTransferObject, IProject
         }
     }
 
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     IEnumerable<string> IProject.ParameterNames => Parameters.Keys;
 }

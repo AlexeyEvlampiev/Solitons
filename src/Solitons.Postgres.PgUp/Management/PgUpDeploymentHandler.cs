@@ -8,7 +8,7 @@ namespace Solitons.Postgres.PgUp.Management;
 internal sealed class PgUpDeploymentHandler
 {
     private readonly string _projectFile;
-    private readonly string _connectionString;
+    private readonly NpgsqlConnectionStringBuilder _connectionStringBuilder;
     private readonly Dictionary<string, string> _parameters;
 
     [DebuggerStepThrough]
@@ -27,7 +27,7 @@ internal sealed class PgUpDeploymentHandler
             CommandTimeout = Convert.ToInt32(TimeSpan.FromHours(5).TotalSeconds)
         };
 
-        _connectionString = builder.ConnectionString;
+        _connectionStringBuilder = builder;
     }
 
 
@@ -53,28 +53,25 @@ internal sealed class PgUpDeploymentHandler
             var preProcessor = new PgUpScriptPreprocessor(_parameters);
 
             var pgUpTransactions = project.GetTransactions(workingDir, preProcessor);
-            await using var connection = new NpgsqlConnection(_connectionString);
-            connection.Notice += (_, args) => Console.WriteLine(args.Notice);
+            await using var connection = new NpgsqlConnection(_connectionStringBuilder
+                .WithDatabase(project.DatabaseName)
+                .ConnectionString);
+            connection.Notice += (_, args) => Console.WriteLine(args.Notice.MessageText);
             await connection.OpenAsync(cancellation);
-            var databaseExists = await connection.ExecuteScalarAsync<bool>(
-                $"SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = '{project.DatabaseName}');", 
-                cancellation: cancellation);
-            if (false == databaseExists)
-            {
-                await connection.ExecuteNonQueryAsync(
-                    $"CREATE DATABASE {project.DatabaseName};", 
-                    cancellation);
-            }
 
             foreach (var pgUpTrx in pgUpTransactions)
             {
                 await using var transaction = await connection.BeginTransactionAsync(cancellation);
                 foreach (var stage in pgUpTrx.GetStages())
                 {
-                    var builder = new PgUpCommandBuilder();
+                    var builder = new PgUpCommandBuilder(stage.CustomExecutorInfo);
                     foreach (var script in stage.GetScripts())
                     {
                         var command = builder.Build(script.RelativePath, script.Content, connection);
+                        if (command.CommandText.IsNullOrWhiteSpace())
+                        {
+                            continue;
+                        }
                         await Observable
                             .FromAsync(() => command.ExecuteNonQueryAsync(cancellation))
                             .Do(_ => Console.WriteLine())
@@ -111,8 +108,9 @@ internal sealed class PgUpDeploymentHandler
         IProject project, 
         CancellationToken cancellation)
     {
-        await using var connection = new NpgsqlConnection(_connectionString);
-        connection.Notice += (_, args) => Console.WriteLine(args.Notice);
+        await using var connection = new NpgsqlConnection(_connectionStringBuilder
+            .ConnectionString);
+        connection.Notice += (_, args) => Console.WriteLine(args.Notice.MessageText);
         await connection.OpenAsync(cancellation);
         bool databaseExists = await connection.ExecuteScalarAsync<bool>(@$"
         DO $$

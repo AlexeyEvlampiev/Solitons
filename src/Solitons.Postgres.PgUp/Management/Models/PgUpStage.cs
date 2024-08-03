@@ -9,6 +9,7 @@ public sealed class PgUpStage
     private readonly string _workDir;
     private readonly byte[] _scripts;
 
+
     public sealed record Script(string RelativePath, string Content)
     {
         public void Serialize(BinaryWriter writer)
@@ -30,6 +31,10 @@ public sealed class PgUpStage
         DirectoryInfo workDir,
         PgUpScriptPreprocessor preProcessor)
     {
+        if (stage.HasCustomExecutor(out var cex))
+        {
+            CustomExecutorInfo = new PgUpCustomExecutorInfo(cex);
+        }
         _scriptFiles = stage
             .GetScriptFiles()
             .ToArray();
@@ -67,6 +72,8 @@ public sealed class PgUpStage
         memory.Position = 0;
         _scripts = memory.ToArray();
     }
+
+    public PgUpCustomExecutorInfo? CustomExecutorInfo { get; }
 
 
     public IEnumerable<Script> GetScripts()

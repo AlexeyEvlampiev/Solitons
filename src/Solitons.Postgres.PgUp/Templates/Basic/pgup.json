@@ -23,8 +23,8 @@
         {
           "workdir": "migrations",
           "customExecutor": {
-            "filePath": "path",
-            "fileContent": "sql",
+            "filePathParameter": "path",
+            "fileContentParameter": "sql",
             "command": "SELECT system.migration_script_execute(@path, @sql);"
           },
           "scripts": [ "migration.sql" ]

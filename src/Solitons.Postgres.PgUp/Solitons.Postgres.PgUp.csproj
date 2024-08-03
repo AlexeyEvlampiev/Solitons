@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Solitons.Core\Solitons.Core.csproj" />
+    <ProjectReference Include="..\Solitons.Postgres\Solitons.Postgres.csproj" />
   </ItemGroup>
 
   <ItemGroup>

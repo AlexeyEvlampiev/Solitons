@@ -11,7 +11,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Solitons.Core.XUnitTest", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Solitons.Postgres.PgUp", "src\Solitons.Postgres.PgUp\Solitons.Postgres.PgUp.csproj", "{9467C547-AD05-4615-9A9D-AC0D5F46D117}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Solitons.AzProvider", "src\Solitons.AzProvider\Solitons.AzProvider.csproj", "{8ABA146E-49A9-49EA-A578-2EDDA7BE96A5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Solitons.AzProvider", "src\Solitons.AzProvider\Solitons.AzProvider.csproj", "{8ABA146E-49A9-49EA-A578-2EDDA7BE96A5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Solitons.Postgres", "src\Solitons.Postgres\Solitons.Postgres.csproj", "{7B2DFAF8-D6EB-4624-8131-45934A5BC6DE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,6 +37,10 @@ Global
 		{8ABA146E-49A9-49EA-A578-2EDDA7BE96A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8ABA146E-49A9-49EA-A578-2EDDA7BE96A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8ABA146E-49A9-49EA-A578-2EDDA7BE96A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B2DFAF8-D6EB-4624-8131-45934A5BC6DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B2DFAF8-D6EB-4624-8131-45934A5BC6DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B2DFAF8-D6EB-4624-8131-45934A5BC6DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B2DFAF8-D6EB-4624-8131-45934A5BC6DE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
