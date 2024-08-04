@@ -32,6 +32,8 @@ public sealed class PgUpProjectJson : BasicJsonDataTransferObject, IProject
     [DebuggerDisplay("Stages: {Stages.Length}")]
     public sealed class Transaction
     {
+        [JsonPropertyName("displayName")]
+        public string DisplayName { get; set; } = string.Empty;
         [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
         [JsonPropertyName("stages")]
         public Stage[] Stages { get; set; } = [];
@@ -108,7 +110,7 @@ public sealed class PgUpProjectJson : BasicJsonDataTransferObject, IProject
                 .Stages
                 .Select(s => new PgUpStage(s, workDir, preProcessor))
                 .ToArray();
-            yield return new PgUpTransaction(stages);
+            yield return new PgUpTransaction(transaction.DisplayName, stages);
         }
     }
 

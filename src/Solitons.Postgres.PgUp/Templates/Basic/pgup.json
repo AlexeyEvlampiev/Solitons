@@ -11,6 +11,7 @@
   "databaseOwner": "${dbOwner}",
   "transactions": [
     {
+      "displayName": "Pre-deployment",
       "stages": [
         {
           "workdir": "pre-deployment",
@@ -19,6 +20,7 @@
       ]
     },
     {
+      "displayName": "Upgrade",
       "stages": [
         {
           "workdir": "migrations",
@@ -36,6 +38,7 @@
       ]
     },
     {
+      "displayName": "Post-deployment",
       "stages": [
         {
           "workdir": "post-deployment",

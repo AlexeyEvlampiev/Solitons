@@ -14,7 +14,7 @@ public sealed class PgUpCommandBuilder
         _customExecutorInfo = customExecutorInfo;
     }
 
-    [DebuggerStepThrough]
+    //[DebuggerStepThrough]
     public NpgsqlCommand Build(
         string filePath, 
         string commandText, 
@@ -22,7 +22,7 @@ public sealed class PgUpCommandBuilder
     {
         if (_customExecutorInfo != null)
         {
-            var command = new NpgsqlCommand(commandText, connection);
+            var command = new NpgsqlCommand(_customExecutorInfo.CommandText, connection);
             command.Parameters.AddWithValue(_customExecutorInfo.FilePathParameterName, filePath);
             command.Parameters.AddWithValue(_customExecutorInfo.FileContentParametersName, commandText);
             return command;

@@ -38,16 +38,14 @@ public sealed class PgUpDeploymentHandler
             cancellation.ThrowIfCancellationRequested();
             if (File.Exists(_projectFile) == false)
             {
-                await Console.Error.WriteLineAsync("Specified PgUp project file not found.");
-                return -1;
+                throw new PgUpException(1, "Specified PgUp project file not found.");
             }
 
+            var project = await LoadProjectAsync(cancellation);
             var projectFile = new FileInfo(_projectFile);
-            Trace.WriteLine($"Project file: {projectFile.FullName}");
-            var pgUpJson = await File.ReadAllTextAsync(projectFile.FullName, cancellation);
-            var project = PgUpSerializer.Deserialize(pgUpJson, _parameters);
 
             await CreateDatabaseIfNotExists(project, cancellation);
+            cancellation.ThrowIfCancellationRequested();
 
             var workingDir = new DirectoryInfo(projectFile.Directory?.FullName ?? ".");
             var preProcessor = new PgUpScriptPreprocessor(_parameters);
@@ -59,14 +57,19 @@ public sealed class PgUpDeploymentHandler
             connection.Notice += (_, args) => Console.WriteLine(args.Notice.MessageText);
             await connection.OpenAsync(cancellation);
 
+            int transactionCounter = 0;
             foreach (var pgUpTrx in pgUpTransactions)
             {
+                transactionCounter++;
+                var transactionDisplayName = pgUpTrx.DisplayName.DefaultIfNullOrWhiteSpace(transactionCounter.ToString);
+                Console.WriteLine($"PGUP TRANSACTION: {transactionDisplayName}");
                 await using var transaction = await connection.BeginTransactionAsync(cancellation);
                 foreach (var stage in pgUpTrx.GetStages())
                 {
                     var builder = new PgUpCommandBuilder(stage.CustomExecutorInfo);
                     foreach (var script in stage.GetScripts())
                     {
+                        Console.WriteLine($"\t\t{script.RelativePath}");
                         var command = builder.Build(script.RelativePath, script.Content, connection);
                         if (command.CommandText.IsNullOrWhiteSpace())
                         {
@@ -92,8 +95,7 @@ public sealed class PgUpDeploymentHandler
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
         {
-            Console.WriteLine(@"Operation timeout");
-            return -1;
+            throw new PgUpException(1, "PgUp deployment timeout");
         }
         catch (NpgsqlException e)
         {
@@ -104,6 +106,23 @@ public sealed class PgUpDeploymentHandler
         return 0;
     }
 
+    async Task<IProject> LoadProjectAsync(CancellationToken cancellation)
+    {
+        cancellation.ThrowIfCancellationRequested();
+        
+        try
+        {
+            var projectFile = new FileInfo(_projectFile);
+            Trace.WriteLine($"Project file: {projectFile.FullName}");
+            var pgUpJson = await File.ReadAllTextAsync(projectFile.FullName, cancellation);
+            var project = PgUpSerializer.Deserialize(pgUpJson, _parameters);
+            return project;
+        }
+        catch (Exception e)
+        {
+            throw new PgUpException(1, $"Failed to load project file. {e.Message}");
+        }
+    }
     private async Task CreateDatabaseIfNotExists(
         IProject project, 
         CancellationToken cancellation)
