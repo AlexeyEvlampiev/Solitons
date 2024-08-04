@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Reactive.Linq;
 using Npgsql;
+using Solitons.Postgres.PgUp.Models;
 
 namespace Solitons.Postgres.PgUp;
 
@@ -54,6 +55,7 @@ public sealed class PgUpDeploymentHandler
             await using var connection = new NpgsqlConnection(_connectionStringBuilder
                 .WithDatabase(project.DatabaseName)
                 .ConnectionString);
+
             connection.Notice += (_, args) => Console.WriteLine(args.Notice.MessageText);
             await connection.OpenAsync(cancellation);
 
@@ -62,34 +64,17 @@ public sealed class PgUpDeploymentHandler
             {
                 transactionCounter++;
                 var transactionDisplayName = pgUpTrx.DisplayName.DefaultIfNullOrWhiteSpace(transactionCounter.ToString);
-                Console.WriteLine($"PGUP TRANSACTION: {transactionDisplayName}");
-                await using var transaction = await connection.BeginTransactionAsync(cancellation);
-                foreach (var stage in pgUpTrx.GetStages())
-                {
-                    var builder = new PgUpCommandBuilder(stage.CustomExecutorInfo);
-                    foreach (var script in stage.GetScripts())
-                    {
-                        Console.WriteLine($"\t\t{script.RelativePath}");
-                        var command = builder.Build(script.RelativePath, script.Content, connection);
-                        if (command.CommandText.IsNullOrWhiteSpace())
-                        {
-                            continue;
-                        }
-                        await Observable
-                            .FromAsync(() => command.ExecuteNonQueryAsync(cancellation))
-                            .Do(_ => Console.WriteLine())
-                            .WithRetryTrigger( (trigger) => trigger
-                                .Where(_ => trigger.Exception is DbException {IsTransient: true})
-                                .Where(_ => trigger.AttemptNumber < 100)
-                                .Do(_ => Trace.TraceWarning($"Command failed on attempt {trigger.AttemptNumber}"))
-                                .Delay(TimeSpan
-                                    .FromMilliseconds(200)
-                                    .ScaleByFactor(1.1, trigger.AttemptNumber)))
-                            .Finally(command.Dispose);
-                    }
-                }
-
-                await transaction.CommitAsync(cancellation);
+                Console.WriteLine(PgUpResource.PgUpTransactionAsciiArt);
+                Console.WriteLine(transactionDisplayName);
+                await Observable
+                    .FromAsync(() => ExecTransaction(pgUpTrx, connection, cancellation))
+                    .WithRetryTrigger((trigger) => trigger
+                        .Where(_ => trigger.Exception is DbException { IsTransient: true })
+                        .Where(_ => trigger.AttemptNumber < 100)
+                        .Do(_ => Trace.TraceWarning($"Command failed on attempt {trigger.AttemptNumber}"))
+                        .Delay(TimeSpan
+                            .FromMilliseconds(200)
+                            .ScaleByFactor(1.1, trigger.AttemptNumber)));
             }
             
         }
@@ -104,6 +89,31 @@ public sealed class PgUpDeploymentHandler
         }
 
         return 0;
+    }
+
+
+    async Task ExecTransaction(
+        PgUpTransaction pgUpTransaction, 
+        NpgsqlConnection connection,
+        CancellationToken cancellation)
+    {
+        await using var transaction = await connection.BeginTransactionAsync(cancellation);
+        foreach (var stage in pgUpTransaction.GetStages())
+        {
+            var builder = new PgUpCommandBuilder(stage.CustomExecutorInfo);
+            foreach (var script in stage.GetScripts())
+            {
+                Console.WriteLine($"\t\t{script.RelativePath}");
+                if (script.Content.IsNullOrWhiteSpace())
+                {
+                    continue;
+                }
+                await using var command = builder.Build(script.RelativePath, script.Content, connection);
+                await command.ExecuteNonQueryAsync(cancellation);
+            }
+        }
+
+        await transaction.CommitAsync(cancellation);
     }
 
     async Task<IProject> LoadProjectAsync(CancellationToken cancellation)
