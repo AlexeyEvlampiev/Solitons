@@ -1,6 +1,6 @@
-﻿namespace Solitons.Postgres.PgUp.Management;
+﻿namespace Solitons.Postgres.PgUp;
 
-internal class PgUpFileSystemTemplateRepository : IPgUpTemplateRepository
+public class PgUpFileSystemTemplateRepository : IPgUpTemplateRepository
 {
     public bool Exists(string? template)
     {

@@ -3,9 +3,9 @@ using System.Diagnostics;
 using System.Reactive.Linq;
 using Npgsql;
 
-namespace Solitons.Postgres.PgUp.Management;
+namespace Solitons.Postgres.PgUp;
 
-internal sealed class PgUpDeploymentHandler
+public sealed class PgUpDeploymentHandler
 {
     private readonly string _projectFile;
     private readonly NpgsqlConnectionStringBuilder _connectionStringBuilder;

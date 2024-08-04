@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using Npgsql;
 using Solitons.CommandLine;
-using Solitons.Postgres.PgUp.Management;
 
 namespace Solitons.Postgres.PgUp;
 
@@ -59,11 +58,12 @@ internal class Program
         [CliOption("--parameter|-p")] Dictionary<string, string>? parameters = null,
         [CliOption("--timeout")] CancellationToken cancellation = default)
     {
-        return PgUpDeploymentHandler.DeployAsync(
-            projectFile,
-            connectionString,
-            parameters ?? new Dictionary<string, string>(),
-            cancellation);
+        return PgUpException.TryCatchAsync(() => PgUpDeploymentHandler
+            .DeployAsync(
+                projectFile,
+                connectionString,
+                parameters ?? new Dictionary<string, string>(),
+                cancellation));
     }
 
 

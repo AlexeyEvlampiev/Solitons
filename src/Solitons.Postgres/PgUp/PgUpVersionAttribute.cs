@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using Solitons.Collections;
 
-namespace Solitons.Postgres.PgUp.Management;
+namespace Solitons.Postgres.PgUp;
 
 [AttributeUsage(AttributeTargets.Class)]
 public sealed class PgUpVersionAttribute : Attribute

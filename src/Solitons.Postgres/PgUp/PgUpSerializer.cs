@@ -1,20 +1,11 @@
-﻿using System.Reflection;
-using System.Text.RegularExpressions;
-using Solitons.Data;
+﻿using System.Text.RegularExpressions;
 
-namespace Solitons.Postgres.PgUp.Management;
+namespace Solitons.Postgres.PgUp;
 
 internal sealed class PgUpSerializer
 {
-    private static readonly IDataContractSerializer Serializer;
     private static readonly Regex ParameterRefRegex = new Regex(@"\${([^\s{}]+)}");
 
-    static PgUpSerializer()
-    {
-        Serializer = IDataContractSerializer.Build(config => config
-            .AddAssemblyTypes(Assembly
-                .GetEntryAssembly()!));
-    }
 
     public static IProject Deserialize(
         string pgUpJson, 

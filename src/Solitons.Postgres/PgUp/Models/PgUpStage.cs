@@ -1,7 +1,7 @@
 ﻿using System.IO.Compression;
 using System.Text.RegularExpressions;
 
-namespace Solitons.Postgres.PgUp.Management.Models;
+namespace Solitons.Postgres.PgUp.Models;
 
 public sealed class PgUpStage
 {

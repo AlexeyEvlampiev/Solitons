@@ -1,6 +1,6 @@
 ﻿
 
-namespace Solitons.Postgres.PgUp.Management;
+namespace Solitons.Postgres.PgUp;
 
 public interface IPgUpCustomExecutor
 {

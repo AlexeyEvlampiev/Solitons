@@ -1,6 +1,6 @@
-﻿using Solitons.Postgres.PgUp.Management.Models;
+﻿using Solitons.Postgres.PgUp.Models;
 
-namespace Solitons.Postgres.PgUp.Management;
+namespace Solitons.Postgres.PgUp;
 
 public interface IProject
 {

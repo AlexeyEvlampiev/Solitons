@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
 using Solitons.Data;
 
-namespace Solitons.Postgres.PgUp.Management.Models;
+namespace Solitons.Postgres.PgUp.Models;
 
 
 [Guid("2654b3b3-7603-453d-a43f-5d288e9491d5")]

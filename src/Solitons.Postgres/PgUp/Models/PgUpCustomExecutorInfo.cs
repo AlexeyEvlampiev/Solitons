@@ -1,4 +1,4 @@
-﻿namespace Solitons.Postgres.PgUp.Management.Models;
+﻿namespace Solitons.Postgres.PgUp.Models;
 
 public sealed record PgUpCustomExecutorInfo
 {
