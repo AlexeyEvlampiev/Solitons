@@ -32,7 +32,7 @@
   \s+ 
   (?: <# foreach(var command in SubCommands){ #> 
     (?<<#= GetSegmentGroupName(command) #>><#= GetSegmentPattern(command) #>)|<# } #> 
-    \S+ 
+    [^\s-]\S*
   )
 )*
 
@@ -42,7 +42,7 @@
   \s+ 
   (?: <# foreach(var option in Options){ #> 
     (?<<#= option.Name #>><#= option.Pattern #>)|<# } #> 
-    \S+ 
+    \S+
   )
 )*
 

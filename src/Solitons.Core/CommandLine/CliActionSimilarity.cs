@@ -2,19 +2,19 @@
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace Solitons.CommandLine.ZapCli;
+namespace Solitons.CommandLine;
 
-internal sealed class ZapCliActionSimilarity : CliProcessor.Similarity
+internal sealed class CliActionSimilarity : CliProcessor.Similarity
 {
     private readonly int _matchedGroupsCount;
 
-    public ZapCliActionSimilarity(Match match)
+    public CliActionSimilarity(Match match)
     {
         if (match.Success == false)
         {
             throw new ArgumentException();
         }
-        
+
         _matchedGroupsCount = match.Groups
             .OfType<Group>()
             .Count(g => g.Success);
@@ -22,7 +22,7 @@ internal sealed class ZapCliActionSimilarity : CliProcessor.Similarity
 
     protected override int CompareTo(CliProcessor.Similarity other)
     {
-        var x = (ZapCliActionSimilarity)other;
-        return x._matchedGroupsCount - this._matchedGroupsCount;
+        var x = (CliActionSimilarity)other;
+        return  _matchedGroupsCount - x._matchedGroupsCount;
     }
 }
