@@ -154,11 +154,12 @@ public sealed class CliProcessor
             {
                 Trace.TraceInformation($"Found {selectedActions.Count} actions that matched the given command line.");
 
-                if (_headerConfig.Text.IsPrintable() && 
+                if (_headerConfig.Text.IsPrintable() &&
                     CliTokenSubstitutionPreprocessor.Parse(commandLine).Count() == 1)
                 {
                     Console.WriteLine(_headerConfig.Text);
                 }
+
                 ShowHelp(commandLine);
                 return 1;
             }
@@ -171,6 +172,11 @@ public sealed class CliProcessor
             Trace.TraceInformation($"The action returned {result}");
 
             return result;
+        }
+        catch (CliExitException e)
+        {
+            Console.Error.WriteLine(e.Message);
+            return e.ExitCode;
         }
         catch (CliHelpRequestedException e) 
         {

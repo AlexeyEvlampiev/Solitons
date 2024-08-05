@@ -58,12 +58,12 @@ internal class Program
         [CliOption("--parameter|-p")] Dictionary<string, string>? parameters = null,
         [CliOption("--timeout")] CancellationToken cancellation = default)
     {
-        return PgUpException.TryCatchAsync(() => PgUpDeploymentHandler
+        return PgUpDeploymentHandler
             .DeployAsync(
                 projectFile,
                 connectionString,
                 parameters ?? new Dictionary<string, string>(),
-                cancellation));
+                cancellation);
     }
 
 

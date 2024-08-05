@@ -1,8 +1,10 @@
 ﻿using System.Data.Common;
 using System.Diagnostics;
 using System.Reactive;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Npgsql;
+using Solitons.CommandLine;
 using Solitons.Postgres.PgUp.Models;
 
 namespace Solitons.Postgres.PgUp;
@@ -20,7 +22,13 @@ public sealed class PgUpDeploymentHandler
         Dictionary<string, string> parameters)
     {
         _projectFile = projectFile;
-        _parameters = parameters;
+
+        _parameters = parameters
+            .GroupBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                group => group.Key,
+                group => group.Last().Value,
+                StringComparer.OrdinalIgnoreCase);
 
         var builder = new NpgsqlConnectionStringBuilder(connectionString)
         {
@@ -40,7 +48,7 @@ public sealed class PgUpDeploymentHandler
             cancellation.ThrowIfCancellationRequested();
             if (File.Exists(_projectFile) == false)
             {
-                throw new PgUpException("Specified PgUp project file not found.");
+                throw new CliExitException("Specified PgUp project file not found.");
             }
 
             var project = await LoadProjectAsync(cancellation);
@@ -56,7 +64,7 @@ public sealed class PgUpDeploymentHandler
                         .FromMicroseconds(100)
                         .ScaleByFactor(2, trigger.AttemptNumber)
                         .Max(TimeSpan.FromSeconds(30))))
-                .Catch(Observable.Throw<Unit>(new PgUpException(
+                .Catch(Observable.Throw<Unit>(new CliExitException(
                     $"Failed to create database {project.DatabaseName}")));
             await CreateDatabaseIfNotExists(project, cancellation);
             cancellation.ThrowIfCancellationRequested();
@@ -65,9 +73,10 @@ public sealed class PgUpDeploymentHandler
             var preProcessor = new PgUpScriptPreprocessor(_parameters);
 
             var pgUpTransactions = project.GetTransactions(workingDir, preProcessor);
-            await using var connection = new NpgsqlConnection(_connectionStringBuilder
+            var connection = new NpgsqlConnection(_connectionStringBuilder
                 .WithDatabase(project.DatabaseName)
                 .ConnectionString);
+            using var session = Disposable.Create(connection.Dispose);
 
             connection.Notice += (_, args) => Console.WriteLine(args.Notice.MessageText);
             await connection.OpenAsync(cancellation);
@@ -93,7 +102,7 @@ public sealed class PgUpDeploymentHandler
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
         {
-            throw new PgUpException("PgUp deployment timeout");
+            throw new CliExitException("PgUp deployment timeout");
         }
         catch (NpgsqlException e)
         {
@@ -144,7 +153,7 @@ public sealed class PgUpDeploymentHandler
         }
         catch (Exception e)
         {
-            throw new PgUpException($"Failed to load project file. {e.Message}");
+            throw new CliExitException($"Failed to load project file. {e.Message}");
         }
     }
     private async Task CreateDatabaseIfNotExists(
