@@ -112,9 +112,8 @@ internal sealed class CliAction : IComparable<CliAction>
 
 
     public bool IsMatch(string commandLine) => _regex.IsMatch(commandLine);
-    public int Execute(string commandLine)
+    public int Execute(string commandLine, CliTokenSubstitutionPreprocessor preProcessor)
     {
-        commandLine = CliTokenSubstitutionPreprocessor.SubstituteTokens(commandLine, out var preprocessor);
         var match = _regex.Match(commandLine);
         if (match.Success == false)
         {
@@ -138,14 +137,14 @@ internal sealed class CliAction : IComparable<CliAction>
                     .Convert(o => ThrowIf.NullReference(o))
                     .Convert(o => (CliOptionBundle)o);
                 args[i] = bundle;
-                bundle.Populate(match, preprocessor);
+                bundle.Populate(match, preProcessor);
             }
             else if (_parameterMetadata.TryGetValue(parameter, out var metadata))
             {
                 if (metadata is CliParameterInfo option)
                 {
                     Debug.WriteLine(option.Name);
-                    args[i] = option.GetValue(match, preprocessor);
+                    args[i] = option.GetValue(match, preProcessor);
                 }
                 else
                 {
@@ -160,7 +159,7 @@ internal sealed class CliAction : IComparable<CliAction>
 
         foreach (var bundle in _masterOptions)
         {
-            bundle.Populate(match, preprocessor);
+            bundle.Populate(match, preProcessor);
         }
 
         _masterOptions.ForEach(bundle => bundle.OnExecutingAction(commandLine));
@@ -196,7 +195,7 @@ internal sealed class CliAction : IComparable<CliAction>
     public CliProcessor.Similarity CalcSimilarity(string commandLine)
     {
         var match = _similarityRegex.Match(commandLine);
-        return new ZapCliActionSimilarity(match);
+        return new CliActionSimilarity(match);
     }
 
     public void ShowHelp()

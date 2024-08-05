@@ -138,13 +138,14 @@ public sealed class CliProcessor
     public int Process(string commandLine)
     {
         commandLine = commandLine.Trim();
-        
+        commandLine = CliTokenSubstitutionPreprocessor.SubstituteTokens(commandLine, out var preProcessor);
         try
         {
             var selectedActions = _actions
                 .Where(a => a.IsMatch(commandLine))
                 .GroupBy(a => a.CalcSimilarity(commandLine))
                 .OrderByDescending(similarMatchedActions => similarMatchedActions.Key)
+                .Do(g => Trace.WriteLine(g.Count()))
                 .Take(1)
                 .SelectMany(similarMatchedActions => similarMatchedActions)
                 .ToList();
@@ -166,7 +167,7 @@ public sealed class CliProcessor
 
             Trace.TraceInformation($"Found an actions that matches the given command line.");
 
-            var result = action.Execute(commandLine);
+            var result = action.Execute(commandLine, preProcessor);
             Trace.TraceInformation($"The action returned {result}");
 
             return result;

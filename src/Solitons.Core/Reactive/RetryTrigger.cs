@@ -43,7 +43,6 @@ public sealed class RetryTrigger : ObservableBase<Unit>
     /// </summary>
     public TimeSpan ElapsedTimeSinceFirstException { get; }
 
-
     protected override IDisposable SubscribeCore(IObserver<Unit> observer) => Observable
         .Return(Unit.Default)
         .Subscribe(observer);
