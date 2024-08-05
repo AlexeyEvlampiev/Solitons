@@ -188,25 +188,6 @@ public sealed class CliProcessor
 
 
 
-    public abstract class Similarity : IComparable<Similarity>
-    {
-        protected abstract int CompareTo(Similarity other);
-
-        [DebuggerStepThrough]
-        int IComparable<Similarity>.CompareTo(Similarity? other)
-        {
-            if (other?.GetType() != this.GetType())
-            {
-                throw new ArgumentOutOfRangeException();
-            }
-
-            return CompareTo(other);
-        }
-    }
-    
-
-
-
     public void ShowHelp(string commandLine)
     {
         var matchesFound = _actions.Any(a => a.IsMatch(commandLine));

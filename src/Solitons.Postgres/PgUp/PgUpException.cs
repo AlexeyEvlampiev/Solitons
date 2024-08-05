@@ -4,7 +4,7 @@ namespace Solitons.Postgres.PgUp;
 
 public sealed class PgUpException : Exception
 {
-    internal PgUpException(int exitCode, string message) : base(message)
+    internal PgUpException(string message, int exitCode = 1) : base(message)
     {
         ExitCode = exitCode;
     }

@@ -21,8 +21,8 @@ internal sealed class CliAction : IComparable<CliAction>
     private readonly CliOptionBundle[] _bundles;
     private readonly ParameterInfo[] _parameters;
     private readonly Dictionary<ParameterInfo, object> _parameterMetadata = new();
-    private readonly Regex _regex;
-    private readonly Regex _similarityRegex;
+    private readonly Regex _commandExactRegex;
+    private readonly Regex _commandFuzzyRegex;
 
     internal CliAction(
         object? instance,
@@ -97,24 +97,24 @@ internal sealed class CliAction : IComparable<CliAction>
         }
 
 
-        DefaultPattern = CliActionRegexRtt.Build(this, ZapCliActionRegexRttMode.Default);
-        SimilarityPattern = CliActionRegexRtt.Build(this, ZapCliActionRegexRttMode.Similarity);
-        _regex = new Regex(DefaultPattern, RegexOptions.Compiled);
-        _similarityRegex = new Regex(SimilarityPattern, RegexOptions.Compiled);
+        CommandExactMatchExpression = CliActionRegexRtt.Build(this, ZapCliActionRegexRttMode.Default);
+        CommandFuzzyMatchExpression = CliActionRegexRtt.Build(this, ZapCliActionRegexRttMode.Similarity);
+        _commandExactRegex = new Regex(CommandExactMatchExpression, RegexOptions.Compiled);
+        _commandFuzzyRegex = new Regex(CommandFuzzyMatchExpression, RegexOptions.Compiled);
     }
 
-    public string DefaultPattern { get; }
-    public string SimilarityPattern { get; }
+    public string CommandExactMatchExpression { get; }
+    public string CommandFuzzyMatchExpression { get; }
 
     internal IEnumerable<ICliCommandSegment> CommandSegments => _commandSegments;
 
     internal IEnumerable<CliOperandInfo> Operands => _operands;
 
 
-    public bool IsMatch(string commandLine) => _regex.IsMatch(commandLine);
+    public bool IsMatch(string commandLine) => _commandExactRegex.IsMatch(commandLine);
     public int Execute(string commandLine, CliTokenSubstitutionPreprocessor preProcessor)
     {
-        var match = _regex.Match(commandLine);
+        var match = _commandExactRegex.Match(commandLine);
         if (match.Success == false)
         {
             throw new InvalidOperationException();
@@ -192,9 +192,9 @@ internal sealed class CliAction : IComparable<CliAction>
 
     }
 
-    public CliProcessor.Similarity CalcSimilarity(string commandLine)
+    public CliActionSimilarity CalcSimilarity(string commandLine)
     {
-        var match = _similarityRegex.Match(commandLine);
+        var match = _commandFuzzyRegex.Match(commandLine);
         return new CliActionSimilarity(match);
     }
 

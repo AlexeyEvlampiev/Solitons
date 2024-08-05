@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
 
-internal sealed class CliActionSimilarity : CliProcessor.Similarity
+internal sealed class CliActionSimilarity : IComparable<CliActionSimilarity>
 {
     private readonly int _matchedGroupsCount;
 
@@ -20,9 +20,9 @@ internal sealed class CliActionSimilarity : CliProcessor.Similarity
             .Count(g => g.Success);
     }
 
-    protected override int CompareTo(CliProcessor.Similarity other)
+    public int CompareTo(CliActionSimilarity other)
     {
-        var x = (CliActionSimilarity)other;
-        return  _matchedGroupsCount - x._matchedGroupsCount;
+        return  _matchedGroupsCount - other._matchedGroupsCount;
     }
+
 }

@@ -1,5 +1,6 @@
 ﻿using System.Data.Common;
 using System.Diagnostics;
+using System.Reactive;
 using System.Reactive.Linq;
 using Npgsql;
 using Solitons.Postgres.PgUp.Models;
@@ -39,12 +40,24 @@ public sealed class PgUpDeploymentHandler
             cancellation.ThrowIfCancellationRequested();
             if (File.Exists(_projectFile) == false)
             {
-                throw new PgUpException(1, "Specified PgUp project file not found.");
+                throw new PgUpException("Specified PgUp project file not found.");
             }
 
             var project = await LoadProjectAsync(cancellation);
             var projectFile = new FileInfo(_projectFile);
 
+            await Observable
+                .FromAsync(() => CreateDatabaseIfNotExists(project, cancellation))
+                .WithRetryTrigger(trigger => trigger
+                    .Where(_ => trigger.Exception is DbException { IsTransient: true })
+                    .Where(_ => trigger.AttemptNumber < 100)
+                    .Do(_ => Console.WriteLine(trigger.Exception.Message))
+                    .Delay(_ => TimeSpan
+                        .FromMicroseconds(100)
+                        .ScaleByFactor(2, trigger.AttemptNumber)
+                        .Max(TimeSpan.FromSeconds(30))))
+                .Catch(Observable.Throw<Unit>(new PgUpException(
+                    $"Failed to create database {project.DatabaseName}")));
             await CreateDatabaseIfNotExists(project, cancellation);
             cancellation.ThrowIfCancellationRequested();
 
@@ -80,7 +93,7 @@ public sealed class PgUpDeploymentHandler
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
         {
-            throw new PgUpException(1, "PgUp deployment timeout");
+            throw new PgUpException("PgUp deployment timeout");
         }
         catch (NpgsqlException e)
         {
@@ -131,7 +144,7 @@ public sealed class PgUpDeploymentHandler
         }
         catch (Exception e)
         {
-            throw new PgUpException(1, $"Failed to load project file. {e.Message}");
+            throw new PgUpException($"Failed to load project file. {e.Message}");
         }
     }
     private async Task CreateDatabaseIfNotExists(
