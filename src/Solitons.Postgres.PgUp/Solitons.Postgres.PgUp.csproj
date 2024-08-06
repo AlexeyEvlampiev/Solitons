@@ -33,19 +33,34 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Templates\Basic\pgup.json">
+    <None Update="Templates\basic\pgup.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Templates\Basic\migrations\migration.sql">
+    <None Update="Templates\basic\migrations\migration.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Templates\Basic\post-deployment\post-deployment.sql">
+    <None Update="Templates\basic\post-deployment\post-deployment.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Templates\Basic\pre-deployment\pre-deployment.sql">
+    <None Update="Templates\basic\pre-deployment\pre-deployment.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Templates\Basic\setup\setup.sql">
+    <None Update="Templates\basic\setup\setup.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Templates\solitons\migrations\migration.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Templates\solitons\pgup.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Templates\solitons\post-deployment\post-deployment.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Templates\solitons\pre-deployment\pre-deployment.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Templates\solitons\setup\setup.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

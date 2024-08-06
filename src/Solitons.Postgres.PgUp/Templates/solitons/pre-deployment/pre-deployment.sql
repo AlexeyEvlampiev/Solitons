@@ -86,10 +86,10 @@ COMMENT ON TABLE "system".migration_script IS 'Stores the relative paths and exe
 CREATE UNIQUE INDEX IF NOT EXISTS ux_migration_script_path ON "system".migration_script (LOWER(path));
 COMMENT ON INDEX system.ux_migration_script_path IS 'Ensures unique file paths for migration scripts by comparing them in a case-insensitive manner.';
 
+
 REVOKE ALL ON TABLE system.migration_script FROM PUBLIC;
 GRANT SELECT ON TABLE system.migration_script TO PUBLIC;
 GRANT INSERT, UPDATE, DELETE ON TABLE system.migration_script TO ${dbOwner};
-
 
 -- Create a function to execute migration scripts if they are new.
 

@@ -72,7 +72,7 @@ public sealed class CliProcessor
 
         IOptions UseCommands(Type declaringType, CliCommandAttribute[] rootCommands, BindingFlags binding = BindingFlags.Static | BindingFlags.Public);
         IOptions UseCommands(object target, CliCommandAttribute[] rootCommands, BindingFlags binding = BindingFlags.Instance | BindingFlags.Public);
-        IOptions UseAsciiHeader(string asciiHeaderText, CliAsciiHeaderCondition condition);
+        IOptions UseLogo(string asciiHeaderText, CliAsciiHeaderCondition condition);
     }
 
 
@@ -122,7 +122,7 @@ public sealed class CliProcessor
             return this;
         }
 
-        public IOptions UseAsciiHeader(string text, CliAsciiHeaderCondition condition)
+        public IOptions UseLogo(string text, CliAsciiHeaderCondition condition)
         {
             _processor._headerConfig = new AsciiHeaderConfig(text, condition);
             return this;

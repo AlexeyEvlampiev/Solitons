@@ -6,7 +6,7 @@ using Solitons.CommandLine;
 namespace Solitons.Postgres.PgUp;
 
 
-internal class Program
+internal class PgUpProgram
 {
     public const string InitializeProjectCommand = "init|initialize";
     public const string ProjectDirectoryArgumentDescription = "File directory where to initialize the new pgup project.";
@@ -18,11 +18,11 @@ internal class Program
 
     static int Main()
     {
-        var program = new Program();
+        var program = new PgUpProgram();
         return CliProcessor
             .Setup(config => config
                 .UseCommands(program)
-                .UseAsciiHeader(Resources.Title, CliAsciiHeaderCondition.OnNoArguments))
+                .UseLogo(Resources.Title, CliAsciiHeaderCondition.OnNoArguments))
             .Process();
     }
 
@@ -36,16 +36,12 @@ internal class Program
         [CliOption("--parameter|-p")] Dictionary<string, string>? parameters = null,
         [CliOption("--timeout")] CancellationToken cancellation = default)
     {
-        var builder = new NpgsqlConnectionStringBuilder()
-        {
-            Host = host,
-            Username = username,
-            Password = password,
-        };
         return PgUpDeploymentHandler.DeployAsync(
             projectFile,
-            builder.ConnectionString,
-            parameters ?? new Dictionary<string, string>(),
+            host,
+            username, 
+            password,
+            parameters ?? [],
             cancellation);
     }
 
@@ -62,7 +58,7 @@ internal class Program
             .DeployAsync(
                 projectFile,
                 connectionString,
-                parameters ?? new Dictionary<string, string>(),
+                parameters ?? [],
                 cancellation);
     }
 

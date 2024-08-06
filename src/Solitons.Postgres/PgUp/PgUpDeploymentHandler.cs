@@ -188,6 +188,37 @@ public sealed class PgUpDeploymentHandler
         }
     }
 
+
+    [DebuggerStepThrough]
+    public static Task<int> DeployAsync(
+        string projectFile,
+        string host,
+        string username,
+        string password,
+        Dictionary<string, string> parameters,
+        CancellationToken cancellation)
+    {
+        
+        string connectionString;
+        try
+        {
+            connectionString = new NpgsqlConnectionStringBuilder()
+                {
+                    Host = host,
+                    Username = username,
+                    Password = password
+                }
+                .ConnectionString;
+        }
+        catch (Exception e)
+        {
+            throw new CliExitException("Invalid connection information.");
+        }
+        
+        var instance = new PgUpDeploymentHandler(projectFile, connectionString, parameters);
+        return instance.DeployAsync(cancellation);
+    }
+
     [DebuggerStepThrough]
     public static Task<int> DeployAsync(
         string projectFile,
