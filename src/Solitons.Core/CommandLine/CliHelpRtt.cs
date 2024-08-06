@@ -25,6 +25,18 @@ namespace Solitons.CommandLine
         /// </summary>
         public override string TransformText()
         {
+            this.Write("Usage: toolname COMMAND [ARGS] [OPTIONS]\r\n\r\nDescription:\r\n  Brief description of " +
+                    "what the tool does.\r\n\r\nOptions:\r\n  -h, --help  Show this message and exit.\r\n\r\nCo" +
+                    "mmands:");
+ foreach(var cmd in Commands){ 
+            this.Write(" \r\n  ");
+            this.Write(this.ToStringHelper.ToStringWithCulture(cmd.Path));
+            this.Write("        ");
+            this.Write(this.ToStringHelper.ToStringWithCulture(cmd.Description));
+            this.Write(" ");
+ } 
+            this.Write(" \r\n\r\nFor detailed information on a specific command, use \'toolname COMMAND --help" +
+                    "\'.\r\n");
             return this.GenerationEnvironment.ToString();
         }
     }

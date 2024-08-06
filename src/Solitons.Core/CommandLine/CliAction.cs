@@ -1,6 +1,7 @@
 ﻿using Solitons.CommandLine.ZapCli;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -96,6 +97,32 @@ internal sealed class CliAction : IComparable<CliAction>
                 .GetOptions(bundle.GetType()));
         }
 
+        Description = attributes
+            .OfType<DescriptionAttribute>()
+            .Select(d => d.Description)
+            .FirstOrDefault(string.Empty);
+
+        this.FullPath = _commandSegments
+            .Select(s =>
+            {
+                if (s is CliSubCommand cmd)
+                {
+                    if (cmd.PrimaryName.IsNullOrWhiteSpace())
+                    {
+                        return string.Empty;
+                    }
+                    return cmd.SubCommandPattern;
+                }
+
+                if (s is CliArgumentInfo arg)
+                {
+                    return $"<{arg.ArgumentRole.ToUpper()}>";
+                }
+
+                throw new InvalidOperationException();
+            })
+            .Where(s => s.IsPrintable())
+            .Join(" ");
 
         CommandExactMatchExpression = CliActionRegexRtt.Build(this, ZapCliActionRegexRttMode.Default);
         CommandFuzzyMatchExpression = CliActionRegexRtt.Build(this, ZapCliActionRegexRttMode.Similarity);
@@ -109,7 +136,9 @@ internal sealed class CliAction : IComparable<CliAction>
     internal IEnumerable<ICliCommandSegment> CommandSegments => _commandSegments;
 
     internal IEnumerable<CliOperandInfo> Operands => _operands;
+    public string Description { get; }
 
+    public string FullPath { get; }
 
     public bool IsMatch(string commandLine) => _commandExactRegex.IsMatch(commandLine);
     public int Execute(string commandLine, CliTokenSubstitutionPreprocessor preProcessor)
@@ -204,7 +233,7 @@ internal sealed class CliAction : IComparable<CliAction>
         var tool = args[0];
         if (File.Exists(tool))
         {
-            tool = Path.GetFileName(tool);
+            tool = System.IO.Path.GetFileName(tool);
         }
 
         var help = CliActionHelpRtt.Build(tool, this);
@@ -219,7 +248,8 @@ internal sealed class CliAction : IComparable<CliAction>
 
     public int CompareTo(CliAction? other)
     {
-        throw new NotImplementedException();
+        ThrowIf.ArgumentNull(other);
+        return String.Compare(FullPath, other?.FullPath, StringComparison.OrdinalIgnoreCase);
     }
 
     public static bool IsAction(MethodInfo method) => method

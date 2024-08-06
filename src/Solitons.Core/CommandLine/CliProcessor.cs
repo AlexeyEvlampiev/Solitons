@@ -202,7 +202,8 @@ public sealed class CliProcessor
             Console.WriteLine(_logo);
         }
 
-        var text = CliHelpRtt.Build(_actions);
+        var help = CliHelpRtt.Build(_actions);
+        Console.WriteLine(help);
     }
 
     public void ShowHelp(string commandLine)
