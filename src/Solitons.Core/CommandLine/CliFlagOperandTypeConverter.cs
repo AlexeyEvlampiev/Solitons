@@ -12,7 +12,8 @@ internal sealed class CliFlagOperandTypeConverter : CliOperandTypeConverter
 
     private static readonly Dictionary<Type, object> SupportedTypes = new()
     {
-        [typeof(Unit)] = Unit.Default
+        [typeof(Unit)] = Unit.Default,
+        [typeof(Unit?)] = null,
     };
 
     public CliFlagOperandTypeConverter(Type type, string parameterName) 

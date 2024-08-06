@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reactive;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -53,7 +54,7 @@ public sealed class CliProcessor
         var showHelpMi = GetType()
             .GetMethod(
                 nameof(ShowHelp), BindingFlags.Instance | BindingFlags.NonPublic, 
-                [typeof(CliHelpMasterOptionBundle)]) ?? throw new InvalidOperationException();
+                [typeof(Unit)]) ?? throw new InvalidOperationException();
         actions.Add(new CliAction(this, showHelpMi, []));
         _actions = actions.ToArray();
     }
@@ -193,7 +194,8 @@ public sealed class CliProcessor
     }
 
     [CliCommand("")]
-    private void ShowHelp(CliHelpMasterOptionBundle help)
+    private void ShowHelp(
+        [CliOption(CliHelpMasterOptionBundle.OptionSpecification)]Unit _)
     {
         if (_logo.IsPrintable())
         {
