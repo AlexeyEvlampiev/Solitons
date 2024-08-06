@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
-using Npgsql;
 using Solitons.CommandLine;
 
 namespace Solitons.Postgres.PgUp;
@@ -22,7 +21,7 @@ internal class PgUpProgram
         return CliProcessor
             .Setup(config => config
                 .UseCommands(program)
-                .UseLogo(Resources.Title, CliAsciiHeaderCondition.OnNoArguments))
+                .UseLogo(Resources.Title))
             .Process();
     }
 

@@ -207,7 +207,7 @@ internal sealed class CliAction : IComparable<CliAction>
             tool = Path.GetFileName(tool);
         }
 
-        var help = ZapCliActionHelpRtt.Build(tool, this);
+        var help = CliActionHelpRtt.Build(tool, this);
         Console.WriteLine(help);
     }
 
@@ -227,4 +227,6 @@ internal sealed class CliAction : IComparable<CliAction>
         .Any();
 
     internal int IndexOf(ICliCommandSegment segment) => Array.IndexOf(_commandSegments, segment);
+
+    public override string ToString() => $"{_method.Name}";
 }

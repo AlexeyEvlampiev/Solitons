@@ -4,6 +4,10 @@
       "commandName": "Project",
       "commandLineArgs": ""
     },
+    "help": {
+      "commandName": "Project",
+      "commandLineArgs": "-?"
+    },
     "init .": {
       "commandName": "Project",
       "commandLineArgs": "init ."

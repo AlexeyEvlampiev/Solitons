@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
 
@@ -14,11 +15,9 @@ public sealed class CliProcessor
         CliCommandAttribute[] RootCommands,
         BindingFlags BindingFlags);
 
-    private sealed record AsciiHeaderConfig(string Text, CliAsciiHeaderCondition When);
-
     private readonly List<Source> _sources = new();
     private readonly CliAction[] _actions;
-    private AsciiHeaderConfig _headerConfig = new("", CliAsciiHeaderCondition.Always);
+    private string _logo = String.Empty;
 
 
 
@@ -51,9 +50,15 @@ public sealed class CliProcessor
             }
         }
 
+        var showHelpMi = GetType()
+            .GetMethod(
+                nameof(ShowHelp), BindingFlags.Instance | BindingFlags.NonPublic, 
+                [typeof(CliHelpMasterOptionBundle)]) ?? throw new InvalidOperationException();
+        actions.Add(new CliAction(this, showHelpMi, []));
         _actions = actions.ToArray();
     }
 
+    
     public interface IOptions
     {
         [DebuggerStepThrough]
@@ -72,7 +77,7 @@ public sealed class CliProcessor
 
         IOptions UseCommands(Type declaringType, CliCommandAttribute[] rootCommands, BindingFlags binding = BindingFlags.Static | BindingFlags.Public);
         IOptions UseCommands(object target, CliCommandAttribute[] rootCommands, BindingFlags binding = BindingFlags.Instance | BindingFlags.Public);
-        IOptions UseLogo(string asciiHeaderText, CliAsciiHeaderCondition condition);
+        IOptions UseLogo(string asciiHeaderText);
     }
 
 
@@ -122,9 +127,9 @@ public sealed class CliProcessor
             return this;
         }
 
-        public IOptions UseLogo(string text, CliAsciiHeaderCondition condition)
+        public IOptions UseLogo(string text)
         {
-            _processor._headerConfig = new AsciiHeaderConfig(text, condition);
+            _processor._logo = text;
             return this;
         }
     }
@@ -139,6 +144,7 @@ public sealed class CliProcessor
     {
         commandLine = commandLine.Trim();
         commandLine = CliTokenSubstitutionPreprocessor.SubstituteTokens(commandLine, out var preProcessor);
+
         try
         {
             var selectedActions = _actions
@@ -153,12 +159,6 @@ public sealed class CliProcessor
             if (selectedActions.Count != 1)
             {
                 Trace.TraceInformation($"Found {selectedActions.Count} actions that matched the given command line.");
-
-                if (_headerConfig.Text.IsPrintable() &&
-                    CliTokenSubstitutionPreprocessor.Parse(commandLine).Count() == 1)
-                {
-                    Console.WriteLine(_headerConfig.Text);
-                }
 
                 ShowHelp(commandLine);
                 return 1;
@@ -192,7 +192,16 @@ public sealed class CliProcessor
 
     }
 
+    [CliCommand("")]
+    private void ShowHelp(CliHelpMasterOptionBundle help)
+    {
+        if (_logo.IsPrintable())
+        {
+            Console.WriteLine(_logo);
+        }
 
+        var text = CliHelpRtt.Build(_actions);
+    }
 
     public void ShowHelp(string commandLine)
     {

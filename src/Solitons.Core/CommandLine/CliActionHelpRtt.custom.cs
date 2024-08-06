@@ -1,14 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace Solitons.CommandLine.ZapCli;
+namespace Solitons.CommandLine;
 
-internal partial class ZapCliActionHelpRtt
+internal partial class CliActionHelpRtt
 {
     private readonly CliAction _action;
     private const string Tab = "\t\t\t";
 
-    private ZapCliActionHelpRtt(string tool, CliAction action)
+    private CliActionHelpRtt(string tool, CliAction action)
     {
         _action = action;
         Tool = tool;
@@ -43,9 +43,9 @@ internal partial class ZapCliActionHelpRtt
 
 
     }
-    
+
     public IReadOnlyList<string> UsageOptions { get; }
-    
+
     public IReadOnlyList<string> Options { get; }
 
     IEnumerable<string> CommandOptions(IEnumerable<ICliCommandSegment> segments)
@@ -57,7 +57,7 @@ internal partial class ZapCliActionHelpRtt
             yield return "[options]";
             yield break;
         }
-        
+
         var rhsOptions = CommandOptions(list.Skip(1)).ToList();
         if (segment is CliSubCommand command)
         {
@@ -87,7 +87,7 @@ internal partial class ZapCliActionHelpRtt
 
     public static string Build(string tool, CliAction action)
     {
-        var rtt = new ZapCliActionHelpRtt(tool, action);
+        var rtt = new CliActionHelpRtt(tool, action);
         return rtt.ToString().Trim();
     }
 

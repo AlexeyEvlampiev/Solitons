@@ -7,7 +7,7 @@
 //     the code is regenerated.
 // </auto-generated>
 // ------------------------------------------------------------------------------
-namespace Solitons.CommandLine.ZapCli
+namespace Solitons.CommandLine
 {
     using System.Linq;
     using System.Text;
@@ -18,7 +18,7 @@ namespace Solitons.CommandLine.ZapCli
     /// Class to produce the template output
     /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.TextTemplating", "17.0.0.0")]
-    internal partial class ZapCliActionHelpRtt : Solitons.Text.RuntimeTextTemplate
+    internal partial class CliActionHelpRtt : Solitons.Text.RuntimeTextTemplate
     {
         /// <summary>
         /// Create the template output

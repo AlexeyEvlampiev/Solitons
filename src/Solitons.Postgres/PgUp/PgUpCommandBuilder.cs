@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using Npgsql;
+﻿using Npgsql;
 using Solitons.Postgres.PgUp.Models;
 
 namespace Solitons.Postgres.PgUp;

@@ -72,6 +72,7 @@ internal abstract class CliOperandInfo : IFormattable
         OperandKeyPattern = _metadata
             .OfType<CliOptionAttribute>()
             .Select(o => o.OptionSpecification)
+            .Select(s => Regex.Replace(s, @"\?", @"\?"))
             .FirstOrDefault("^");
 
         Description = _metadata.Descriptions.FirstOrDefault(Name);
