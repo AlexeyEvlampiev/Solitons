@@ -41,7 +41,7 @@
 (?: 
   \s+ 
   (?: <# foreach(var option in Options){ #> 
-    (?<<#= option.Name #>><#= option.Pattern #>)|<# } #> 
+    (?: <#= option.Pattern #>) |<# } #> 
     \S+
   )
 )*

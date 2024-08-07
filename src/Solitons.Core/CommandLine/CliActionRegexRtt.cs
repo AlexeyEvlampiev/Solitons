@@ -58,11 +58,9 @@ namespace Solitons.CommandLine
  } 
             this.Write(" \r\n    [^\\s-]\\S*\r\n  )\r\n)*\r\n\r\n\r\n# --- PARAMETERS ---\r\n(?: \r\n  \\s+ \r\n  (?: ");
  foreach(var option in Options){ 
-            this.Write(" \r\n    (?<");
-            this.Write(this.ToStringHelper.ToStringWithCulture(option.Name));
-            this.Write(">");
+            this.Write(" \r\n    (?: ");
             this.Write(this.ToStringHelper.ToStringWithCulture(option.Pattern));
-            this.Write(")|");
+            this.Write(") |");
  } 
             this.Write(" \r\n    \\S+\r\n  )\r\n)*\r\n\r\n\r\n");
  } 

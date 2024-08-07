@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reactive;
 using System.Reflection;
-using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
 
@@ -51,11 +50,6 @@ public sealed class CliProcessor
             }
         }
 
-        var showHelpMi = GetType()
-            .GetMethod(
-                nameof(ShowHelp), BindingFlags.Instance | BindingFlags.NonPublic, 
-                [typeof(Unit)]) ?? throw new InvalidOperationException();
-        actions.Add(new CliAction(this, showHelpMi, []));
         _actions = actions.ToArray();
     }
 
@@ -143,24 +137,30 @@ public sealed class CliProcessor
 
     public int Process(string commandLine)
     {
-        commandLine = commandLine.Trim();
-        commandLine = CliTokenSubstitutionPreprocessor.SubstituteTokens(commandLine, out var preProcessor);
-
         try
         {
+            commandLine = CliTokenSubstitutionPreprocessor
+                .SubstituteTokens(commandLine, out var preProcessor)
+                .Trim();
+
+            if (CliHelpOptionAttribute.IsMatch(commandLine))
+            {
+                ShowHelp(commandLine);
+                return 0;
+            }
+
             var selectedActions = _actions
-                .Where(a => a.IsMatch(commandLine))
-                .GroupBy(a => a.CalcSimilarity(commandLine))
-                .OrderByDescending(similarMatchedActions => similarMatchedActions.Key)
-                .Do(g => Trace.WriteLine(g.Count()))
-                .Take(1)
-                .SelectMany(similarMatchedActions => similarMatchedActions)
-                .ToList();
+            .Where(a => a.IsMatch(commandLine))
+            .GroupBy(a => a.CalcSimilarity(commandLine))
+            .OrderByDescending(similarMatchedActions => similarMatchedActions.Key)
+            .Do(g => Trace.WriteLine(g.Count()))
+            .Take(1)
+            .SelectMany(similarMatchedActions => similarMatchedActions)
+            .ToList();
 
             if (selectedActions.Count != 1)
             {
-                Trace.TraceInformation($"Found {selectedActions.Count} actions that matched the given command line.");
-
+                Console.WriteLine("No matching commands found. See closest commands description below. ");
                 ShowHelp(commandLine);
                 return 1;
             }
@@ -193,27 +193,14 @@ public sealed class CliProcessor
 
     }
 
-    [CliCommand("")]
-    private void ShowHelp(
-        [CliOption(CliHelpMasterOptionBundle.OptionSpecification)]Unit _)
-    {
-        if (_logo.IsPrintable())
-        {
-            Console.WriteLine(_logo);
-        }
-
-        var help = CliHelpRtt.Build(_actions);
-        Console.WriteLine(help);
-    }
-
     public void ShowHelp(string commandLine)
     {
-        var matchesFound = _actions.Any(a => a.IsMatch(commandLine));
+        var anyMatchesFound = _actions.Any(a => a.IsMatch(commandLine));
         _actions
-            .Where(a => false == matchesFound || a.IsMatch(commandLine))
+            .Where(a => false == anyMatchesFound || a.IsMatch(commandLine))
             .GroupBy(a => a.CalcSimilarity(commandLine))
             .OrderByDescending(similarActions => similarActions.Key)
-            .Take(1)
+            .Take(3)
             .SelectMany(similarActions => similarActions)
             .ForEach((action) =>action.ShowHelp());
     }

@@ -5,8 +5,8 @@ namespace Solitons.CommandLine;
 
 internal sealed class CliHelpMasterOptionBundle : CliMasterOptionBundle
 {
-    public const string OptionSpecification = "--help|-h|-?";
-    [CliOption(OptionSpecification)]
+
+    [CliHelpOption]
     public Unit? Help { get; set; }
 
     [DebuggerStepThrough]

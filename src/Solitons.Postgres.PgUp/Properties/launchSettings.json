@@ -15,6 +15,9 @@
     "deploy .": {
       "commandName": "Project",
       "commandLineArgs": "deploy templates/basic/pgup.json --connection \"%DEV_POSTGRES_CONNECTION_STRING%\" --timeout \"3 minutes\""
+    },
+    "deploy -?": {
+      "commandName": "Project",
+      "commandLineArgs": "deploy -?"
     }
   }
-}
