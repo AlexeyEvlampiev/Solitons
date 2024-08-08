@@ -43,7 +43,6 @@ public sealed class PgUpDeploymentHandler
     }
 
 
-    [DebuggerStepThrough]
     public static async Task<int> DeployAsync(
         string projectFile,
         string connectionString,
@@ -72,12 +71,12 @@ public sealed class PgUpDeploymentHandler
                     .ScaleByFactor(2.0, trigger.AttemptNumber))
                 .Do(() => Trace.TraceInformation($"Connection test retry. Attempt: {trigger.AttemptNumber}")))
             .Catch(Observable.Throw<Unit>(new CliExitException("Connection failed")))
-            .ToTask(cancellation.WithTimeoutEnforcement(timeout.Value / 100));
+            .ToTask(cancellation.WithTimeoutEnforcement(timeout.Value * 0.05));
 
         connectionString = new NpgsqlConnectionStringBuilder(connectionString)
         {
             ApplicationName = "DbUp",
-            CommandTimeout = Convert.ToInt32(TimeSpan.FromHours(10))
+            CommandTimeout = Convert.ToInt32(TimeSpan.FromHours(10).TotalSeconds)
         }.ConnectionString;
 
         var loadProjectTask = LoadProjectAsync(projectFile, parameters, cancellation);
@@ -85,11 +84,9 @@ public sealed class PgUpDeploymentHandler
         var project = loadProjectTask.Result;
 
         var builder = new NpgsqlConnectionStringBuilder(connectionString);
-        void Print(string key, string value) => Console.WriteLine(@$"{key}:\t\t\t{value}");
+        void Print(string key, string value) => Console.WriteLine($"{key}:\t{value}");
         Print("Host", builder.Host!);
         Print("Port", builder.Port.ToString());
-        Print("Database", builder.Database!);
-        Console.WriteLine(@$"Host: {builder.Host}");
         if (overwrite)
         {
             if (false == forceOverwrite)
