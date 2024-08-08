@@ -1,4 +1,5 @@
-﻿using Npgsql;
+﻿using System.Diagnostics;
+using Npgsql;
 
 namespace Solitons.Postgres;
 
@@ -14,6 +15,7 @@ public static class Extensions
         };
     }
 
+    [DebuggerStepThrough]
     public static async Task<int> ExecuteNonQueryAsync(
         this NpgsqlConnection connection,
         string commandText, 

@@ -16,6 +16,10 @@
       "commandName": "Project",
       "commandLineArgs": "deploy templates/basic/pgup.json --connection \"%DEV_POSTGRES_CONNECTION_STRING%\" --timeout 00:10:00"
     },
+    "re-deploy .": {
+      "commandName": "Project",
+      "commandLineArgs": "deploy templates/basic/pgup.json --connection \"%DEV_POSTGRES_CONNECTION_STRING%\" --overwrite"
+    },
     "deploy -?": {
       "commandName": "Project",
       "commandLineArgs": "deploy -?"

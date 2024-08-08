@@ -5,10 +5,8 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using Npgsql;
-using Solitons;
 using Solitons.CommandLine;
 using Solitons.Postgres.PgUp.Models;
-using Solitons.Reactive;
 
 namespace Solitons.Postgres.PgUp;
 
@@ -92,7 +90,7 @@ public sealed class PgUpDeploymentHandler
         {
             if (false == forceOverwrite)
             {
-                var confirmed = CliPrompt.GetYesNoAnswer("Sure? [Y/N]");
+                var confirmed = CliPrompt.GetYesNoAnswer("Sure?");
                 if (!confirmed)
                 {
                     throw new CliExitException("Operation cancelled by user")
@@ -105,10 +103,13 @@ public sealed class PgUpDeploymentHandler
             await Observable
                 .Using(
                     () => new NpgsqlConnection(connectionString),
-                    connection => Observable.FromAsync(() => connection.ExecuteNonQueryAsync(
-                        "DROP DATABASE IF EXISTS @dbname FORCE", 
-                        cmd => cmd.Parameters.AddWithValue("dbname", project.DatabaseName),
-                        cancellation: cancellation)))
+                    connection => connection
+                        .OpenAsync(cancellation)
+                        .ToObservable()
+                        .SelectMany(_ => connection.ExecuteNonQueryAsync(
+                            $"DROP DATABASE IF EXISTS {project.DatabaseName} WITH(FORCE);",
+                            cancellation: cancellation))
+                        .Do(_ =>{}, e => Console.WriteLine(e.Message)))
                 .WithRetryTrigger(trigger => trigger
                     .Where(trigger.Exception is DbException { IsTransient: true })
                     .Where(trigger.AttemptNumber <= 5)
@@ -129,13 +130,13 @@ public sealed class PgUpDeploymentHandler
 
 
     private async Task<int> DeployAsync(
-        DirectoryInfo workingDir, 
+        DirectoryInfo workingDir,
         CancellationToken cancellation)
     {
         try
         {
             cancellation.ThrowIfCancellationRequested();
-            
+
             await Observable
                 .FromAsync(() => CreateDatabaseIfNotExists(_project, cancellation))
                 .WithRetryTrigger(trigger => trigger
@@ -177,7 +178,7 @@ public sealed class PgUpDeploymentHandler
                             .FromMilliseconds(200)
                             .ScaleByFactor(1.1, trigger.AttemptNumber)));
             }
-            
+
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
         {
@@ -194,7 +195,7 @@ public sealed class PgUpDeploymentHandler
 
 
     async Task ExecTransaction(
-        PgUpTransaction pgUpTransaction, 
+        PgUpTransaction pgUpTransaction,
         NpgsqlConnection connection,
         CancellationToken cancellation)
     {
@@ -219,7 +220,7 @@ public sealed class PgUpDeploymentHandler
     }
 
     private static async Task<IProject> LoadProjectAsync(
-        string projectFilePath, 
+        string projectFilePath,
         Dictionary<string, string> parameters,
         CancellationToken cancellation)
     {
@@ -228,7 +229,7 @@ public sealed class PgUpDeploymentHandler
         {
             throw new CliExitException("Specified project file not found.");
         }
-        
+
         try
         {
             var projectFile = new FileInfo(projectFilePath);
@@ -243,7 +244,7 @@ public sealed class PgUpDeploymentHandler
         }
     }
     private async Task CreateDatabaseIfNotExists(
-        IProject project, 
+        IProject project,
         CancellationToken cancellation)
     {
         await using var connection = new NpgsqlConnection(_connectionStringBuilder
@@ -260,7 +261,7 @@ public sealed class PgUpDeploymentHandler
         GRANT {project.DatabaseOwner} TO CURRENT_USER;
         SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = '{project.DatabaseName}');
         ", cancellation);
-        if(databaseExists)
+        if (databaseExists)
         {
             await connection.ExecuteNonQueryAsync(
                 $"ALTER DATABASE {project.DatabaseName} OWNER TO {project.DatabaseOwner};",

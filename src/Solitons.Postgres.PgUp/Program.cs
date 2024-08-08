@@ -1,5 +1,4 @@
 ﻿using System.Reactive;
-using Npgsql;
 using Solitons.CommandLine;
 
 namespace Solitons.Postgres.PgUp;
