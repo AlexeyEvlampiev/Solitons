@@ -20,7 +20,7 @@ internal class Program
         return CliProcessor
             .Setup(config => config
                 .UseCommands<Program>()
-                .UseLogo(Resources.Title))
+                .UseLogo(PgUpResource.AsciiLogo))
             .Process();
     }
 

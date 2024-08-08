@@ -5,6 +5,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using Npgsql;
+using Solitons;
 using Solitons.CommandLine;
 using Solitons.Postgres.PgUp.Models;
 using Solitons.Reactive;
@@ -165,8 +166,7 @@ public sealed class PgUpDeploymentHandler
             {
                 transactionCounter++;
                 var transactionDisplayName = pgUpTrx.DisplayName.DefaultIfNullOrWhiteSpace(transactionCounter.ToString);
-                Console.WriteLine(PgUpResource.PgUpTransactionAsciiArt);
-                Console.WriteLine($@"- {transactionDisplayName}");
+                PgUpTransactionDelimiterRtt.WriteLine(transactionDisplayName);
                 await Observable
                     .FromAsync(() => ExecTransaction(pgUpTrx, connection, cancellation))
                     .WithRetryTrigger((trigger) => trigger
@@ -201,7 +201,7 @@ public sealed class PgUpDeploymentHandler
         await using var transaction = await connection.BeginTransactionAsync(cancellation);
         foreach (var stage in pgUpTransaction.GetStages())
         {
-            Console.WriteLine(PgUpResource.PgUpStageAsciiArt);
+            //Console.WriteLine(PgUpResource.PgUpStageAsciiArt);
             var builder = new PgUpCommandBuilder(stage.CustomExecutorInfo);
             foreach (var script in stage.GetScripts())
             {

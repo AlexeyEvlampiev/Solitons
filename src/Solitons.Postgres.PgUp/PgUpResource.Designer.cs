@@ -62,31 +62,16 @@ namespace Solitons.Postgres.PgUp {
         
         /// <summary>
         ///   Looks up a localized string similar to 
-        ///               _                 
-        ///  ___ ___   __| |_ __ _ __ _ ___ 
-        /// |___|___| (_-|  _/ _` / _` / -_)
-        ///           /__/\__\__,_\__, \___|
-        ///                       |___/     
+        ///  ___      _   _      
+        /// | _ \__ _| | | |_ __ 
+        /// |  _/ _` | |_| | &apos;_ \
+        /// |_| \__, |\___/| .__/
+        ///     |___/      |_|   
         ///.
         /// </summary>
-        internal static string PgUpStageAsciiArt {
+        internal static string AsciiLogo {
             get {
-                return ResourceManager.GetString("PgUpStageAsciiArt", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to 
-        ///        _                            _   _          
-        ///  ___  | |_ _ _ __ _ _ _  _____ _ __| |_(_)___ _ _  
-        /// |___| |  _| &apos;_/ _` | &apos; \(_-/ _` / _|  _| / _ | &apos; \ 
-        ///        \__|_| \__,_|_||_/__\__,_\__|\__|_\___|_||_|
-        ///                                                    
-        ///.
-        /// </summary>
-        internal static string PgUpTransactionAsciiArt {
-            get {
-                return ResourceManager.GetString("PgUpTransactionAsciiArt", resourceCulture);
+                return ResourceManager.GetString("AsciiLogo", resourceCulture);
             }
         }
     }

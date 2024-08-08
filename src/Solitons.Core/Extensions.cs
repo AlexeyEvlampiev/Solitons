@@ -22,7 +22,9 @@ namespace Solitons;
 
 public static partial class Extensions
 {
-    public static CancellationToken WithTimeoutEnforcement(this CancellationToken cancellation, TimeSpan timeout)
+    public static CancellationToken WithTimeoutEnforcement(
+        this CancellationToken cancellation, 
+        TimeSpan timeout)
     {
         var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation,
             new CancellationTokenSource(timeout).Token);
