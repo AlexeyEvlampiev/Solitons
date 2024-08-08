@@ -25,9 +25,9 @@ namespace Solitons.Postgres.PgUp
         /// </summary>
         public override string TransformText()
         {
-            this.Write("================== PgUp TRANSACTION ");
+            this.Write("\r\n================== PgUp TRANSACTION ");
             this.Write(this.ToStringHelper.ToStringWithCulture(DisplayName));
-            this.Write(" ==================\r\n");
+            this.Write(" \r\n\r\n");
             return this.GenerationEnvironment.ToString();
         }
     }
