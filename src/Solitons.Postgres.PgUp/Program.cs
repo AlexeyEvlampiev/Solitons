@@ -1,11 +1,11 @@
-﻿using System.ComponentModel;
-using System.Diagnostics;
+﻿using System.Reactive;
+using Npgsql;
 using Solitons.CommandLine;
 
 namespace Solitons.Postgres.PgUp;
 
 
-internal class PgUpProgram
+internal class Program
 {
     public const string InitializeProjectCommand = "init|initialize";
     public const string ProjectDirectoryArgumentDescription = "File directory where to initialize the new pgup project.";
@@ -17,17 +17,16 @@ internal class PgUpProgram
 
     static int Main()
     {
-        var program = new PgUpProgram();
         return CliProcessor
             .Setup(config => config
-                .UseCommands(program)
+                .UseCommands<Program>()
                 .UseLogo(Resources.Title))
             .Process();
     }
 
     [CliCommand("deploy")]
     [CliArgument(nameof(projectFile), "PgUp project file.")]
-    public Task<int> Deploy(
+    public static Task<int> Deploy(
         string projectFile,
         [CliOption("--host")] string host,
         [CliOption("--user")] string username,
@@ -47,18 +46,42 @@ internal class PgUpProgram
 
     [CliCommand("deploy")]
     [CliArgument(nameof(projectFile), "PgUp project file.")]
-    public Task<int> Deploy(
+    public static Task<int> Deploy(
         string projectFile,
         [CliOption("--connection")] string connectionString,
-        [CliOption("--parameter|-p")] Dictionary<string, string>? parameters = null,
-        [CliOption("--timeout")] CancellationToken cancellation = default)
+        [CliMapOption("--parameter|-p")] Dictionary<string, string>? parameters = null,
+        [CliOption("--timeout")] TimeSpan? timeout = null)
     {
         return PgUpDeploymentHandler
             .DeployAsync(
                 projectFile,
                 connectionString,
+                false,
+                false,
                 parameters ?? [],
-                cancellation);
+                timeout);
+    }
+
+
+    [CliCommand("deploy")]
+    [CliArgument(nameof(projectFile), "PgUp project file.")]
+    public static  Task<int> Deploy(
+        string projectFile,
+        [CliOption("--connection")] string connectionString,
+        [CliOption("--overwrite")] Unit overwrite,
+        [CliOption("--force")] Unit? forceOverride = null,
+        [CliMapOption("--parameter|-p")] Dictionary<string, string>? parameters = null,
+        [CliOption("--timeout")] TimeSpan? timeout = null)
+    {
+
+        return PgUpDeploymentHandler
+            .DeployAsync(
+                projectFile,
+                connectionString,
+                true,
+                forceOverride.HasValue,
+                parameters ?? [],
+                timeout);
     }
 
 

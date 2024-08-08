@@ -3,25 +3,27 @@ using System.Diagnostics;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
 using Npgsql;
 using Solitons.CommandLine;
 using Solitons.Postgres.PgUp.Models;
+using Solitons.Reactive;
 
 namespace Solitons.Postgres.PgUp;
 
 public sealed class PgUpDeploymentHandler
 {
-    private readonly string _projectFile;
+    private readonly IProject _project;
     private readonly NpgsqlConnectionStringBuilder _connectionStringBuilder;
     private readonly Dictionary<string, string> _parameters;
 
     [DebuggerStepThrough]
     private PgUpDeploymentHandler(
-        string projectFile,
+        IProject project,
         string connectionString,
         Dictionary<string, string> parameters)
     {
-        _projectFile = projectFile;
+        _project = project;
 
         _parameters = parameters
             .GroupBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase)
@@ -41,21 +43,103 @@ public sealed class PgUpDeploymentHandler
     }
 
 
-    private async Task<int> DeployAsync(CancellationToken cancellation)
+    [DebuggerStepThrough]
+    public static async Task<int> DeployAsync(
+        string projectFile,
+        string connectionString,
+        bool overwrite,
+        bool forceOverwrite,
+        Dictionary<string, string> parameters,
+        TimeSpan? timeout)
+    {
+        timeout ??= TimeSpan.FromMinutes(5);
+        var cancellation = new CancellationTokenSource(timeout.Value).Token;
+        var connectionTestTask = Observable
+            .Using(
+                () => new NpgsqlConnection(connectionString),
+                connection => connection
+                    .OpenAsync(cancellation)
+                    .ToObservable())
+            .Catch((ArgumentException e) => Observable.Throw<Unit>(new CliExitException("Invalid connection string")))
+            .Catch((FormatException e) => Observable.Throw<Unit>(new CliExitException("Invalid connection string")))
+            .WithRetryTrigger(trigger => trigger
+                .Where(trigger.Exception is DbException { IsTransient: true })
+                .Where(trigger.AttemptNumber < 100)
+                .Do(() => Console.WriteLine(trigger.Exception.Message))
+                .Do(() => Trace.TraceError(trigger.Exception.ToString()))
+                .Delay(TimeSpan
+                    .FromMilliseconds(100)
+                    .ScaleByFactor(2.0, trigger.AttemptNumber))
+                .Do(() => Trace.TraceInformation($"Connection test retry. Attempt: {trigger.AttemptNumber}")))
+            .Catch(Observable.Throw<Unit>(new CliExitException("Connection failed")))
+            .ToTask(cancellation.WithTimeoutEnforcement(timeout.Value / 100));
+
+        connectionString = new NpgsqlConnectionStringBuilder(connectionString)
+        {
+            ApplicationName = "DbUp",
+            CommandTimeout = Convert.ToInt32(TimeSpan.FromHours(10))
+        }.ConnectionString;
+
+        var loadProjectTask = LoadProjectAsync(projectFile, parameters, cancellation);
+        await Task.WhenAll(loadProjectTask, connectionTestTask);
+        var project = loadProjectTask.Result;
+
+        var builder = new NpgsqlConnectionStringBuilder(connectionString);
+        void Print(string key, string value) => Console.WriteLine(@$"{key}:\t\t\t{value}");
+        Print("Host", builder.Host!);
+        Print("Port", builder.Port.ToString());
+        Print("Database", builder.Database!);
+        Console.WriteLine(@$"Host: {builder.Host}");
+        if (overwrite)
+        {
+            if (false == forceOverwrite)
+            {
+                var confirmed = CliPrompt.GetYesNoAnswer("Sure? [Y/N]");
+                if (!confirmed)
+                {
+                    throw new CliExitException("Operation cancelled by user")
+                    {
+                        ExitCode = 0
+                    };
+                }
+            }
+
+            await Observable
+                .Using(
+                    () => new NpgsqlConnection(connectionString),
+                    connection => Observable.FromAsync(() => connection.ExecuteNonQueryAsync(
+                        "DROP DATABASE IF EXISTS @dbname FORCE", 
+                        cmd => cmd.Parameters.AddWithValue("dbname", project.DatabaseName),
+                        cancellation: cancellation)))
+                .WithRetryTrigger(trigger => trigger
+                    .Where(trigger.Exception is DbException { IsTransient: true })
+                    .Where(trigger.AttemptNumber <= 5)
+                    .Do(() => Console.WriteLine(trigger.Exception.Message))
+                    .Do(() => Trace.TraceError(trigger.Exception.ToString()))
+                    .Delay(TimeSpan
+                        .FromMilliseconds(100)
+                        .ScaleByFactor(2.0, trigger.AttemptNumber))
+                    .Do(() => Trace.TraceInformation($"Connection test retry. Attempt: {trigger.AttemptNumber}")))
+                .ToTask(cancellation.WithTimeoutEnforcement(timeout.Value / 80));
+        }
+
+        var workingDir = new FileInfo(projectFile).Directory ?? new DirectoryInfo(".");
+        Debug.Assert(workingDir.Exists);
+        var instance = new PgUpDeploymentHandler(project, connectionString, parameters);
+        return await instance.DeployAsync(workingDir, cancellation);
+    }
+
+
+    private async Task<int> DeployAsync(
+        DirectoryInfo workingDir, 
+        CancellationToken cancellation)
     {
         try
         {
             cancellation.ThrowIfCancellationRequested();
-            if (File.Exists(_projectFile) == false)
-            {
-                throw new CliExitException("Specified PgUp project file not found.");
-            }
-
-            var project = await LoadProjectAsync(cancellation);
-            var projectFile = new FileInfo(_projectFile);
-
+            
             await Observable
-                .FromAsync(() => CreateDatabaseIfNotExists(project, cancellation))
+                .FromAsync(() => CreateDatabaseIfNotExists(_project, cancellation))
                 .WithRetryTrigger(trigger => trigger
                     .Where(_ => trigger.Exception is DbException { IsTransient: true })
                     .Where(_ => trigger.AttemptNumber < 100)
@@ -65,16 +149,14 @@ public sealed class PgUpDeploymentHandler
                         .ScaleByFactor(2, trigger.AttemptNumber)
                         .Max(TimeSpan.FromSeconds(30))))
                 .Catch(Observable.Throw<Unit>(new CliExitException(
-                    $"Failed to create database {project.DatabaseName}")));
-            await CreateDatabaseIfNotExists(project, cancellation);
+                    $"Failed to create database {_project.DatabaseName}")));
             cancellation.ThrowIfCancellationRequested();
 
-            var workingDir = new DirectoryInfo(projectFile.Directory?.FullName ?? ".");
             var preProcessor = new PgUpScriptPreprocessor(_parameters);
 
-            var pgUpTransactions = project.GetTransactions(workingDir, preProcessor);
+            var pgUpTransactions = _project.GetTransactions(workingDir, preProcessor);
             var connection = new NpgsqlConnection(_connectionStringBuilder
-                .WithDatabase(project.DatabaseName)
+                .WithDatabase(_project.DatabaseName)
                 .ConnectionString);
             using var session = Disposable.Create(connection.Dispose);
 
@@ -139,16 +221,23 @@ public sealed class PgUpDeploymentHandler
         await transaction.CommitAsync(cancellation);
     }
 
-    async Task<IProject> LoadProjectAsync(CancellationToken cancellation)
+    private static async Task<IProject> LoadProjectAsync(
+        string projectFilePath, 
+        Dictionary<string, string> parameters,
+        CancellationToken cancellation)
     {
         cancellation.ThrowIfCancellationRequested();
+        if (false == File.Exists(projectFilePath))
+        {
+            throw new CliExitException("Specified project file not found.");
+        }
         
         try
         {
-            var projectFile = new FileInfo(_projectFile);
+            var projectFile = new FileInfo(projectFilePath);
             Trace.WriteLine($"Project file: {projectFile.FullName}");
             var pgUpJson = await File.ReadAllTextAsync(projectFile.FullName, cancellation);
-            var project = PgUpSerializer.Deserialize(pgUpJson, _parameters);
+            var project = PgUpSerializer.Deserialize(pgUpJson, parameters);
             return project;
         }
         catch (Exception e)
@@ -198,35 +287,8 @@ public sealed class PgUpDeploymentHandler
         Dictionary<string, string> parameters,
         CancellationToken cancellation)
     {
-        
-        string connectionString;
-        try
-        {
-            connectionString = new NpgsqlConnectionStringBuilder()
-                {
-                    Host = host,
-                    Username = username,
-                    Password = password
-                }
-                .ConnectionString;
-        }
-        catch (Exception e)
-        {
-            throw new CliExitException("Invalid connection information.");
-        }
-        
-        var instance = new PgUpDeploymentHandler(projectFile, connectionString, parameters);
-        return instance.DeployAsync(cancellation);
+
+        throw new NotImplementedException();
     }
 
-    [DebuggerStepThrough]
-    public static Task<int> DeployAsync(
-        string projectFile,
-        string connectionString,
-        Dictionary<string, string> parameters,
-        CancellationToken cancellation)
-    {
-        var instance = new PgUpDeploymentHandler(projectFile, connectionString, parameters);
-        return instance.DeployAsync(cancellation);
-    }
 }

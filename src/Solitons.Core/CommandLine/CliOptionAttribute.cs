@@ -25,20 +25,20 @@ public class CliOptionAttribute : Attribute
     /// <summary>
     /// Constructs a CLI option attribute with specified options and an optional description.
     /// </summary>
-    /// <param name="options">A pipe-separated string containing different CLI options.</param>
+    /// <param name="specification">A pipe-separated string containing different CLI options.</param>
     /// <param name="description">A description of what the options do.</param>
     /// <exception cref="ArgumentException">Thrown when the options format is invalid or contains duplicates.</exception>
-    public CliOptionAttribute(string options, string description = "")
+    public CliOptionAttribute(string specification, string description = "")
     {
         // Regex to split the pattern and validate format
         var namePatternMatch = ThrowIf
-            .ArgumentNullOrWhiteSpace(options)
+            .ArgumentNullOrWhiteSpace(specification)
             .Convert(SpecificationRegex.Match);
 
         if (!namePatternMatch.Success)
         {
             throw new ArgumentException("Invalid pattern format. Expected: --option1|--option2|-o|...",
-                nameof(options));
+                nameof(specification));
         }
 
         var names = new HashSet<string>(StringComparer.Ordinal);
@@ -52,12 +52,12 @@ public class CliOptionAttribute : Attribute
             if (false == match.Success)
             {
                 throw new ArgumentException($"Invalid parameter name option: {capture}",
-                    nameof(options));
+                    nameof(specification));
             }
 
             if (!names.Add(value))
             {
-                throw new ArgumentException($"Duplicate option name detected: '{value}'", nameof(options));
+                throw new ArgumentException($"Duplicate option name detected: '{value}'", nameof(specification));
             }
 
             if (capture.Value.StartsWith("--"))
@@ -73,7 +73,7 @@ public class CliOptionAttribute : Attribute
 
         if (longNames.Count == 0 && shortNames.Count == 0)
         {
-            throw new ArgumentException("At least one long or short name must be specified.", nameof(options));
+            throw new ArgumentException("At least one long or short name must be specified.", nameof(specification));
         }
 
 

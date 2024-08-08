@@ -13,4 +13,15 @@ public static class Extensions
             Database = database
         };
     }
+
+    public static async Task<int> ExecuteNonQueryAsync(
+        this NpgsqlConnection connection,
+        string commandText, 
+        Action<NpgsqlCommand> config, 
+        CancellationToken cancellation = default)
+    {
+        await using var command = new NpgsqlCommand(commandText, connection);
+        config.Invoke(command);
+        return await command.ExecuteNonQueryAsync(cancellation);
+    }
 }

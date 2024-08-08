@@ -62,11 +62,11 @@ namespace Solitons.Postgres.PgUp {
         
         /// <summary>
         ///   Looks up a localized string similar to 
-        ///           _                 
-        ///  ___   __| |_ __ _ __ _ ___ 
-        /// |___| (_-|  _/ _` / _` / -_)
-        ///       /__/\__\__,_\__, \___|
-        ///                   |___/     
+        ///               _                 
+        ///  ___ ___   __| |_ __ _ __ _ ___ 
+        /// |___|___| (_-|  _/ _` / _` / -_)
+        ///           /__/\__\__,_\__, \___|
+        ///                       |___/     
         ///.
         /// </summary>
         internal static string PgUpStageAsciiArt {

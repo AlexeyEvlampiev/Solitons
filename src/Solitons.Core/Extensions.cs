@@ -22,6 +22,39 @@ namespace Solitons;
 
 public static partial class Extensions
 {
+    public static CancellationToken WithTimeoutEnforcement(this CancellationToken cancellation, TimeSpan timeout)
+    {
+        var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation,
+            new CancellationTokenSource(timeout).Token);
+        return cts.Token;
+    }
+
+    /// <summary>
+    /// Converts a StringComparison value to its corresponding StringComparer.
+    /// </summary>
+    /// <param name="comparison">The StringComparison enumeration value.</param>
+    /// <returns>The corresponding StringComparer instance.</returns>
+    public static StringComparer ToStringComparer(this StringComparison comparison)
+    {
+        switch (comparison)
+        {
+            case StringComparison.CurrentCulture:
+                return StringComparer.CurrentCulture;
+            case StringComparison.CurrentCultureIgnoreCase:
+                return StringComparer.CurrentCultureIgnoreCase;
+            case StringComparison.InvariantCulture:
+                return StringComparer.InvariantCulture;
+            case StringComparison.InvariantCultureIgnoreCase:
+                return StringComparer.InvariantCultureIgnoreCase;
+            case StringComparison.Ordinal:
+                return StringComparer.Ordinal;
+            case StringComparison.OrdinalIgnoreCase:
+                return StringComparer.OrdinalIgnoreCase;
+            default:
+                throw new ArgumentException("Invalid StringComparison value.");
+        }
+    }
+
     /// <summary>
     /// Creates a task that will complete after a time delay specified by the TimeSpan.
     /// </summary>

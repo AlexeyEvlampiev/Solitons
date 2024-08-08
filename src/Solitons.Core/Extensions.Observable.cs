@@ -15,6 +15,17 @@ namespace Solitons;
 
 public static partial class Extensions
 {
+    public static IObservable<Unit> Where(this IObservable<Unit> observable, bool condition)
+    {
+        return observable.Where(_ => condition);
+    }
+
+    public static IObservable<Unit> Do(this IObservable<Unit> observable, Action action)
+    {
+        action.Invoke();
+        return observable;
+    }
+
     /// <summary>
     /// Creates a new Observable that applies a retry policy to the source Observable.
     /// </summary>

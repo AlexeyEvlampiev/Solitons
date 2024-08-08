@@ -4,10 +4,10 @@ namespace Solitons.CommandLine;
 
 public sealed class CliExitException : Exception
 {
-    public CliExitException(string message, int exitCode = 1) : base(message)
+    public CliExitException(string message) : base(message)
     {
-        ExitCode = exitCode;
+
     }
 
-    public int ExitCode { get; }
+    public int ExitCode { get; init; } = 1;
 }
