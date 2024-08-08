@@ -88,6 +88,11 @@ internal abstract class CliOperandInfo : IFormattable
         {
             customTypeConverter ??= new CliCancellationTokenTypeConverter();
         }
+        else if (ParameterType == typeof(TimeSpan) || 
+                 ParameterType == typeof(TimeSpan?))
+        {
+            customTypeConverter ??= new TimeSpanConverter();
+        }
         Converter = CliOperandTypeConverter.Create(ParameterType, Name, customTypeConverter);
     }
 
