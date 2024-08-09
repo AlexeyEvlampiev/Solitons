@@ -97,6 +97,7 @@ public sealed class PgUpProvider(TimeSpan timeout) : IPgUpProvider
             .Catch((FormatException e) => Exit(e))
             .WithRetryTrigger(trigger => trigger
                 .Where(trigger.Exception is DbException { IsTransient: true })
+                .Where(trigger.ElapsedTimeSinceFirstException < (timeout * 0.01).Min(TimeSpan.FromSeconds(5)))
                 .Do(() => Console.WriteLine(trigger.Exception.Message))
                 .Do(() => Trace.TraceError(trigger.Exception.ToString()))
                 .Delay(TimeSpan
@@ -104,7 +105,8 @@ public sealed class PgUpProvider(TimeSpan timeout) : IPgUpProvider
                     .ScaleByFactor(2.0, trigger.AttemptNumber))
                 .Do(() => Trace.TraceInformation($"Connection test retry. Attempt: {trigger.AttemptNumber}")))
             .Catch(Observable.Throw<Unit>(new CliExitException("Connection failed")))
-            .ToTask(_cancellation.JoinTimeout(timeout * 0.05)); ;
+            .ToTask(_cancellation.JoinTimeout(timeout)); 
+
         IObservable<Unit> Exit(Exception e) => Observable
             .Throw<Unit>(new CliExitException("Invalid connection string"));
     }

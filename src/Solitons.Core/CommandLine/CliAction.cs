@@ -201,9 +201,10 @@ internal sealed class CliAction : IComparable<CliAction>
                 var resultProperty = task.GetType().GetProperty("Result");
                 if (resultProperty != null)
                 {
-                    result = resultProperty.GetValue(task); 
+                    result = resultProperty.GetValue(task);
                 }
             }
+
             _masterOptions.ForEach(bundle => bundle.OnActionExecuted(commandLine));
             if (result is int code)
             {
@@ -214,6 +215,7 @@ internal sealed class CliAction : IComparable<CliAction>
         }
         catch (Exception e)
         {
+            Debug.WriteLine(e.GetType().Name);
             _masterOptions.ForEach(bundle => bundle.OnError(commandLine, e));
             throw;
         }
