@@ -35,7 +35,7 @@ internal class Program
         [CliOption("--parameter|-p")] Dictionary<string, string>? parameters = null,
         [CliOption("--timeout")] CancellationToken cancellation = default)
     {
-        return PgUpDeploymentHandler.DeployAsync(
+        return PgUpManager.DeployAsync(
             projectFile,
             host,
             username, 
@@ -53,7 +53,7 @@ internal class Program
         [CliMapOption("--parameter|-p")] Dictionary<string, string>? parameters = null,
         [CliOption("--timeout")] TimeSpan? timeout = null)
     {
-        return PgUpDeploymentHandler
+        return PgUpManager
             .DeployAsync(
                 projectFile,
                 connectionString,
@@ -75,7 +75,7 @@ internal class Program
         [CliOption("--timeout")] TimeSpan? timeout = null)
     {
 
-        return PgUpDeploymentHandler
+        return PgUpManager
             .DeployAsync(
                 projectFile,
                 connectionString,

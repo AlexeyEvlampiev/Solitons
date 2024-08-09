@@ -7,7 +7,7 @@ internal sealed class PgUpSerializer
     private static readonly Regex ParameterRefRegex = new Regex(@"\${([^\s{}]+)}");
 
 
-    public static IProject Deserialize(
+    public static IPgUpProject Deserialize(
         string pgUpJson, 
         Dictionary<string, string> parameters)
     {

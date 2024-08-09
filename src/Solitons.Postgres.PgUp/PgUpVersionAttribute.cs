@@ -37,7 +37,7 @@ public sealed class PgUpVersionAttribute : Attribute
                     .SingleOrDefault();
                 if (att is null ||
                     att.Verion != version ||
-                    typeof(IProject).IsAssignableFrom(type) == false)
+                    typeof(IPgUpProject).IsAssignableFrom(type) == false)
                 {
                     return [];
                 }
@@ -54,10 +54,10 @@ public sealed class PgUpVersionAttribute : Attribute
             .Single();
     }
 
-    public IProject Deserialize(string pgUpJson)
+    public IPgUpProject Deserialize(string pgUpJson)
     {
-        return (IProject)JsonSerializer.Deserialize(pgUpJson, _type)!;
+        return (IPgUpProject)JsonSerializer.Deserialize(pgUpJson, _type)!;
     }
 
-    public string Serialize(IProject project) => JsonSerializer.Serialize(project);
+    public string Serialize(IPgUpProject project) => JsonSerializer.Serialize(project);
 }

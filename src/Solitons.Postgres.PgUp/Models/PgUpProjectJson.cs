@@ -8,7 +8,7 @@ namespace Solitons.Postgres.PgUp.Models;
 
 [Guid("2654b3b3-7603-453d-a43f-5d288e9491d5")]
 [PgUpVersion("1.0")]
-public sealed class PgUpProjectJson : BasicJsonDataTransferObject, IProject
+public sealed class PgUpProjectJson : BasicJsonDataTransferObject, IPgUpProject
 {
     [JsonPropertyName("parameters")]
     public Dictionary<string, ParameterData> Parameters { get; set; } = new();
@@ -71,7 +71,7 @@ public sealed class PgUpProjectJson : BasicJsonDataTransferObject, IProject
         string IPgUpCustomExecutor.GetCommandText() => CommandText;
     }
 
-    bool IProject.HasDefaultParameterValue(string key, out string value)
+    bool IPgUpProject.HasDefaultParameterValue(string key, out string value)
     {
         if (Parameters.TryGetValue(key, out var data) && 
             data.Default != null)
@@ -115,5 +115,5 @@ public sealed class PgUpProjectJson : BasicJsonDataTransferObject, IProject
     }
 
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-    IEnumerable<string> IProject.ParameterNames => Parameters.Keys;
+    IEnumerable<string> IPgUpProject.ParameterNames => Parameters.Keys;
 }

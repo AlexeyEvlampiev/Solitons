@@ -4,7 +4,7 @@ using System.Diagnostics;
 
 namespace Solitons.Postgres.PgUp;
 
-public interface IProject
+public interface IPgUpProject
 {
     IEnumerable<PgUpTransaction> GetTransactions(
         DirectoryInfo workDir,
@@ -16,7 +16,7 @@ public interface IProject
     bool HasDefaultParameterValue(string key, out string value);
     void SetDefaultParameterValue(string parameterKey, string parameterValue);
 
-    public static async Task<IProject> LoadAsync(
+    public static async Task<IPgUpProject> LoadAsync(
         string projectFilePath,  
         Dictionary<string, string> parameters,
         CancellationToken cancellation = default)
@@ -24,7 +24,7 @@ public interface IProject
         cancellation.ThrowIfCancellationRequested();
         if (false == File.Exists(projectFilePath))
         {
-            throw new CliExitException("PgUp project file does not exist.");
+            throw new CliExitException("Specified PgUp project file does not exist.");
         }
 
         try
