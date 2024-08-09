@@ -15,6 +15,26 @@ public static class Extensions
         };
     }
 
+    public static NpgsqlConnectionStringBuilder WithApplicationName(
+        this NpgsqlConnectionStringBuilder self,
+        string applicationName)
+    {
+        return new NpgsqlConnectionStringBuilder(self.ConnectionString)
+        {
+            ApplicationName = applicationName
+        };
+    }
+
+    public static NpgsqlConnectionStringBuilder WithTimeout(
+        this NpgsqlConnectionStringBuilder self,
+        TimeSpan timeout)
+    {
+        return new NpgsqlConnectionStringBuilder(self.ConnectionString)
+        {
+            Timeout = Convert.ToInt32(timeout.TotalSeconds)
+        };
+    }
+
     [DebuggerStepThrough]
     public static async Task<int> ExecuteNonQueryAsync(
         this NpgsqlConnection connection,

@@ -9,9 +9,10 @@ using Solitons.Postgres.PgUp.Models;
 
 namespace Solitons.Postgres.PgUp;
 
-public sealed class PgUpProvider(TimeSpan timeout) : IPgUpProvider
+public sealed class PgUpSession(TimeSpan timeout) : IPgUpProvider
 {
     private readonly CancellationToken _cancellation = new CancellationTokenSource(timeout).Token;
+
 
     private async Task TestConnectionAsync(string connectionString)
     {

@@ -179,11 +179,6 @@ public sealed class CliProcessor
             Console.Error.WriteLine(e.Message);
             return e.ExitCode;
         }
-        catch (CliHelpRequestedException e) 
-        {
-            ShowHelp(commandLine);
-            return 1;
-        }
         catch (Exception e)
         {
             Trace.TraceError(e.ToString());

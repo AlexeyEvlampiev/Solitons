@@ -40,62 +40,63 @@ public sealed class PgUpManager
         Dictionary<string, string> parameters,
         TimeSpan timeout)
     {
-        IPgUpProvider provider = new PgUpProvider(timeout);
-        var cancellation = new CancellationTokenSource(timeout).Token;
-
-        var builder = new NpgsqlConnectionStringBuilder(connectionString)
+        timeout = timeout.Min(TimeSpan.FromMinutes(1));
+        try
         {
-            ApplicationName = "PgUp",
-            CommandTimeout = Convert.ToInt32(timeout.TotalSeconds)
-        };
+            var builder = IPgUpProvider
+                .ParseConnectionString(connectionString)
+                .WithApplicationName("PgUp")
+                .WithTimeout(timeout);
+            Console.WriteLine(PgUpConnectionDisplayRtt.Build(builder));
+            Console.WriteLine();
 
-        var loadProjectTask = IPgUpProject.LoadAsync(projectFile, parameters, cancellation);
-        await Task.WhenAll(
-            loadProjectTask,
-            provider.TestConnectionAsync(connectionString));
-        var project = loadProjectTask.Result;
+            var project = await IPgUpProject.LoadAsync(projectFile, parameters);
 
-        void Print(string key, string value) => Console.WriteLine($@"{key}:	{value}");
-        Print("Host", builder.Host!);
-        Print("Port", builder.Port.ToString());
-        if (overwrite)
-        {
-            if (false == forceOverwrite)
+            IPgUpProvider provider = new PgUpSession(timeout);
+            await provider.TestConnectionAsync(connectionString);
+
+            
+            if (overwrite)
             {
-                var confirmed = CliPrompt.GetYesNoAnswer("Sure?");
-                if (!confirmed)
+                if (false == forceOverwrite)
                 {
-                    throw new CliExitException("Operation cancelled by user")
+                    var confirmed = CliPrompt.GetYesNoAnswer("Sure?");
+                    if (!confirmed)
                     {
-                        ExitCode = 0
-                    };
+                        throw new CliExitException("Operation cancelled by user")
+                        {
+                            ExitCode = 0
+                        };
+                    }
                 }
+
+                await provider.DropDatabaseIfExistsAsync(connectionString, project.DatabaseName);
             }
 
-            await provider.DropDatabaseIfExistsAsync(connectionString, project.DatabaseName);
+            var workingDir = new FileInfo(projectFile).Directory ?? new DirectoryInfo(".");
+            Debug.Assert(workingDir.Exists);
+            var instance = new PgUpManager(project, provider, builder, parameters);
+            return await instance.DeployAsync(workingDir);
         }
-
-        var workingDir = new FileInfo(projectFile).Directory ?? new DirectoryInfo(".");
-        Debug.Assert(workingDir.Exists);
-        var instance = new PgUpManager(project, provider, builder, parameters);
-        return await instance.DeployAsync(workingDir, cancellation);
+        catch (Exception e) when(e is OperationCanceledException ||
+                                 e is TaskCanceledException ||
+                                 e is TimeoutException)
+        {
+            await Console.Error.WriteLineAsync("Operation cancelled");
+            return 1;
+        }
     }
 
 
     private async Task<int> DeployAsync(
-        DirectoryInfo workingDir,
-        CancellationToken cancellation)
+        DirectoryInfo workingDir)
     {
         try
         {
-            cancellation.ThrowIfCancellationRequested();
-
             await _provider.ProvisionDatabaseAsync(
                 _connectionStringBuilder.ConnectionString,
                 _project.DatabaseName,
                 _project.DatabaseOwner);
-
-            cancellation.ThrowIfCancellationRequested();
 
             var preProcessor = new PgUpScriptPreprocessor(_parameters);
 
@@ -115,7 +116,7 @@ public sealed class PgUpManager
             }
 
         }
-        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        catch (OperationCanceledException)
         {
             throw new CliExitException("PgUp deployment timeout");
         }
