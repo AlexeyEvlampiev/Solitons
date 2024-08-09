@@ -25,6 +25,8 @@ public sealed class PgUpSession(TimeSpan timeout) : IPgUpProvider
         await using var connection = new NpgsqlConnection(connectionString);
         connection.Notice += (_, args) => Console.WriteLine(args.Notice.MessageText);
         var commandText = $"DROP DATABASE IF EXISTS {databaseName} WITH(FORCE);";
+
+        await connection.OpenAsync(_cancellation);
         await connection.ExecuteNonQueryAsync(commandText, _cancellation);
     }
 
