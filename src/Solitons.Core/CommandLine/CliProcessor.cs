@@ -56,21 +56,21 @@ public sealed class CliProcessor
     public interface IOptions
     {
         [DebuggerStepThrough]
-        public sealed IOptions UseCommands<T>(BindingFlags binding = BindingFlags.Static | BindingFlags.Public) => 
-            UseCommands(typeof(T), binding);
+        public sealed IOptions UseCommandsFrom<T>(BindingFlags binding = BindingFlags.Static | BindingFlags.Public) => 
+            UseCommandsFrom(typeof(T), binding);
 
         [DebuggerStepThrough]
-        public sealed IOptions UseCommands(Type declaringType,
+        public sealed IOptions UseCommandsFrom(Type declaringType,
             BindingFlags binding = BindingFlags.Static | BindingFlags.Public) =>
-            UseCommands(declaringType, [], binding);
+            UseCommandsFrom(declaringType, [], binding);
 
         [DebuggerStepThrough]
-        public sealed IOptions UseCommands(object target,
+        public sealed IOptions UseCommandsFrom(object target,
             BindingFlags binding = BindingFlags.Instance | BindingFlags.Public) =>
-            UseCommands(target, [], binding);
+            UseCommandsFrom(target, [], binding);
 
-        IOptions UseCommands(Type declaringType, CliCommandAttribute[] rootCommands, BindingFlags binding = BindingFlags.Static | BindingFlags.Public);
-        IOptions UseCommands(object target, CliCommandAttribute[] rootCommands, BindingFlags binding = BindingFlags.Instance | BindingFlags.Public);
+        IOptions UseCommandsFrom(Type declaringType, CliCommandAttribute[] rootCommands, BindingFlags binding = BindingFlags.Static | BindingFlags.Public);
+        IOptions UseCommandsFrom(object target, CliCommandAttribute[] rootCommands, BindingFlags binding = BindingFlags.Instance | BindingFlags.Public);
         IOptions UseLogo(string asciiHeaderText);
     }
 
@@ -85,7 +85,7 @@ public sealed class CliProcessor
         }
 
         [DebuggerStepThrough]
-        public IOptions UseCommands(
+        public IOptions UseCommandsFrom(
             object target,
             CliCommandAttribute[] rootCommands,
             BindingFlags binding)
@@ -94,7 +94,7 @@ public sealed class CliProcessor
         }
 
         [DebuggerStepThrough]
-        public IOptions UseCommands(
+        public IOptions UseCommandsFrom(
             Type declaringType,
             CliCommandAttribute[] rootCommands,
             BindingFlags binding)

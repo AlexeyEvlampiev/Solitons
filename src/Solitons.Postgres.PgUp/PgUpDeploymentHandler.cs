@@ -48,33 +48,15 @@ public sealed class PgUpDeploymentHandler
         bool overwrite,
         bool forceOverwrite,
         Dictionary<string, string> parameters,
-        TimeSpan? timeout)
+        TimeSpan timeout)
     {
-        timeout ??= TimeSpan.FromMinutes(5);
-        var cancellation = new CancellationTokenSource(timeout.Value).Token;
-        var connectionTestTask = Observable
-            .Using(
-                () => new NpgsqlConnection(connectionString),
-                connection => connection
-                    .OpenAsync(cancellation)
-                    .ToObservable())
-            .Catch((ArgumentException e) => Observable.Throw<Unit>(new CliExitException("Invalid connection string")))
-            .Catch((FormatException e) => Observable.Throw<Unit>(new CliExitException("Invalid connection string")))
-            .WithRetryTrigger(trigger => trigger
-                .Where(trigger.Exception is DbException { IsTransient: true })
-                .Where(trigger.AttemptNumber < 100)
-                .Do(() => Console.WriteLine(trigger.Exception.Message))
-                .Do(() => Trace.TraceError(trigger.Exception.ToString()))
-                .Delay(TimeSpan
-                    .FromMilliseconds(100)
-                    .ScaleByFactor(2.0, trigger.AttemptNumber))
-                .Do(() => Trace.TraceInformation($"Connection test retry. Attempt: {trigger.AttemptNumber}")))
-            .Catch(Observable.Throw<Unit>(new CliExitException("Connection failed")))
-            .ToTask(cancellation.WithTimeoutEnforcement(timeout.Value * 0.05));
+
+        var cancellation = new CancellationTokenSource(timeout).Token;
+        var connectionTestTask = PgUpConnectionTest.TestAsync(connectionString, timeout * 0.1);
 
         connectionString = new NpgsqlConnectionStringBuilder(connectionString)
         {
-            ApplicationName = "DbUp",
+            ApplicationName = "PgUp",
             CommandTimeout = Convert.ToInt32(TimeSpan.FromHours(10).TotalSeconds)
         }.ConnectionString;
 
@@ -119,7 +101,7 @@ public sealed class PgUpDeploymentHandler
                         .FromMilliseconds(100)
                         .ScaleByFactor(2.0, trigger.AttemptNumber))
                     .Do(() => Trace.TraceInformation($"Connection test retry. Attempt: {trigger.AttemptNumber}")))
-                .ToTask(cancellation.WithTimeoutEnforcement(timeout.Value / 80));
+                .ToTask(cancellation.JoinTimeout(timeout / 80));
         }
 
         var workingDir = new FileInfo(projectFile).Directory ?? new DirectoryInfo(".");

@@ -22,7 +22,7 @@ namespace Solitons;
 
 public static partial class Extensions
 {
-    public static CancellationToken WithTimeoutEnforcement(
+    public static CancellationToken JoinTimeout(
         this CancellationToken cancellation, 
         TimeSpan timeout)
     {

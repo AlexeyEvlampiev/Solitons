@@ -3,27 +3,19 @@ using Solitons.Postgres.PgUp.Models;
 
 namespace Solitons.Postgres.PgUp;
 
-public sealed class PgUpCommandBuilder
+public sealed class PgUpCommandBuilder(PgUpCustomExecutorInfo? customExecutorInfo)
 {
-    private readonly PgUpCustomExecutorInfo? _customExecutorInfo;
-
-
-    public PgUpCommandBuilder(PgUpCustomExecutorInfo? customExecutorInfo)
-    {
-        _customExecutorInfo = customExecutorInfo;
-    }
-
     //[DebuggerStepThrough]
     public NpgsqlCommand Build(
         string filePath, 
         string commandText, 
         NpgsqlConnection connection)
     {
-        if (_customExecutorInfo != null)
+        if (customExecutorInfo != null)
         {
-            var command = new NpgsqlCommand(_customExecutorInfo.CommandText, connection);
-            command.Parameters.AddWithValue(_customExecutorInfo.FilePathParameterName, filePath);
-            command.Parameters.AddWithValue(_customExecutorInfo.FileContentParametersName, commandText);
+            var command = new NpgsqlCommand(customExecutorInfo.CommandText, connection);
+            command.Parameters.AddWithValue(customExecutorInfo.FilePathParameterName, filePath);
+            command.Parameters.AddWithValue(customExecutorInfo.FileContentParametersName, commandText);
             return command;
         }
 
