@@ -25,9 +25,8 @@ namespace Solitons.Postgres.PgUp.Formatting
         /// </summary>
         public override string TransformText()
         {
-            this.Write("\r\n======================================================\r\n=== Script: ");
+            this.Write("========= Script: ");
             this.Write(this.ToStringHelper.ToStringWithCulture(_relativePath));
-            this.Write("\r\n======================================================");
             return this.GenerationEnvironment.ToString();
         }
     }
