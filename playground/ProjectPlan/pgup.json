@@ -2,7 +2,7 @@
   "version": "1.0",
   "parameters": {
     "dbPrefix": { "default": "" },
-    "dbName": { "default": "${dbPrefix}mypgupdb" },
+    "dbName": { "default": "${dbPrefix}projectdb" },
     "dbOwner": { "default": "${dbName}" },
     "dbManager": { "default": "${dbName}_manager" },
     "dbManagerPwd": { "default": "postgres" }
