@@ -4,6 +4,11 @@
       "commandName": "Project",
       "commandLineArgs": "deploy pgup.json --connection \"%DEV_POSTGRES_CONNECTION_STRING%\" --timeout 00:10:00"
     },
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": "Ubuntu-20.04",
+      "commandLineArgs": "deploy pgup.json --connection \"%DEV_POSTGRES_CONNECTION_STRING%\" --overwrite --force"
+    },
     "re-deploy .": {
       "commandName": "Project",
       "commandLineArgs": "deploy pgup.json --connection \"%DEV_POSTGRES_CONNECTION_STRING%\" --overwrite --force"

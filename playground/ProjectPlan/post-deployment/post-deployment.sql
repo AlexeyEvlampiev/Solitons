@@ -1,5 +1,7 @@
 
-
+DELETE FROM data.dependency WHERE project_object_id = '00146fbc-0ffc-471e-a6d6-d4b1b671c4d5';
+DELETE FROM data.activity WHERE project_object_id = '00146fbc-0ffc-471e-a6d6-d4b1b671c4d5';
+DELETE FROM data.project WHERE object_id = '00146fbc-0ffc-471e-a6d6-d4b1b671c4d5';
 DO 
 $init$
 DECLARE 
