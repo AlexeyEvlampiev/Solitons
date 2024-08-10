@@ -4,7 +4,7 @@ using Solitons.CommandLine;
 namespace Solitons.Postgres.PgUp;
 
 
-internal class Program
+public class Program
 {
     private static readonly TimeSpan DefaultActionTimeout = TimeSpan.FromMinutes(10);
 
@@ -16,7 +16,7 @@ internal class Program
     private readonly IPgUpTemplateRepository _templates = new PgUpFileSystemTemplateRepository();
 
 
-    static int Main()
+    public static int Main()
     {
         return CliProcessor
             .Setup(config => config
