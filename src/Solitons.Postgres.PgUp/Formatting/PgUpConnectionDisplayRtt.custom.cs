@@ -1,6 +1,6 @@
 ﻿using Npgsql;
 
-namespace Solitons.Postgres.PgUp;
+namespace Solitons.Postgres.PgUp.Formatting;
 
 internal partial class PgUpConnectionDisplayRtt
 {

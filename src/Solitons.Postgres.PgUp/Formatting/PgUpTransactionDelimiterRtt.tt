@@ -4,5 +4,6 @@
 <#@ import namespace="System.Text" #>
 <#@ import namespace="System.Collections.Generic" #>
 
-================== PgUp TRANSACTION <#= DisplayName #> 
-
+==================================================================
+=== PgUp TRANSACTION <#= DisplayName #> 
+==================================================================

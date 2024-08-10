@@ -7,7 +7,7 @@
 //     the code is regenerated.
 // </auto-generated>
 // ------------------------------------------------------------------------------
-namespace Solitons.Postgres.PgUp
+namespace Solitons.Postgres.PgUp.Formatting
 {
     using System.Linq;
     using System.Text;
@@ -18,16 +18,16 @@ namespace Solitons.Postgres.PgUp
     /// Class to produce the template output
     /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.TextTemplating", "17.0.0.0")]
-    internal partial class PgUpTransactionDelimiterRtt : Solitons.Text.RuntimeTextTemplate
+    internal partial class PgUpScriptDisplayRtt : Solitons.Text.RuntimeTextTemplate
     {
         /// <summary>
         /// Create the template output
         /// </summary>
         public override string TransformText()
         {
-            this.Write("\r\n================== PgUp TRANSACTION ");
-            this.Write(this.ToStringHelper.ToStringWithCulture(DisplayName));
-            this.Write(" \r\n\r\n");
+            this.Write("\r\n======================================================\r\n=== Script: ");
+            this.Write(this.ToStringHelper.ToStringWithCulture(_relativePath));
+            this.Write("\r\n======================================================");
             return this.GenerationEnvironment.ToString();
         }
     }

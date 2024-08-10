@@ -1,4 +1,4 @@
-﻿namespace Solitons.Postgres.PgUp;
+﻿namespace Solitons.Postgres.PgUp.Formatting;
 
 internal partial class PgUpTransactionDelimiterRtt
 {
@@ -15,6 +15,6 @@ internal partial class PgUpTransactionDelimiterRtt
     public static void WriteLine(string displayName)
     {
         var rtt = new PgUpTransactionDelimiterRtt(displayName);
-        Console.WriteLine(rtt);
+        Console.WriteLine((object?)rtt);
     }
 }

@@ -5,6 +5,7 @@ using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using Npgsql;
 using Solitons.CommandLine;
+using Solitons.Postgres.PgUp.Formatting;
 using Solitons.Postgres.PgUp.Models;
 
 namespace Solitons.Postgres.PgUp;
@@ -76,7 +77,7 @@ public sealed class PgUpSession(TimeSpan timeout) : IPgUpProvider
             var builder = new PgUpCommandBuilder(stage.CustomExecutorInfo);
             foreach (var script in stage.GetScripts())
             {
-                Console.WriteLine($@"--- {script.RelativePath}");
+                Console.WriteLine(PgUpScriptDisplayRtt.Build(script.RelativePath));
                 if (script.Content.IsNullOrWhiteSpace())
                 {
                     continue;

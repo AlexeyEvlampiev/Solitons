@@ -7,7 +7,7 @@
 //     the code is regenerated.
 // </auto-generated>
 // ------------------------------------------------------------------------------
-namespace Solitons.Postgres.PgUp
+namespace Solitons.Postgres.PgUp.Formatting
 {
     using System.Linq;
     using System.Text;

@@ -18,27 +18,36 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="PgUpConnectionDisplayRtt.cs">
+    <Compile Update="Formatting\PgUpConnectionDisplayRtt.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>PgUpConnectionDisplayRtt.tt</DependentUpon>
+    </Compile>
+    <Compile Update="Formatting\PgUpScriptDisplayRtt.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PgUpScriptDisplayRtt.tt</DependentUpon>
+    </Compile>
+    <Compile Update="Formatting\PgUpTransactionDelimiterRtt.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PgUpTransactionDelimiterRtt.tt</DependentUpon>
     </Compile>
     <Compile Update="PgUpResource.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>PgUpResource.resx</DependentUpon>
     </Compile>
-    <Compile Update="PgUpTransactionDelimiterRtt.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>PgUpTransactionDelimiterRtt.tt</DependentUpon>
-    </Compile>
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="PgUpConnectionDisplayRtt.tt">
+    <None Update="Formatting\PgUpConnectionDisplayRtt.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>
       <LastGenOutput>PgUpConnectionDisplayRtt.cs</LastGenOutput>
+    </None>
+    <None Update="Formatting\PgUpScriptDisplayRtt.tt">
+      <Generator>TextTemplatingFilePreprocessor</Generator>
+      <LastGenOutput>PgUpScriptDisplayRtt.cs</LastGenOutput>
     </None>
     <None Update="Templates\basic\pgup.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -70,7 +79,7 @@
     <None Update="Templates\solitons\setup\setup.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="PgUpTransactionDelimiterRtt.tt">
+    <None Update="Formatting\PgUpTransactionDelimiterRtt.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>
       <LastGenOutput>PgUpTransactionDelimiterRtt.cs</LastGenOutput>
     </None>
