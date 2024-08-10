@@ -7,10 +7,11 @@
 ) INHERITS(system.gc_object);
 
 
+
 CREATE TABLE IF NOT EXISTS data.activity
 (
 	project_object_id uuid NOT NULL REFERENCES data.project(object_id),
-	"id" varchar(150) NOT NULL UNIQUE,
+	"id" varchar(150) NOT NULL,
 	"description" text NOT NULL DEFAULT(''),
 	duration interval NOT NULL,
 	started_on TIMESTAMP WITH TIME ZONE,
@@ -23,10 +24,10 @@ CREATE TABLE IF NOT EXISTS data.activity
 	) STORED,
 	PRIMARY KEY(object_id),
 	UNIQUE(project_object_id, object_id),
+	UNIQUE(project_object_id, "id"),
 	CONSTRAINT non_negative_duration CHECK(duration >= '0 days'::interval),
 	CONSTRAINT completedutc_ge_started_on CHECK(completed_on >= started_on)
 ) INHERITS(system.gc_object);
-
 
 
 CREATE TABLE IF NOT EXISTS data.dependency
@@ -39,6 +40,7 @@ CREATE TABLE IF NOT EXISTS data.dependency
 	FOREIGN KEY(project_object_id, activity_object_id) REFERENCES data.activity(project_object_id, object_id),
 	FOREIGN KEY(project_object_id, precondition_activity_object_id) REFERENCES data.activity(project_object_id, object_id)
 );
+
 
 
 
@@ -96,6 +98,7 @@ $$
 	FROM dependency_thread
 	LIMIT 1000;
 $$ LANGUAGE sql;
+
 
 
 CREATE OR REPLACE VIEW data.vw_dependency_space AS
@@ -160,6 +163,8 @@ CREATE TRIGGER trg_check_circular_dependency
 BEFORE INSERT ON data.dependency
 FOR EACH ROW EXECUTE FUNCTION data.check_circular_dependency();
 
+
+
 CREATE OR REPLACE FUNCTION data.project_metrics(p_project_object_id uuid) RETURNS
 TABLE
 (
@@ -220,6 +225,8 @@ $$ LANGUAGE SQL;
 
 
 
+
+
 CREATE OR REPLACE FUNCTION data.critical_path(p_project_object_id uuid) RETURNS
 TABLE
 (	
@@ -271,7 +278,6 @@ $$
 $$ LANGUAGE SQL;
 
 
-
 CREATE OR REPLACE FUNCTION data.get_dependencies(p_project_object_id uuid) RETURNS
 TABLE
 (
@@ -315,6 +321,7 @@ $$
 $$ LANGUAGE SQL;
 
 
+
 CREATE OR REPLACE VIEW data.vw_activity AS
 SELECT 
 	c_project.id AS project_id,
@@ -322,6 +329,16 @@ SELECT
 	c_activity.id AS "id",
 	c_activity.duration,
 	c_activity.effective_duration,
+	(
+		SELECT ARRAY_AGG(c_precondition_activity)
+		FROM data.dependency AS c_dependency
+		INNER JOIN data.activity AS c_precondition_activity 
+			ON c_precondition_activity.object_id = c_dependency.precondition_activity_object_id
+		WHERE 
+			c_dependency.project_object_id  = c_activity.project_object_id
+		AND c_dependency.activity_object_id = c_activity.object_id
+		AND c_precondition_activity.deleted_on IS NULL
+	) AS preconditions,
 	c_path.cumulative_thread_duration AS commulative_estimate,
 	(c_critical_path.activity_object_id IS NOT NULL) AS is_critical,
 	c_activity.started_on,
@@ -356,7 +373,8 @@ FROM
 	data.critical_path(c_project.object_id) AS c_critical_path
 WHERE	
     c_project.deleted_on IS NULL;
-
+	
+		
 
 
 CREATE OR REPLACE FUNCTION data.graphml_build_project(p_project_object_id uuid)
@@ -469,3 +487,6 @@ FROM
 	data.project_metrics(c_project.object_id) AS c_metrics
 WHERE
 	c_project.deleted_on IS NULL;
+
+
+
