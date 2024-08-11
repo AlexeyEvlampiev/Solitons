@@ -8,15 +8,13 @@ using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Reactive.Disposables;
-using System.Globalization;
 using System.Threading;
 
 namespace Solitons.CommandLine;
 
-internal abstract class CliOperandInfo : IFormattable
+internal abstract class CliOperandInfo
 {
     private readonly MetadataCollection _metadata = new();
-    private readonly object _attribute;
 
     protected CliOperandInfo(
         ICustomAttributeProvider source)
@@ -64,10 +62,7 @@ internal abstract class CliOperandInfo : IFormattable
             throw new InvalidOperationException();
         }
 
-        _attribute = _metadata
-            .Where(m => m is CliOptionAttribute || m is CliArgumentAttribute)
-            .FirstOrDefault(new CliOptionAttribute($"--{Name}".ToLower(), _metadata.Descriptions.FirstOrDefault(Name)));
-
+    
 
         OperandKeyPattern = _metadata
             .OfType<CliOptionAttribute>()
@@ -91,7 +86,7 @@ internal abstract class CliOperandInfo : IFormattable
         else if (ParameterType == typeof(TimeSpan) || 
                  ParameterType == typeof(TimeSpan?))
         {
-            customTypeConverter ??= new TimeSpanConverter();
+            customTypeConverter ??= new MultiFormatTimeSpanConverter();
         }
         Converter = CliOperandTypeConverter.Create(ParameterType, Name, Metadata, customTypeConverter);
     }
@@ -145,39 +140,10 @@ internal abstract class CliOperandInfo : IFormattable
 
     public bool IsOptional { get; }
 
-    protected bool IsArgument => _metadata.Arguments.Any();
 
     internal CliOperandTypeConverter Converter { get; }
 
-    public override string ToString() => ToString("G", CultureInfo.CurrentCulture);
-
-
-    public string ToString(string? format, IFormatProvider? formatProvider)
-    {
-        format = format?
-            .DefaultIfNullOrEmpty("G");
-
-        switch (format?.ToUpperInvariant())
-        {
-            case "G": return Name;
-            case "D": return Description;
-            case "H":
-                {
-                    if (_attribute is CliArgumentAttribute arg)
-                    {
-                        return $"<{arg.ArgumentRole}>".ToUpper();
-                    }
-                    else if (_attribute is CliOptionAttribute options)
-                    {
-                        return options.OptionSpecification;
-                    }
-
-                    throw new InvalidOperationException();
-                }
-            default:
-                throw new FormatException($"The format string '{format}' is not supported.");
-        }
-    }
+    public override string ToString() => Name;
 
 
     protected bool FindValue(Match match, CliTokenSubstitutionPreprocessor preprocessor, out object? value)

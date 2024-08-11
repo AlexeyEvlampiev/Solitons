@@ -25,7 +25,7 @@ public sealed class CliCancellationTokenTypeConverter : TypeConverter
         try
         {
             if (TimeSpan.TryParse(timeoutText, out var timeout) ||
-                HumanizedTimeSpanTypeConverter.TryParse(timeoutText, out timeout))
+                HumanReadableTimeSpanConverter.TryParse(timeoutText, out timeout))
             {
                 // .NET TimeSpan format
                 return new CancellationTokenSource(timeout).Token;
