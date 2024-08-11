@@ -26,7 +26,8 @@ internal sealed class CliMapOperandTypeConverter : CliOperandTypeConverter
         if (!_valueTypeConverter.CanConvertFrom(typeof(string)))
         {
             throw new InvalidOperationException(
-                $"Cannot convert from string to {ValueType}");
+                $"The specified type '{ValueType.FullName}' cannot be converted from a string. " +
+                $"Ensure that a valid type converter is available.");
         }
     }
 
@@ -48,7 +49,7 @@ internal sealed class CliMapOperandTypeConverter : CliOperandTypeConverter
 
         var result = mapOption is null 
             ? (IDictionary)Activator.CreateInstance(dictionaryType)!
-            : (IDictionary)Activator.CreateInstance(dictionaryType, new Object[]{ mapOption.GetComparer() })!;
+            : (IDictionary)Activator.CreateInstance(dictionaryType, mapOption.GetComparer())!;
 
 
         var keyValuePairs = match.Groups[_optionName].Captures;
@@ -60,12 +61,21 @@ internal sealed class CliMapOperandTypeConverter : CliOperandTypeConverter
                 .Convert(s => Regex.Split(s, @"\s+"));
             if (pair.Length != 2)
             {
-                throw new FormatException();
+                throw new CliExitException(
+                    $"The input '{capture.Value}' does not contain a valid key-value pair. " +
+                    $"The issue occurred with the operand '{_optionName}'. Ensure the format is '<key> <value>'."); ;
             }
 
             var (key, valueText) = (pair[0], pair[1]);
             valueText = preprocessor.GetSubstitution(valueText);
             var value = _valueTypeConverter.ConvertFromInvariantString(valueText);
+            if (result.Contains(key) && 
+                false == result[key]!.Equals(value))
+            {
+                throw new CliExitException(
+                    $"Conflicting specification detected for the parameter '{_optionName}'. " +
+                    $"The key '{key}' has multiple conflicting values. Ensure that each key has a unique and consistent value.");
+            }
             result.Add(key, value);
         }
 

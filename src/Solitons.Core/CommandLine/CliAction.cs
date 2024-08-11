@@ -31,10 +31,10 @@ internal sealed class CliAction : IComparable<CliAction>
         CliMasterOptionBundle[] masterOptions)
     {
         _instance = instance;
-        _method = method;
+        _method = ThrowIf.ArgumentNull(method);
         _parameters = method.GetParameters();
         
-        _masterOptions = masterOptions;
+        _masterOptions = ThrowIf.ArgumentNull(masterOptions);
         var attributes = method.GetCustomAttributes().ToArray();
         _commandSegments = attributes
             .SelectMany(attribute =>
@@ -48,7 +48,7 @@ internal sealed class CliAction : IComparable<CliAction>
                 {
                     var targetParameter = _parameters
                         .FirstOrDefault(p => argument.References(p))
-                        ?? throw new InvalidOperationException("Target parameter not found.");
+                        ?? throw new InvalidOperationException($"Target parameter '{argument.ParameterName}' not found in method '{_method.Name}'.");
 
                     var operand = new CliArgumentInfo(targetParameter, this, argument);
                     commandSegments.Add(operand);
@@ -65,7 +65,7 @@ internal sealed class CliAction : IComparable<CliAction>
         {
             if (string.IsNullOrWhiteSpace(pi.Name))
             {
-                throw new InvalidOperationException();
+                throw new InvalidOperationException($"Anonymous parameter in method '{_method.Name}'.");
             }
             
             if (_parameterMetadata.TryGetValue(pi, out var argument))
@@ -119,7 +119,7 @@ internal sealed class CliAction : IComparable<CliAction>
                     return $"<{arg.ArgumentRole.ToUpper()}>";
                 }
 
-                throw new InvalidOperationException();
+                throw new InvalidOperationException("Unsupported command segment encountered.");
             })
             .Where(s => s.IsPrintable())
             .Join(" ");
@@ -143,16 +143,24 @@ internal sealed class CliAction : IComparable<CliAction>
     public bool IsMatch(string commandLine) => _commandExactRegex.IsMatch(commandLine);
     public int Execute(string commandLine, CliTokenSubstitutionPreprocessor preProcessor)
     {
+        commandLine = ThrowIf.ArgumentNullOrWhiteSpace(commandLine);
         var match = _commandExactRegex.Match(commandLine);
         if (match.Success == false)
         {
-            throw new InvalidOperationException();
+            throw new InvalidOperationException($"The command line did not match any known patterns.");
         }
 
         var unrecognizedParameterGroup = CliActionRegexRtt.GetUnmatchedParameterGroup(match);
         if (unrecognizedParameterGroup.Success)
         {
-            throw new NotImplementedException();
+            var csv = unrecognizedParameterGroup
+                .Captures
+                .Select(c => c.Value.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Join(", ");
+            throw new CliExitException(
+                $"The following options are not recognized as valid for the command: {csv}. " +
+                $"Please check the command syntax.");
         }
 
         var args = new object?[_parameters.Length];
@@ -177,12 +185,14 @@ internal sealed class CliAction : IComparable<CliAction>
                 }
                 else
                 {
-                    throw new InvalidOperationException();
+                    throw new InvalidOperationException(
+                        $"Unexpected metadata type for parameter '{parameter.Name}' in method '{_method.Name}'.");
                 }
             }
             else
             {
-                throw new InvalidOperationException();
+                throw new InvalidOperationException(
+                    $"No metadata found for parameter '{parameter.Name}' in method '{_method.Name}'.");
             }
         }
 
@@ -235,28 +245,20 @@ internal sealed class CliAction : IComparable<CliAction>
         var tool = args[0];
         if (File.Exists(tool))
         {
-            tool = System.IO.Path.GetFileName(tool);
+            tool = Path.GetFileName(tool);
         }
 
         var help = CliActionHelpRtt.Build(tool, this);
         Console.WriteLine(help);
     }
 
-    public int Similarity(string commandLine)
-    {
-        throw new NotImplementedException();
-    }
-
 
     public int CompareTo(CliAction? other)
     {
-        ThrowIf.ArgumentNull(other);
+        ThrowIf.ArgumentNull(other, "Cannot compare to a null object.");
         return String.Compare(FullPath, other?.FullPath, StringComparison.OrdinalIgnoreCase);
     }
 
-    public static bool IsAction(MethodInfo method) => method
-        .GetCustomAttributes<CliCommandAttribute>()
-        .Any();
 
     internal int IndexOf(ICliCommandSegment segment) => Array.IndexOf(_commandSegments, segment);
 
