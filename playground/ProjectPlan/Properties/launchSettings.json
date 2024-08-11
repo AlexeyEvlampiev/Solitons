@@ -2,16 +2,16 @@
   "profiles": {
     "deploy .": {
       "commandName": "Project",
-      "commandLineArgs": "deploy pgup.json --connection \"%DEV_POSTGRES_CONNECTION_STRING%\" --timeout 00:10:00"
+      "commandLineArgs": "deploy pgup.json --connection \"%DEV_POSTGRES_CONNECTION_STRING%\" --timeout 00:10:00 -p.dbManagerPwd postgres"
+    },
+    "re-deploy .": {
+      "commandName": "Project",
+      "commandLineArgs": "deploy pgup.json --connection \"%DEV_POSTGRES_CONNECTION_STRING%\" --overwrite --force -p.dbManagerPwd postgres"
     },
     "WSL": {
       "commandName": "WSL2",
       "distributionName": "Ubuntu-20.04",
-      "commandLineArgs": "deploy pgup.json --connection \"%DEV_POSTGRES_CONNECTION_STRING%\" --overwrite --force"
-    },
-    "re-deploy .": {
-      "commandName": "Project",
-      "commandLineArgs": "deploy pgup.json --connection \"%DEV_POSTGRES_CONNECTION_STRING%\" --overwrite --force"
+      "commandLineArgs": "deploy pgup.json --connection \"%DEV_POSTGRES_CONNECTION_STRING%\" --overwrite --force -p.dbManagerPwd postgres"
     }
   }
 }

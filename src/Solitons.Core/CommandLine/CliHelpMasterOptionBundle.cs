@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Reactive;
+﻿using System.Reactive;
 
 namespace Solitons.CommandLine;
 

@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Reflection;
 
-namespace Solitons.CommandLine.ZapCli;
+namespace Solitons.CommandLine;
 
 public interface IClParameterTypeConstraint
 {

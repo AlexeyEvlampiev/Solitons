@@ -1,2 +1,0 @@
-﻿namespace Solitons.CommandLine.ZapCli;
-

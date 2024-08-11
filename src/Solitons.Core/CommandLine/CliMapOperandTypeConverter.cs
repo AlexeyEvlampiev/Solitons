@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
@@ -9,14 +10,17 @@ namespace Solitons.CommandLine;
 internal sealed class CliMapOperandTypeConverter : CliOperandTypeConverter
 {
     private readonly string _optionName;
+    private readonly IReadOnlyList<object> _metadata;
     private readonly TypeConverter _valueTypeConverter;
 
     public CliMapOperandTypeConverter(
         Type type,
         string optionName,
+        IReadOnlyList<object> metadata,
         TypeConverter? customTypeConverter) : base(true)
     {
         _optionName = optionName;
+        _metadata = metadata;
         ValueType = type.GetGenericArguments()[1];
         _valueTypeConverter = customTypeConverter ?? TypeDescriptor.GetConverter(ValueType);
         if (!_valueTypeConverter.CanConvertFrom(typeof(string)))
@@ -40,7 +44,12 @@ internal sealed class CliMapOperandTypeConverter : CliOperandTypeConverter
     protected override object Convert(Match match, CliTokenSubstitutionPreprocessor preprocessor)
     {
         var dictionaryType = typeof(Dictionary<,>).MakeGenericType(typeof(string), ValueType);
-        var result = (IDictionary)Activator.CreateInstance(dictionaryType)!;
+        ICliMapOption? mapOption = _metadata.OfType<ICliMapOption>().FirstOrDefault();
+
+        var result = mapOption is null 
+            ? (IDictionary)Activator.CreateInstance(dictionaryType)!
+            : (IDictionary)Activator.CreateInstance(dictionaryType, new Object[]{ mapOption.GetComparer() })!;
+
 
         var keyValuePairs = match.Groups[_optionName].Captures;
         foreach (Capture capture in keyValuePairs)

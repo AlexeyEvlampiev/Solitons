@@ -35,7 +35,16 @@ internal sealed class CliScalarOperandTypeConverter : CliOperandTypeConverter
     protected override object Convert(Match match, CliTokenSubstitutionPreprocessor preprocessor)
     {
         // Retrieve the value from the match using the parameter name
-        var valueString = match.Groups[_parameterName].Value;
+        if (false == match.Success)
+        {
+            throw new ArgumentException();
+        }
+        var group = match.Groups[_parameterName];
+        if (false == group.Success)
+        {
+            throw new InvalidOperationException();
+        }
+        var valueString = group.Value;
 
         if (string.IsNullOrEmpty(valueString))
         {

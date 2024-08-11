@@ -32,7 +32,7 @@ public class Program
         [CliOption("--host")] string host,
         [CliOption("--user")] string username,
         [CliOption("--password")] string password,
-        [CliOption("--parameter|-p")] Dictionary<string, string>? parameters = null,
+        [PgUpParametersOption] Dictionary<string, string>? parameters = null,
         [CliOption("--timeout")] CancellationToken cancellation = default)
     {
         return PgUpManager.DeployAsync(
@@ -50,7 +50,7 @@ public class Program
     public static Task<int> DeployAsync(
         string projectFile,
         [CliOption("--connection")] string connectionString,
-        [CliMapOption("--parameter|-p")] Dictionary<string, string>? parameters = null,
+        [PgUpParametersOption] Dictionary<string, string>? parameters = null,
         [CliOption("--timeout")] TimeSpan? timeout = null)
     {
         return PgUpManager
@@ -71,7 +71,7 @@ public class Program
         [CliOption("--connection")] string connectionString,
         [CliOption("--overwrite")] Unit overwrite,
         [CliOption("--force")] Unit? forceOverride = null,
-        [CliMapOption("--parameter|-p")] Dictionary<string, string>? parameters = null,
+        [PgUpParametersOption] Dictionary<string, string>? parameters = null,
         [CliOption("--timeout")] TimeSpan? timeout = null)
     {
 
@@ -83,5 +83,15 @@ public class Program
                 forceOverride.HasValue,
                 parameters ?? [],
                 timeout ?? DefaultActionTimeout);
+    }
+
+    sealed class PgUpParametersOptionAttribute : CliOptionAttribute, ICliMapOption
+    {
+        public PgUpParametersOptionAttribute() 
+            : base("--parameter|-p", "PgUp parameters to be substituted in all scripts")
+        {
+        }
+
+        public StringComparer GetComparer() => StringComparer.OrdinalIgnoreCase;
     }
 }

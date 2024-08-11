@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
@@ -8,6 +10,7 @@ internal abstract class CliOperandTypeConverter(bool allowsMultipleValues)
 {
     public bool AllowsMultipleValues { get;  } = allowsMultipleValues;
 
+    [DebuggerStepThrough]
     public object FromMatch(
         Match match,
         CliTokenSubstitutionPreprocessor preprocessor)
@@ -32,6 +35,7 @@ internal abstract class CliOperandTypeConverter(bool allowsMultipleValues)
     public static CliOperandTypeConverter Create(
         Type type, 
         string parameterType, 
+        IReadOnlyList<object> metadata,
         TypeConverter? customTypeConverter)
     {
         if (CliFlagOperandTypeConverter.IsFlag(type))
@@ -46,7 +50,7 @@ internal abstract class CliOperandTypeConverter(bool allowsMultipleValues)
 
         if (CliMapOperandTypeConverter.IsMap(type))
         {
-            return new CliMapOperandTypeConverter(type, parameterType, customTypeConverter);
+            return new CliMapOperandTypeConverter(type, parameterType, metadata, customTypeConverter);
         }
 
         //TODO: if type is Dictionary<string, T> return CliMapOperandTypeConverter

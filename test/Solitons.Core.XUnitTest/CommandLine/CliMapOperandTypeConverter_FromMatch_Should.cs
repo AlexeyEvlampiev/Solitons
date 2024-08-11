@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Xunit;
@@ -14,7 +15,7 @@ public sealed class CliMapOperandTypeConverter_FromMatch_Should
     public void HandleIntValues(string input, string key, int expectedValue)
     {
         input = CliTokenSubstitutionPreprocessor.SubstituteTokens(input, out var preprocessor);
-        var target = new CliMapOperandTypeConverter(typeof(Dictionary<string, int>), "test", null);
+        var target = new CliMapOperandTypeConverter(typeof(Dictionary<string, int>), "test", Array.Empty<object>(), null);
         var pattern = target.ToMatchPattern("--map");
         var match = Regex.Match(input, pattern);
         var map = (IDictionary)target.FromMatch(match, preprocessor);

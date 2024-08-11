@@ -93,7 +93,7 @@ internal abstract class CliOperandInfo : IFormattable
         {
             customTypeConverter ??= new TimeSpanConverter();
         }
-        Converter = CliOperandTypeConverter.Create(ParameterType, Name, customTypeConverter);
+        Converter = CliOperandTypeConverter.Create(ParameterType, Name, Metadata, customTypeConverter);
     }
 
 
