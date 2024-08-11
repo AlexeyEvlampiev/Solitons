@@ -19,7 +19,6 @@ internal sealed class CliAction : IComparable<CliAction>
 
     private readonly ICliCommandSegment[] _commandSegments;
     private readonly List<CliOperandInfo> _operands = new();
-    private readonly CliOptionBundle[] _bundles;
     private readonly ParameterInfo[] _parameters;
     private readonly Dictionary<ParameterInfo, object> _parameterMetadata = new();
     private readonly Regex _commandExactRegex;
