@@ -11,6 +11,7 @@ public class CliProcessor_Should
     [InlineData("test-cli -?", 0, 1)]
     [InlineData("test-cli -h", 0, 1)]
     [InlineData("test-cli --help", 0, 1)]
+    [InlineData("test-cli run --help", 0, 1)]
     [InlineData("test-cli run", 0, 0)]
     public void Work(string commandLine, int expectedExitCode, int showHelpCalledCount)
     {
