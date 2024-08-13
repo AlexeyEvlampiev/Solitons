@@ -4,7 +4,8 @@ using Xunit;
 
 namespace Solitons.CommandLine;
 
-public class CliProcessor_Should
+// ReSharper disable once InconsistentNaming
+public class CliProcessor_Process_Should
 {
     [Theory]
     [InlineData("test-cli", 1, 1)]
@@ -13,7 +14,7 @@ public class CliProcessor_Should
     [InlineData("test-cli --help", 0, 1)]
     [InlineData("test-cli run --help", 0, 1)]
     [InlineData("test-cli run", 0, 0)]
-    public void Work(string commandLine, int expectedExitCode, int showHelpCalledCount)
+    public void RespondToHelpFlag(string commandLine, int expectedExitCode, int showHelpCalledCount)
     {
         var callback = new Mock<ICliProcessorCallback>();
         
@@ -35,9 +36,34 @@ public class CliProcessor_Should
         Assert.Equal(expectedExitCode, exitCode);
     }
 
-    [CliCommand("run")]
-    public void TestAction()
+    [Theory]
+    [InlineData(1,1, 2)]
+    [InlineData(1, 100, 101)]
+    public void ReturnActionExitCode(int a, int b, int expectedSum)
     {
+        var processor = CliProcessor
+            .Setup(options => options
+                .UseCommandsFrom(this));
+        var sum = processor.Process($"tool sum {a} {b}");
+        Assert.Equal(expectedSum, sum);
 
+        sum = processor.Process($"tool sum -a {a} -b {b}");
+        Assert.Equal(expectedSum, sum);
     }
+
+    [CliCommand("run")]
+    public void VoidAction()
+    {
+    }
+
+    [CliCommand("sum")]
+    [CliArgument(nameof(a), "param a")]
+    [CliArgument(nameof(b), "param b")]
+    public int SumActionUsingArguments(int a, int b) => a + b;
+
+    [CliCommand("sum")]
+    public int SumActionUsingOptions(
+        [CliOption("-a")]int a,
+        [CliOption("-b")] int b) => a + b;
+
 }

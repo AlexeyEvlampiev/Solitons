@@ -6,7 +6,7 @@ namespace Solitons.CommandLine;
 /// <summary>
 /// Attribute to reference a parameter of the target method, describing its purpose and usage in CLI commands.
 /// </summary>
-[AttributeUsage(AttributeTargets.Method)]
+[AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
 public sealed class CliArgumentAttribute : Attribute
 {
     /// <summary>
