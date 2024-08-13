@@ -4,7 +4,7 @@ using Solitons.Postgres.PgUp.Models;
 
 namespace Solitons.Postgres.PgUp;
 
-public interface IPgUpProvider
+public interface IPgUpSession
 {
     Task TestConnectionAsync(string connectionString);
 
@@ -20,17 +20,4 @@ public interface IPgUpProvider
     Task ExecuteAsync(
         PgUpTransaction pgUpTransaction,
         string connectionString);
-
-    public static NpgsqlConnectionStringBuilder ParseConnectionString(
-        string connectionString)
-    {
-        try
-        {
-            return new NpgsqlConnectionStringBuilder(connectionString);
-        }
-        catch (Exception e)
-        {
-            throw new CliExitException("Invalid connection string.");
-        }
-    }
 }

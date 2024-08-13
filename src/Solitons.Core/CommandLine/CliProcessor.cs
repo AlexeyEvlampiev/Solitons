@@ -6,7 +6,7 @@ using System.Reflection;
 
 namespace Solitons.CommandLine;
 
-public sealed class CliProcessor
+public sealed class CliProcessor : ICliProcessorCallback
 {
     private sealed record Source(
         Type DeclaringType,
@@ -16,12 +16,15 @@ public sealed class CliProcessor
 
     private readonly List<Source> _sources = new();
     private readonly CliAction[] _actions;
-    private string _logo = String.Empty;
+    private ICliProcessorCallback _callback;
+    private string _logo;
 
 
-
-    private CliProcessor(Action<IOptions> config)
+    private CliProcessor(
+        Action<IOptions> config,
+        ICliProcessorCallback? callback = null)
     {
+        _callback = callback ?? this;
         var masterOptionBundles = new CliMasterOptionBundle[]
         {
             new CliHelpMasterOptionBundle(),
@@ -52,7 +55,6 @@ public sealed class CliProcessor
         _actions = actions.ToArray();
     }
 
-    
     public interface IOptions
     {
         [DebuggerStepThrough]
@@ -72,6 +74,7 @@ public sealed class CliProcessor
         IOptions UseCommandsFrom(Type declaringType, CliCommandAttribute[] rootCommands, BindingFlags binding = BindingFlags.Static | BindingFlags.Public);
         IOptions UseCommandsFrom(object target, CliCommandAttribute[] rootCommands, BindingFlags binding = BindingFlags.Instance | BindingFlags.Public);
         IOptions UseLogo(string asciiHeaderText);
+        internal IOptions UseCallback(ICliProcessorCallback callback);
     }
 
 
@@ -126,6 +129,12 @@ public sealed class CliProcessor
             _processor._logo = text;
             return this;
         }
+
+        public IOptions UseCallback(ICliProcessorCallback callback)
+        {
+            _processor._callback = callback;
+            return this;
+        }
     }
 
     [DebuggerStepThrough]
@@ -144,7 +153,7 @@ public sealed class CliProcessor
 
             if (CliHelpOptionAttribute.IsMatch(commandLine))
             {
-                ShowHelp(commandLine);
+                _callback.ShowHelp(commandLine);
                 return 0;
             }
 
@@ -160,7 +169,7 @@ public sealed class CliProcessor
             if (selectedActions.Count != 1)
             {
                 Console.WriteLine("No matching commands found. See closest commands description below. ");
-                ShowHelp(commandLine);
+                _callback.ShowHelp(commandLine);
                 return 1;
             }
 
@@ -187,7 +196,7 @@ public sealed class CliProcessor
 
     }
 
-    public void ShowHelp(string commandLine)
+    void ICliProcessorCallback.ShowHelp(string commandLine)
     {
         var anyMatchesFound = _actions.Any(a => a.IsMatch(commandLine));
         _actions

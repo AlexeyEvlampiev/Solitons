@@ -1,26 +1,28 @@
 ﻿using System.Diagnostics;
+using System.Reactive.Linq;
 using Npgsql;
 using Solitons.CommandLine;
 using Solitons.Postgres.PgUp.Formatting;
+using Solitons.Reactive;
 
 namespace Solitons.Postgres.PgUp;
 
 public sealed class PgUpManager
 {
     private readonly IPgUpProject _project;
-    private readonly IPgUpProvider _provider;
+    private readonly IPgUpSession _session;
     private readonly NpgsqlConnectionStringBuilder _connectionStringBuilder;
     private readonly Dictionary<string, string> _parameters;
 
     [DebuggerStepThrough]
     private PgUpManager(
         IPgUpProject project,
-        IPgUpProvider provider,
+        IPgUpSession session,
         NpgsqlConnectionStringBuilder connectionStringBuilder,
         Dictionary<string, string> parameters)
     {
         _project = project;
-        _provider = provider;
+        _session = session;
 
         _parameters = parameters
             .GroupBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase)
@@ -41,20 +43,28 @@ public sealed class PgUpManager
         Dictionary<string, string> parameters,
         TimeSpan timeout)
     {
-        timeout = timeout.Min(TimeSpan.FromMinutes(1));
+        timeout = timeout
+            .Min(TimeSpan.FromSeconds(30))
+            .Max(TimeSpan.FromHours(24));
+
+        var builder = await FluentObservable
+            .Defer(() => NpgsqlConnectionStringParser.Parse(connectionString))
+            .Do(builder =>
+            {
+                builder.ApplicationName = "PgUp";
+                builder.Timeout = Convert.ToInt32(timeout.TotalSeconds);
+                using var _ = new NpgsqlConnection(builder.ConnectionString);
+            })
+            .CatchAndThrow(e => new CliExitException("Invalid connection string."));
+        
+        Console.WriteLine(PgUpConnectionDisplayRtt.Build(builder));
+        Console.WriteLine();
+
         try
         {
-            var builder = IPgUpProvider
-                .ParseConnectionString(connectionString)
-                .WithApplicationName("PgUp")
-                .WithTimeout(timeout);
-            Console.WriteLine(PgUpConnectionDisplayRtt.Build(builder));
-            Console.WriteLine();
-
             var project = await IPgUpProject.LoadAsync(projectFile, parameters);
-
-            IPgUpProvider provider = new PgUpSession(timeout);
-            await provider.TestConnectionAsync(connectionString);
+            IPgUpSession session = new PgUpSession(timeout);
+            await session.TestConnectionAsync(connectionString);
 
             
             if (overwrite)
@@ -71,12 +81,12 @@ public sealed class PgUpManager
                     }
                 }
 
-                await provider.DropDatabaseIfExistsAsync(connectionString, project.DatabaseName);
+                await session.DropDatabaseIfExistsAsync(connectionString, project.DatabaseName);
             }
 
             var workingDir = new FileInfo(projectFile).Directory ?? new DirectoryInfo(".");
             Debug.Assert(workingDir.Exists);
-            var instance = new PgUpManager(project, provider, builder, parameters);
+            var instance = new PgUpManager(project, session, builder, parameters);
             return await instance.DeployAsync(workingDir);
         }
         catch (Exception e) when(e is OperationCanceledException ||
@@ -94,7 +104,7 @@ public sealed class PgUpManager
     {
         try
         {
-            await _provider.ProvisionDatabaseAsync(
+            await _session.ProvisionDatabaseAsync(
                 _connectionStringBuilder.ConnectionString,
                 _project.DatabaseName,
                 _project.DatabaseOwner);
@@ -113,7 +123,7 @@ public sealed class PgUpManager
                 transactionCounter++;
                 var transactionDisplayName = pgUpTrx.DisplayName.DefaultIfNullOrWhiteSpace(transactionCounter.ToString);
                 PgUpTransactionDelimiterRtt.WriteLine(transactionDisplayName);
-                await _provider.ExecuteAsync(pgUpTrx, connectionString);
+                await _session.ExecuteAsync(pgUpTrx, connectionString);
             }
 
         }
@@ -123,8 +133,7 @@ public sealed class PgUpManager
         }
         catch (NpgsqlException e)
         {
-            await Console.Error.WriteLineAsync(e.Message);
-            return -1;
+            throw new CliExitException(e.Message);
         }
 
         return 0;

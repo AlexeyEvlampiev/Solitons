@@ -14,6 +14,8 @@ namespace Solitons.Reactive;
 /// </summary>
 public static partial class FluentObservable
 {
+    public static IObservable<T> Defer<T>(Func<T> factory) =>
+        Observable.Defer(() => Observable.Return(factory.Invoke()));
     /// <summary>
     /// Creates an observable sequence that completes after a specified relative due time.
     /// </summary>

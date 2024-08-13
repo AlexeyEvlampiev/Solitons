@@ -15,6 +15,11 @@ namespace Solitons;
 
 public static partial class Extensions
 {
+    public static IObservable<T> CatchAndThrow<T>(this IObservable<T> observable, Func<Exception, Exception> factory)
+    {
+        return observable.Catch<T, Exception>(ex => Observable.Throw<T>(factory(ex)));
+    }
+
     public static IObservable<Unit> Where(this IObservable<Unit> observable, bool condition)
     {
         return observable.Where(_ => condition);

@@ -10,7 +10,7 @@ using Solitons.Postgres.PgUp.Models;
 
 namespace Solitons.Postgres.PgUp;
 
-public sealed class PgUpSession(TimeSpan timeout) : IPgUpProvider
+public sealed class PgUpSession(TimeSpan timeout) : IPgUpSession
 {
     private readonly CancellationToken _cancellation = new CancellationTokenSource(timeout).Token;
 
@@ -92,7 +92,7 @@ public sealed class PgUpSession(TimeSpan timeout) : IPgUpProvider
 
 
     [DebuggerStepThrough]
-    Task IPgUpProvider.TestConnectionAsync(string connectionString)
+    Task IPgUpSession.TestConnectionAsync(string connectionString)
     {
         _cancellation.ThrowIfCancellationRequested();
         return Observable
@@ -116,7 +116,7 @@ public sealed class PgUpSession(TimeSpan timeout) : IPgUpProvider
     }
 
     [DebuggerStepThrough]
-    Task IPgUpProvider.DropDatabaseIfExistsAsync(string connectionString, string databaseName)
+    Task IPgUpSession.DropDatabaseIfExistsAsync(string connectionString, string databaseName)
     {
         _cancellation.ThrowIfCancellationRequested();
         return Observable
@@ -134,7 +134,7 @@ public sealed class PgUpSession(TimeSpan timeout) : IPgUpProvider
     }
 
     [DebuggerStepThrough]
-    Task IPgUpProvider.ProvisionDatabaseAsync(
+    Task IPgUpSession.ProvisionDatabaseAsync(
         string connectionString,
         string databaseName,
         string databaseOwner)
@@ -155,7 +155,7 @@ public sealed class PgUpSession(TimeSpan timeout) : IPgUpProvider
     }
 
     [DebuggerStepThrough]
-    Task IPgUpProvider.ExecuteAsync(
+    Task IPgUpSession.ExecuteAsync(
         PgUpTransaction pgUpTransaction,
         string connectionString)
     {
