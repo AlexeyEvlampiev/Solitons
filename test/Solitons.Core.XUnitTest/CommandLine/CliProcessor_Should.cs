@@ -14,10 +14,14 @@ public class CliProcessor_Should
             .Setup(options => options
                 .UseCommandsFrom(this)
                 .UseCallback(callback.Object));
+
         int exitCode = processor.Process("tool");
         callback.Verify(m => m.ShowHelp("tool"), Times.Once);
         Assert.Equal(1, exitCode);
-        
+
+        exitCode = processor.Process("tool -?");
+        callback.Verify(m => m.ShowHelp("tool"), Times.Once);
+        Assert.Equal(0, exitCode);
     }
 
     [CliCommand("test")]
