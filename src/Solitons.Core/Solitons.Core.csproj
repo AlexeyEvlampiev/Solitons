@@ -108,11 +108,6 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>CliHelpRtt.tt</DependentUpon>
     </Compile>
-    <Compile Update="CommandLine\ZapCli\ZapCliPropertyBundleRegexRtt.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>ZapCliPropertyBundleRegexRtt.tt</DependentUpon>
-    </Compile>
     <Compile Update="Common\Azure\ResourceManager\AutoScaleSettingsRtt.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -162,10 +157,6 @@
     <None Update="CommandLine\CliHelpRtt.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>
       <LastGenOutput>CliHelpRtt.cs</LastGenOutput>
-    </None>
-    <None Update="CommandLine\ZapCli\ZapCliPropertyBundleRegexRtt.tt">
-      <Generator>TextTemplatingFilePreprocessor</Generator>
-      <LastGenOutput>ZapCliPropertyBundleRegexRtt.cs</LastGenOutput>
     </None>
     <None Update="Common\Azure\ResourceManager\AutoScaleSettingsRtt.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>

@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
 using System.Linq;
-using Solitons.CommandLine.ZapCli;
 
 namespace Solitons.CommandLine;
 
