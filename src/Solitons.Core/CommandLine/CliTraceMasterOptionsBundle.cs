@@ -21,7 +21,7 @@ internal sealed class CliTraceMasterOptionsBundle : CliMasterOptionBundle
 
         if (TraceLevel != TraceLevel.Off)
         {
-            Trace.Listeners.Add(new ZapCliTraceListener(TraceLevel));
+            Trace.Listeners.Add(new CliTraceListener(TraceLevel));
         }
     }
 }

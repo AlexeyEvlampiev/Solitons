@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace Solitons.CommandLine.ZapCli;
+namespace Solitons.CommandLine;
 
-internal class ZapCliTraceListener : TraceListener
+internal class CliTraceListener : TraceListener
 {
     private readonly TraceLevel _level;
 
-    public ZapCliTraceListener(TraceLevel level)
+    public CliTraceListener(TraceLevel level)
     {
         _level = level;
     }
