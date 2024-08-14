@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Moq;
 using Xunit;
 
@@ -51,6 +52,16 @@ public class CliProcessor_Process_Should
         Assert.Equal(expectedSum, sum);
     }
 
+    [Fact]
+    public void HandleMapOptions()
+    {
+        var exitCode = CliProcessor
+            .Setup(options => options
+                .UseCommandsFrom(this))
+            .Process("tool use maps -cs.a 1 -ci[b] 2");
+        Assert.Equal(0, exitCode);
+    }
+
     [CliCommand("run")]
     public void VoidAction()
     {
@@ -66,4 +77,20 @@ public class CliProcessor_Process_Should
         [CliOption("-a")]int a,
         [CliOption("-b")] int b) => a + b;
 
+    [CliCommand("use maps")]
+    public int UseMaps(
+        [CliOption("-cs")]Dictionary<string, int> defaultMap,
+        [CliCaseInsensitiveMapOption("-ci")] Dictionary<string, int> customizedMap)
+    {
+        var defaultComparer = new Dictionary<string, int>().Comparer;
+        Assert.True(defaultMap.Comparer.Equals(defaultComparer));
+        Assert.True(customizedMap.Comparer.Equals(StringComparer.OrdinalIgnoreCase));
+        return 0;
+    }
+
+    sealed class CliCaseInsensitiveMapOptionAttribute(string specification, string description = "")
+        : CliOptionAttribute(specification, description), ICliMapOption
+    {
+        public StringComparer GetComparer() => StringComparer.OrdinalIgnoreCase;
+    }
 }

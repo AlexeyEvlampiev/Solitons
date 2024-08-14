@@ -78,7 +78,11 @@ internal abstract class CliOperandInfo
             .Where(type => type != null)
             .Select(Activator.CreateInstance!)
             .OfType<TypeConverter>()
-            .FirstOrDefault();
+            .FirstOrDefault() ?? CustomAttributes
+            .OfType<CliOptionAttribute>()
+            .Select(a => a.GetCustomTypeConverter())
+            .FirstOrDefault(c => c is not null);
+
         if (ParameterType == typeof(CancellationToken))
         {
             customTypeConverter ??= new CliCancellationTokenTypeConverter();

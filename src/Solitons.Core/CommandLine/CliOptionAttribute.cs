@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -121,6 +122,7 @@ public class CliOptionAttribute : Attribute
     /// </summary>
     public IReadOnlyList<string> LongOptionNames { get; }
 
+    public virtual TypeConverter? GetCustomTypeConverter() => null;
 
     /// <summary>
     /// Returns a string representation of the option specification.
