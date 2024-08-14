@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Solitons.CommandLine.ZapCli;
 
 namespace Solitons.CommandLine;
 
@@ -18,7 +17,7 @@ internal partial class CliActionRegexRtt
 
 
     //[DebuggerNonUserCode]
-    private CliActionRegexRtt(CliAction action, ZapCliActionRegexRttMode mode)
+    private CliActionRegexRtt(CliAction action, CliActionRegexRttMode mode)
     {
         Mode = mode;
         _action = action;
@@ -45,7 +44,7 @@ internal partial class CliActionRegexRtt
 
 
 
-    internal static string Build(CliAction action, ZapCliActionRegexRttMode mode) => new CliActionRegexRtt(action, mode)
+    internal static string Build(CliAction action, CliActionRegexRttMode mode) => new CliActionRegexRtt(action, mode)
         .ToString()
 #if DEBUG
         .Convert(p => Regex.Replace(p, @"((?<=\n)[^\S\n]+\n+)+", ""))
@@ -53,14 +52,14 @@ internal partial class CliActionRegexRtt
         .Trim();
 
 
-    internal ZapCliActionRegexRttMode Mode { get; }
+    internal CliActionRegexRttMode Mode { get; }
 
     private IEnumerable<ICliCommandSegment> CommandSegments { get; }
 
     private IEnumerable<CliSubCommand> SubCommands { get; }
 
-    public bool IsDefaultMode => Mode == ZapCliActionRegexRttMode.Default;
-    public bool IsSimilarityMode => Mode == ZapCliActionRegexRttMode.Similarity;
+    public bool IsDefaultMode => Mode == CliActionRegexRttMode.Default;
+    public bool IsSimilarityMode => Mode == CliActionRegexRttMode.Similarity;
 
     private IEnumerable<Option> Options => _action
         .Operands

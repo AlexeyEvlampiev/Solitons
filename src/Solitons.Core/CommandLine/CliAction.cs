@@ -1,5 +1,4 @@
-﻿using Solitons.CommandLine.ZapCli;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -123,8 +122,8 @@ internal sealed class CliAction : IComparable<CliAction>
             .Where(s => s.IsPrintable())
             .Join(" ");
 
-        CommandExactMatchExpression = CliActionRegexRtt.Build(this, ZapCliActionRegexRttMode.Default);
-        CommandFuzzyMatchExpression = CliActionRegexRtt.Build(this, ZapCliActionRegexRttMode.Similarity);
+        CommandExactMatchExpression = CliActionRegexRtt.Build(this, CliActionRegexRttMode.Default);
+        CommandFuzzyMatchExpression = CliActionRegexRtt.Build(this, CliActionRegexRttMode.Similarity);
         _commandExactRegex = new Regex(CommandExactMatchExpression, RegexOptions.Compiled);
         _commandFuzzyRegex = new Regex(CommandFuzzyMatchExpression, RegexOptions.Compiled);
     }
