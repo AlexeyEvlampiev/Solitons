@@ -2,6 +2,8 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using Solitons.CommandLine;
+using Solitons.Data;
 
 namespace Solitons.Postgres.PgUp.Models;
 
@@ -46,7 +48,7 @@ public sealed class PgUpBatch
         using var memory = new MemoryStream();
         using var zipStream = new GZipStream(memory, CompressionLevel.SmallestSize);
         using var writer = new BinaryWriter(zipStream);
-        using var crypto = SHA256.Create();
+        using var alg = new DbCommandTextHasher();
         writer.Write(_scriptFiles.Length);
         foreach (var fileName in _scriptFiles)
         {
@@ -60,14 +62,14 @@ public sealed class PgUpBatch
             
             if (false == File.Exists(path))
             {
-                throw new NotImplementedException();
+                throw new CliExitException(
+                    $"The SQL script specified at '{path}' in the pgup.json file was not found. " +
+                    $"Please verify the path and filename are correct.");
+
             }
 
             var content = File.ReadAllText(path);
-            var checksum = crypto
-                .ComputeHash(Encoding.UTF8.GetBytes(content))
-                .Select(b => b.ToString("x2"))
-                .Join(string.Empty);
+            var checksum = alg.ComputeHash(content);
 
             content = preProcessor.Transform(content);
             var relativePath = Path
