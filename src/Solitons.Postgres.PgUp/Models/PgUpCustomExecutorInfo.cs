@@ -6,12 +6,12 @@ public sealed record PgUpCustomExecutorInfo
     {
         FilePathParameterName = customExecutor.GetFilePathParameterName();
         FileContentParametersName = customExecutor.GetFileContentParameterName();
+        FileChecksumParameterName = customExecutor.GetFileChecksumParameterName();
         CommandText = customExecutor.GetCommandText();
     }
 
     public string CommandText { get; }
-
     public string FileContentParametersName { get; }
-
     public string FilePathParameterName { get;  }
+    public string FileChecksumParameterName { get; }
 }

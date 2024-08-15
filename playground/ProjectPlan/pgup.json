@@ -27,7 +27,8 @@
           "customExecutor": {
             "filePathParameter": "path",
             "fileContentParameter": "sql",
-            "command": "SELECT system.migration_script_execute(@path, @sql);"
+            "fileChecksumParameter": "checksum",
+            "command": "SELECT system.migration_script_execute(@path, @sql, @checksum);"
           },
           "scripts": [
             "00-00-00.sql",

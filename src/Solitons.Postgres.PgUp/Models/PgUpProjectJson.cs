@@ -60,15 +60,17 @@ public sealed class PgUpProjectJson : BasicJsonDataTransferObject, IPgUpProject
     [DebuggerDisplay("{CommandText}")]
     public sealed class CustomExecutor : IPgUpCustomExecutor
     {
-        [JsonPropertyName("filePathParameter")] public string FilePathParameterName { get; set; }
-        [JsonPropertyName("fileContentParameter")] public string FileContentParameterName { get; set; }
-        [JsonPropertyName("command")] public string CommandText { get; set; }
+        [JsonPropertyName("filePathParameter"), JsonRequired] public string FilePathParameterName { get; set; } = string.Empty;
+        [JsonPropertyName("fileContentParameter"), JsonRequired] public string FileContentParameterName { get; set; } = string.Empty;
+        [JsonPropertyName("fileChecksumParameter"), JsonRequired] public string FileChecksumParameterName { get; set; } = string.Empty;
+        [JsonPropertyName("command"), JsonRequired] public string CommandText { get; set; } = string.Empty;
 
         string IPgUpCustomExecutor.GetFilePathParameterName() => FilePathParameterName;
 
         string IPgUpCustomExecutor.GetFileContentParameterName() => FileContentParameterName;
 
         string IPgUpCustomExecutor.GetCommandText() => CommandText;
+        string IPgUpCustomExecutor.GetFileChecksumParameterName() => FileChecksumParameterName;
     }
 
     bool IPgUpProject.HasDefaultParameterValue(string key, out string value)

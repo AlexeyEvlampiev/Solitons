@@ -9,6 +9,7 @@ public sealed class PgUpCommandBuilder(PgUpCustomExecutorInfo? customExecutorInf
     public NpgsqlCommand Build(
         string filePath, 
         string commandText, 
+        string checksum,
         NpgsqlConnection connection)
     {
         if (customExecutorInfo != null)
@@ -16,6 +17,7 @@ public sealed class PgUpCommandBuilder(PgUpCustomExecutorInfo? customExecutorInf
             var command = new NpgsqlCommand(customExecutorInfo.CommandText, connection);
             command.Parameters.AddWithValue(customExecutorInfo.FilePathParameterName, filePath);
             command.Parameters.AddWithValue(customExecutorInfo.FileContentParametersName, commandText);
+            command.Parameters.AddWithValue(customExecutorInfo.FileChecksumParameterName, checksum);
             return command;
         }
 

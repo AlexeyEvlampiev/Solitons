@@ -94,16 +94,16 @@ GRANT INSERT, UPDATE, DELETE ON TABLE system.migration_script TO ${dbOwner};
 -- Create a function to execute migration scripts if they are new.
 
 -- Function to execute SQL commands associated with migration scripts.
-CREATE OR REPLACE FUNCTION system.migration_script_execute(p_path text, p_sql text) RETURNS BIGINT
+CREATE OR REPLACE FUNCTION system.migration_script_execute(p_path text, p_sql text, p_checksum) RETURNS BIGINT
 AS
 $$
 DECLARE
     inserted_id BIGINT;  -- Variable to hold the ID of the newly inserted or existing script
 BEGIN
     -- Attempt to insert the new script path
-    INSERT INTO system.migration_script("path")
-    VALUES ($1)
-    ON CONFLICT ("path") DO NOTHING
+    INSERT INTO system.migration_script("path", "checksum")
+    VALUES ($1, $3)
+    ON CONFLICT ("checksum") DO NOTHING
     RETURNING id INTO inserted_id;
 
     -- If a new path was inserted, execute the provided SQL and return the script ID

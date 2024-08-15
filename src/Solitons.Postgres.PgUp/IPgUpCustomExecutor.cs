@@ -7,4 +7,5 @@ public interface IPgUpCustomExecutor
     string GetFilePathParameterName();
     string GetFileContentParameterName();
     string GetCommandText();
+    string GetFileChecksumParameterName();
 }

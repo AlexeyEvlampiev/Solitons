@@ -74,9 +74,11 @@ ALTER DATABASE ${dbname} SET search_path TO "api", "data", "system", "extensions
 CREATE TABLE IF NOT EXISTS system.migration_script
 (
 	id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-	"path" TEXT NOT NULL UNIQUE,
+    "checksum" TEXT NOT NULL UNIQUE,
+	"path" TEXT NOT NULL,
 	executed_on TIMESTAMP NOT NULL DEFAULT NOW(),
-	CONSTRAINT path_format CHECK (path ~ '^\S+(?:\s*\S+)*$')
+	CONSTRAINT checksum_format CHECK (path ~ '^\S+$'),
+    CONSTRAINT path_format CHECK (path ~ '^\S+(?:\s*\S+)*$')
 );
 COMMENT ON TABLE "system".migration_script IS 'Stores the relative paths and execution timestamps of executed migration scripts.';
 
@@ -94,16 +96,16 @@ GRANT INSERT, UPDATE, DELETE ON TABLE system.migration_script TO ${dbOwner};
 -- Create a function to execute migration scripts if they are new.
 
 -- Function to execute SQL commands associated with migration scripts.
-CREATE OR REPLACE FUNCTION system.migration_script_execute(p_path text, p_sql text) RETURNS BIGINT
+CREATE OR REPLACE FUNCTION system.migration_script_execute(p_path text, p_sql text, p_checksum text) RETURNS BIGINT
 AS
 $$
 DECLARE
     inserted_id BIGINT;  -- Variable to hold the ID of the newly inserted or existing script
 BEGIN
     -- Attempt to insert the new script path
-    INSERT INTO system.migration_script("path")
-    VALUES ($1)
-    ON CONFLICT ("path") DO NOTHING
+    INSERT INTO system.migration_script("path", "checksum")
+    VALUES ($1, $3)
+    ON CONFLICT ("checksum") DO NOTHING
     RETURNING id INTO inserted_id;
 
     -- If a new path was inserted, execute the provided SQL and return the script ID
@@ -113,22 +115,27 @@ BEGIN
     ELSE
         -- If the path already exists, return (-1) to indicate no execution occurred
         RAISE NOTICE 'script "%" already executed, skipping', p_path;
+        UPDATE system.migration_script
+        SET "path" = p_path
+        WHERE "checksum" = p_checksum;
         RETURN (-1);
     END IF;
 END;
 $$ LANGUAGE plpgsql;
 
+
 -- Set function ownership for consistency.
-ALTER FUNCTION system.migration_script_execute(text, text) OWNER TO ${dbname};
+ALTER FUNCTION system.migration_script_execute(text, text, text) OWNER TO ${dbname};
 
 -- Add comments to describe the function's purpose and usage.
 
 -- Function to execute a SQL statement if the provided migration script path is new.
-COMMENT ON FUNCTION system.migration_script_execute("path" text, "sql" text) IS
+COMMENT ON FUNCTION system.migration_script_execute("path" text, "sql" text, "checksum" text) IS
 'This function executes a SQL statement if the provided migration script path is new. 
 Parameters:
 - path: Text representation of the relative path to the migration script.
 - sql: The SQL command to execute if the migration script is not found in the database.
+- checksum: The SQL command checksum.
 Returns:
 - The ID of the newly inserted migration script if it was not already present, after successfully executing the provided SQL command.
 - (-1) if the path already exists, indicating that the SQL command was not executed.';

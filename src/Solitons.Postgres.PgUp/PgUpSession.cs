@@ -82,7 +82,7 @@ public sealed class PgUpSession(TimeSpan timeout) : IPgUpSession
                 {
                     continue;
                 }
-                await using var command = builder.Build(script.RelativePath, script.Content, connection);
+                await using var command = builder.Build(script.RelativePath, script.Content, script.Checksum, connection);
                 await command.ExecuteNonQueryAsync(_cancellation);
             }
         }

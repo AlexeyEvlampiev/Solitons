@@ -1,4 +1,6 @@
 ﻿using System.IO.Compression;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Solitons.Postgres.PgUp.Models;
@@ -10,19 +12,21 @@ public sealed class PgUpStage
     private readonly byte[] _scripts;
 
 
-    public sealed record Script(string RelativePath, string Content)
+    public sealed record Script(string RelativePath, string Content, string Checksum)
     {
         public void Serialize(BinaryWriter writer)
         {
             writer.Write(RelativePath);
             writer.Write(Content);
+            writer.Write(Checksum);
         }
 
         public static Script Read(BinaryReader reader)
         {
             var relativePath = reader.ReadString();
             var content = reader.ReadString();
-            return new Script(relativePath, content);
+            var checksum = reader.ReadString();
+            return new Script(relativePath, content, checksum);
         }
     }
 
@@ -42,6 +46,7 @@ public sealed class PgUpStage
         using var memory = new MemoryStream();
         using var zipStream = new GZipStream(memory, CompressionLevel.SmallestSize);
         using var writer = new BinaryWriter(zipStream);
+        using var crypto = SHA256.Create();
         writer.Write(_scriptFiles.Length);
         foreach (var fileName in _scriptFiles)
         {
@@ -59,12 +64,17 @@ public sealed class PgUpStage
             }
 
             var content = File.ReadAllText(path);
+            var checksum = crypto
+                .ComputeHash(Encoding.UTF8.GetBytes(content))
+                .Select(b => b.ToString("x2"))
+                .Join(string.Empty);
+
             content = preProcessor.Transform(content);
             var relativePath = Path
                 .GetRelativePath(workDir.FullName, path)
                 .Convert(p => Regex.Replace(p, @"\\", "/"));
 
-            var script = new Script(relativePath, content);
+            var script = new Script(relativePath, content, checksum);
             script.Serialize(writer);
         }
         zipStream.Flush();
