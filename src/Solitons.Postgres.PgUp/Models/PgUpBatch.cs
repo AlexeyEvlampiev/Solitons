@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace Solitons.Postgres.PgUp.Models;
 
-public sealed class PgUpStage
+public sealed class PgUpBatch
 {
     private readonly string[] _scriptFiles;
     private readonly string _workDir;
@@ -30,7 +30,7 @@ public sealed class PgUpStage
         }
     }
 
-    public PgUpStage(
+    public PgUpBatch(
         IPgUpStage stage, 
         DirectoryInfo workDir,
         PgUpScriptPreprocessor preProcessor)

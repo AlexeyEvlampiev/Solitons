@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using Solitons.Collections;
+using Solitons.CommandLine;
 
 namespace Solitons.Postgres.PgUp;
 
@@ -24,7 +25,11 @@ public sealed class PgUpVersionAttribute : Attribute
     public static PgUpVersionAttribute FromJson(string pgUpJson)
     {
         JsonElement jsonObject = JsonSerializer.Deserialize<JsonElement>(pgUpJson);
-        string? versionText = ThrowIf.NullOrWhiteSpace(jsonObject.GetProperty("version").GetString(), "pgup version is missing");
+        string? versionText = jsonObject.GetProperty("version").GetString();
+        if (string.IsNullOrWhiteSpace(versionText))
+        {
+            throw new CliExitException("PgUp version is missing. Ensure that the version json element is present in the pgup.json file.");
+        }
         var version = Version.Parse(versionText);
         return typeof(PgUpVersionAttribute)
             .Assembly
@@ -47,7 +52,7 @@ public sealed class PgUpVersionAttribute : Attribute
             {
                 if (index > 0)
                 {
-                    throw new InvalidOperationException("Multiple matches");
+                    throw new InvalidOperationException($"Multiple {version} version matches found.");
                 }
             })
             .Select(t => new PgUpVersionAttribute(version, t))

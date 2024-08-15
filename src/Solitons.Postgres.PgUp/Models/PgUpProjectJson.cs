@@ -29,18 +29,19 @@ public sealed class PgUpProjectJson : BasicJsonDataTransferObject, IPgUpProject
         public string? Default { get; set; }
     }
 
-    [DebuggerDisplay("Stages: {Stages.Length}")]
+    [DebuggerDisplay("Batches: {Batches.Length}")]
     public sealed class Transaction
     {
         [JsonPropertyName("displayName")]
         public string DisplayName { get; set; } = string.Empty;
+
         [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
-        [JsonPropertyName("stages")]
-        public Stage[] Stages { get; set; } = [];
+        [JsonPropertyName("batches")]
+        public Batch[] Batches { get; set; } = [];
     }
 
     [DebuggerDisplay("{WorkingDirectory}")]
-    public sealed class Stage : IPgUpStage
+    public sealed class Batch : IPgUpStage
     {
         [JsonPropertyName("workdir")] public string WorkingDirectory { get; set; } = ".";
         [JsonPropertyName("scripts")] public string[] ScriptFiles { get; set; } = [];
@@ -60,17 +61,22 @@ public sealed class PgUpProjectJson : BasicJsonDataTransferObject, IPgUpProject
     [DebuggerDisplay("{CommandText}")]
     public sealed class CustomExecutor : IPgUpCustomExecutor
     {
-        [JsonPropertyName("filePathParameter"), JsonRequired] public string FilePathParameterName { get; set; } = string.Empty;
-        [JsonPropertyName("fileContentParameter"), JsonRequired] public string FileContentParameterName { get; set; } = string.Empty;
-        [JsonPropertyName("fileChecksumParameter"), JsonRequired] public string FileChecksumParameterName { get; set; } = string.Empty;
+        [JsonPropertyName("parameters"), JsonRequired] public CustomExecutorParameters Paraneters { get; set; } 
         [JsonPropertyName("command"), JsonRequired] public string CommandText { get; set; } = string.Empty;
 
-        string IPgUpCustomExecutor.GetFilePathParameterName() => FilePathParameterName;
+        string IPgUpCustomExecutor.GetFilePathParameterName() => Paraneters.FilePathParameterName;
 
-        string IPgUpCustomExecutor.GetFileContentParameterName() => FileContentParameterName;
+        string IPgUpCustomExecutor.GetFileContentParameterName() => Paraneters.FileContentParameterName;
 
         string IPgUpCustomExecutor.GetCommandText() => CommandText;
-        string IPgUpCustomExecutor.GetFileChecksumParameterName() => FileChecksumParameterName;
+        string IPgUpCustomExecutor.GetFileChecksumParameterName() => Paraneters.FileChecksumParameterName;
+    }
+
+    public sealed class CustomExecutorParameters
+    {
+        [JsonPropertyName("path"), JsonRequired] public string FilePathParameterName { get; set; } = string.Empty;
+        [JsonPropertyName("content"), JsonRequired] public string FileContentParameterName { get; set; } = string.Empty;
+        [JsonPropertyName("checksum"), JsonRequired] public string FileChecksumParameterName { get; set; } = string.Empty;
     }
 
     bool IPgUpProject.HasDefaultParameterValue(string key, out string value)
@@ -109,8 +115,8 @@ public sealed class PgUpProjectJson : BasicJsonDataTransferObject, IPgUpProject
         foreach (var transaction in Transactions)
         {
             var stages = transaction
-                .Stages
-                .Select(s => new PgUpStage(s, workDir, preProcessor))
+                .Batches
+                .Select(s => new PgUpBatch(s, workDir, preProcessor))
                 .ToArray();
             yield return new PgUpTransaction(transaction.DisplayName, stages);
         }

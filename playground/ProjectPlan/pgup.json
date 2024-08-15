@@ -12,7 +12,7 @@
   "transactions": [
     {
       "displayName": "Pre-deployment",
-      "stages": [
+      "batches": [
         {
           "workdir": "pre-deployment",
           "scripts": [ "pre-deployment.sql" ]
@@ -21,13 +21,15 @@
     },
     {
       "displayName": "Upgrade",
-      "stages": [
+      "batches": [
         {
           "workdir": "migrations",
           "customExecutor": {
-            "filePathParameter": "path",
-            "fileContentParameter": "sql",
-            "fileChecksumParameter": "checksum",
+            "parameters": {
+              "path": "path",
+              "content": "sql",
+              "checksum": "checksum"
+            },
             "command": "SELECT system.migration_script_execute(@path, @sql, @checksum);"
           },
           "scripts": [
@@ -43,7 +45,7 @@
     },
     {
       "displayName": "Post-deployment",
-      "stages": [
+      "batches": [
         {
           "workdir": "post-deployment",
           "scripts": [ "post-deployment.sql" ]

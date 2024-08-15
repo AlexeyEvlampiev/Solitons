@@ -4,9 +4,9 @@ namespace Solitons.Postgres.PgUp.Models;
 
 public record PgUpTransaction
 {
-    private readonly PgUpStage[] _stages;
+    private readonly PgUpBatch[] _stages;
 
-    public PgUpTransaction(string displayName, PgUpStage[] stages)
+    public PgUpTransaction(string displayName, PgUpBatch[] stages)
     {
         DisplayName = displayName.Trim();
         _stages = stages;
@@ -14,5 +14,5 @@ public record PgUpTransaction
 
     public string DisplayName { get; }
 
-    public IEnumerable<PgUpStage> GetStages() => _stages;
+    public IEnumerable<PgUpBatch> GetStages() => _stages;
 }
