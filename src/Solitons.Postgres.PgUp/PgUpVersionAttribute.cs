@@ -67,10 +67,15 @@ public sealed class PgUpVersionAttribute : Attribute
         {
             return (IPgUpProject)JsonSerializer.Deserialize(pgUpJson, _type)!;
         }
-        catch (Exception e)
+        catch (JsonException e)
         {
             throw new CliExitException($"Invalid pgup.json file. {e.Message} Path: {e.Path}. Line: {e.LineNumber}");
         }
+        catch (Exception e)
+        {
+            throw new CliExitException($"Failed to parse pgup.json file. {e.Message}");
+        }
+        
     }
 
     public string Serialize(IPgUpProject project) => JsonSerializer.Serialize(project);
