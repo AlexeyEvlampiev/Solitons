@@ -41,43 +41,22 @@ public sealed class PgUpProjectJson : BasicJsonDataTransferObject, IPgUpProject
     }
 
     [DebuggerDisplay("{WorkingDirectory}")]
-    public sealed class Batch : IPgUpStage
+    public sealed class Batch : IPgUpBatch
     {
         [JsonPropertyName("workdir")] public string WorkingDirectory { get; set; } = ".";
         [JsonPropertyName("scripts"), JsonRequired] public string[] ScriptFiles { get; set; } = [];
-        [JsonPropertyName("customExecutor")] public CustomExecutor? CustomExecutor { get; set; }
-        IEnumerable<string> IPgUpStage.GetScriptFiles() => ScriptFiles;
+        [JsonPropertyName("customExec")] public string? CustomExecCommandText{ get; set; }
 
         [DebuggerHidden]
-        string IPgUpStage.GetWorkingDirectory() => WorkingDirectory;
+        IEnumerable<string> IPgUpBatch.GetScriptFiles() => ScriptFiles;
 
-        public bool HasCustomExecutor(out IPgUpCustomExecutor? customExecutor)
-        {
-            customExecutor = CustomExecutor;
-            return customExecutor != null;
-        }
+        [DebuggerHidden]
+        string IPgUpBatch.GetWorkingDirectory() => WorkingDirectory;
+
+        [DebuggerHidden]
+        string? IPgUpBatch.GetCustomExecCommandText() => CustomExecCommandText;
     }
 
-    [DebuggerDisplay("{CommandText}")]
-    public sealed class CustomExecutor : IPgUpCustomExecutor
-    {
-        [JsonPropertyName("parameters"), JsonRequired] public CustomExecutorParameters Paraneters { get; set; }
-        [JsonPropertyName("command"), JsonRequired] public string CommandText { get; set; } = string.Empty;
-
-        string IPgUpCustomExecutor.GetFilePathParameterName() => Paraneters.FilePathParameterName;
-
-        string IPgUpCustomExecutor.GetFileContentParameterName() => Paraneters.FileContentParameterName;
-
-        string IPgUpCustomExecutor.GetCommandText() => CommandText;
-        string IPgUpCustomExecutor.GetFileChecksumParameterName() => Paraneters.FileChecksumParameterName;
-    }
-
-    public sealed class CustomExecutorParameters
-    {
-        [JsonPropertyName("path"), JsonRequired] public string FilePathParameterName { get; set; } = string.Empty;
-        [JsonPropertyName("content"), JsonRequired] public string FileContentParameterName { get; set; } = string.Empty;
-        [JsonPropertyName("checksum"), JsonRequired] public string FileChecksumParameterName { get; set; } = string.Empty;
-    }
 
     bool IPgUpProject.HasDefaultParameterValue(string key, out string value)
     {

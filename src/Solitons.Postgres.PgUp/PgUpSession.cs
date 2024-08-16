@@ -71,10 +71,10 @@ public sealed class PgUpSession(TimeSpan timeout) : IPgUpSession
         await connection.OpenAsync(_cancellation);
         await using var transaction = await connection.BeginTransactionAsync(_cancellation);
 
-        foreach (var stage in pgUpTransaction.GetStages())
+        foreach (var batch in pgUpTransaction.GetBatches())
         {
-            var builder = new PgUpCommandBuilder(stage.CustomExecutorInfo);
-            foreach (var script in stage.GetScripts())
+            var builder = new PgUpCommandBuilder(batch.CustomExecCommand);
+            foreach (var script in batch.GetScripts())
             {
                 Console.WriteLine(PgUpScriptDisplayRtt.Build(script.RelativePath));
                 if (script.Content.IsNullOrWhiteSpace())

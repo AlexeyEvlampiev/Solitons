@@ -12,5 +12,5 @@ public record PgUpTransaction
 
     public string DisplayName { get; }
 
-    public IEnumerable<PgUpBatch> GetStages() => _stages;
+    public IEnumerable<PgUpBatch> GetBatches() => _stages;
 }

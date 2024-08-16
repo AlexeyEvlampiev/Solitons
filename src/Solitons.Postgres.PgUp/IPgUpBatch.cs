@@ -1,9 +1,10 @@
 ﻿namespace Solitons.Postgres.PgUp;
 
-public interface IPgUpStage
+public interface IPgUpBatch
 {
     IEnumerable<string> GetScriptFiles();
     string GetWorkingDirectory();
 
-    bool HasCustomExecutor(out IPgUpCustomExecutor customExecutor);
+    string? GetCustomExecCommandText();
+
 }

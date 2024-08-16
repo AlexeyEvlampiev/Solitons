@@ -96,28 +96,44 @@ GRANT INSERT, UPDATE, DELETE ON TABLE system.migration_script TO ${dbOwner};
 -- Create a function to execute migration scripts if they are new.
 
 -- Function to execute SQL commands associated with migration scripts.
-CREATE OR REPLACE FUNCTION system.migration_script_execute(p_path text, p_sql text, p_checksum text) RETURNS BIGINT
+CREATE OR REPLACE FUNCTION system.migration_script_execute(p_data jsonb) RETURNS BIGINT
 AS
 $$
 DECLARE
     inserted_id BIGINT;  -- Variable to hold the ID of the newly inserted or existing script
+    v_path text := NULLIF(TRIM(p_data->>'filePath'),'');
+    v_command text := NULLIF(TRIM(p_data->>'command'),'');
+    v_checksum text := NULLIF(TRIM(p_data->>'checksum'),'');
 BEGIN
+
+    IF v_path IS NULL THEN
+        RAISE EXCEPTION 'filePath JSON property is required';
+    END IF;
+
+    IF v_command IS NULL THEN
+        RAISE EXCEPTION 'command JSON property is required';
+    END IF;
+
+    IF v_checksum IS NULL THEN
+        RAISE EXCEPTION 'checksum JSON property is required';
+    END IF;
+
     -- Attempt to insert the new script path
     INSERT INTO system.migration_script("path", "checksum")
-    VALUES ($1, $3)
+    VALUES (v_path, v_checksum)
     ON CONFLICT ("checksum") DO NOTHING
     RETURNING id INTO inserted_id;
 
     -- If a new path was inserted, execute the provided SQL and return the script ID
     IF inserted_id IS NOT NULL THEN
-        EXECUTE $2;
+        EXECUTE v_command;
         RETURN inserted_id;
     ELSE
         -- If the path already exists, return (-1) to indicate no execution occurred
-        RAISE NOTICE 'script "%" already executed, skipping', p_path;
+        RAISE NOTICE 'script "%" already executed, skipping', v_path;
         UPDATE system.migration_script
-        SET "path" = p_path
-        WHERE "checksum" = p_checksum;
+        SET "path" = v_path
+        WHERE "checksum" = v_checksum;
         RETURN (-1);
     END IF;
 END;
@@ -125,19 +141,13 @@ $$ LANGUAGE plpgsql;
 
 
 -- Set function ownership for consistency.
-ALTER FUNCTION system.migration_script_execute(text, text, text) OWNER TO ${dbname};
+ALTER FUNCTION system.migration_script_execute(jsonb) OWNER TO ${dbname};
 
 -- Add comments to describe the function's purpose and usage.
 
 -- Function to execute a SQL statement if the provided migration script path is new.
-COMMENT ON FUNCTION system.migration_script_execute("path" text, "sql" text, "checksum" text) IS
+COMMENT ON FUNCTION system.migration_script_execute("data" jsonb) IS
 'This function executes a SQL statement if the provided migration script path is new. 
-Parameters:
-- path: Text representation of the relative path to the migration script.
-- sql: The SQL command to execute if the migration script is not found in the database.
-- checksum: The SQL command checksum.
-Returns:
-- The ID of the newly inserted migration script if it was not already present, after successfully executing the provided SQL command.
-- (-1) if the path already exists, indicating that the SQL command was not executed.';
+TODO: extend';
 
 

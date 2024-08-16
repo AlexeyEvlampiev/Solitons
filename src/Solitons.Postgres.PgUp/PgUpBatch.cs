@@ -31,18 +31,15 @@ public sealed class PgUpBatch
     }
 
     public PgUpBatch(
-        IPgUpStage stage,
+        IPgUpBatch batch,
         DirectoryInfo workDir,
         PgUpScriptPreprocessor preProcessor)
     {
-        if (stage.HasCustomExecutor(out var cex))
-        {
-            CustomExecutorInfo = new PgUpCustomExecutorInfo(cex);
-        }
-        _scriptFiles = stage
+        CustomExecCommand = batch.GetCustomExecCommandText();
+        _scriptFiles = batch
             .GetScriptFiles()
             .ToArray();
-        _workDir = stage.GetWorkingDirectory();
+        _workDir = batch.GetWorkingDirectory();
         using var memory = new MemoryStream();
         using var zipStream = new GZipStream(memory, CompressionLevel.SmallestSize);
         using var writer = new BinaryWriter(zipStream);
@@ -83,8 +80,7 @@ public sealed class PgUpBatch
         _scripts = memory.ToArray();
     }
 
-    public PgUpCustomExecutorInfo? CustomExecutorInfo { get; }
-
+    public string? CustomExecCommand { get; }
 
     public IEnumerable<Script> GetScripts()
     {
