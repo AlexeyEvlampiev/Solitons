@@ -1,6 +1,4 @@
-﻿
-
-namespace Solitons.Postgres.PgUp.Models;
+﻿namespace Solitons.Postgres.PgUp;
 
 public record PgUpTransaction
 {

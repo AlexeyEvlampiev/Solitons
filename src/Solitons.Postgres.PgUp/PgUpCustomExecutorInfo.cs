@@ -1,4 +1,4 @@
-﻿namespace Solitons.Postgres.PgUp.Models;
+﻿namespace Solitons.Postgres.PgUp;
 
 public sealed record PgUpCustomExecutorInfo
 {
@@ -12,6 +12,6 @@ public sealed record PgUpCustomExecutorInfo
 
     public string CommandText { get; }
     public string FileContentParametersName { get; }
-    public string FilePathParameterName { get;  }
+    public string FilePathParameterName { get; }
     public string FileChecksumParameterName { get; }
 }

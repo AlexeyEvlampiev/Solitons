@@ -1,5 +1,4 @@
 ﻿using Npgsql;
-using Solitons.Postgres.PgUp.Models;
 
 namespace Solitons.Postgres.PgUp;
 

@@ -6,7 +6,6 @@ using System.Reactive.Threading.Tasks;
 using Npgsql;
 using Solitons.CommandLine;
 using Solitons.Postgres.PgUp.Formatting;
-using Solitons.Postgres.PgUp.Models;
 
 namespace Solitons.Postgres.PgUp;
 

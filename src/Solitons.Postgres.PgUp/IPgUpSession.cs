@@ -1,6 +1,4 @@
-﻿using Solitons.Postgres.PgUp.Models;
-
-namespace Solitons.Postgres.PgUp;
+﻿namespace Solitons.Postgres.PgUp;
 
 public interface IPgUpSession
 {

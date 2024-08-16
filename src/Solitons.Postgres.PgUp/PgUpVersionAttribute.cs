@@ -1,4 +1,6 @@
 ﻿using System.Text.Json;
+using NJsonSchema.Generation;
+using NJsonSchema.Validation;
 using Solitons.Collections;
 using Solitons.CommandLine;
 
@@ -61,7 +63,14 @@ public sealed class PgUpVersionAttribute : Attribute
 
     public IPgUpProject Deserialize(string pgUpJson)
     {
-        return (IPgUpProject)JsonSerializer.Deserialize(pgUpJson, _type)!;
+        try
+        {
+            return (IPgUpProject)JsonSerializer.Deserialize(pgUpJson, _type)!;
+        }
+        catch (Exception e)
+        {
+            throw new CliExitException($"Invalid pgup.json file. {e.Message} Path: {e.Path}. Line: {e.LineNumber}");
+        }
     }
 
     public string Serialize(IPgUpProject project) => JsonSerializer.Serialize(project);

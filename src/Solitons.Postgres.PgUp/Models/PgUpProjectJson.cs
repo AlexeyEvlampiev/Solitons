@@ -10,16 +10,16 @@ namespace Solitons.Postgres.PgUp.Models;
 [PgUpVersion("1.0")]
 public sealed class PgUpProjectJson : BasicJsonDataTransferObject, IPgUpProject
 {
-    [JsonPropertyName("parameters")]
+    [JsonPropertyName("parameters"), JsonRequired]
     public Dictionary<string, ParameterData> Parameters { get; set; } = new();
 
-    [JsonPropertyName("databaseName")]
+    [JsonPropertyName("databaseName"), JsonRequired]
     public string DatabaseName { get; set; } = string.Empty;
 
-    [JsonPropertyName("databaseOwner")]
+    [JsonPropertyName("databaseOwner"), JsonRequired]
     public string DatabaseOwner { get; set; } = string.Empty;
 
-    [JsonPropertyName("transactions")]
+    [JsonPropertyName("transactions"), JsonRequired]
     public Transaction[] Transactions { get; set; } = [];
 
     [DebuggerDisplay("{Default}")]
@@ -36,7 +36,7 @@ public sealed class PgUpProjectJson : BasicJsonDataTransferObject, IPgUpProject
         public string DisplayName { get; set; } = string.Empty;
 
         [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
-        [JsonPropertyName("batches")]
+        [JsonPropertyName("batches"), JsonRequired]
         public Batch[] Batches { get; set; } = [];
     }
 
@@ -44,7 +44,7 @@ public sealed class PgUpProjectJson : BasicJsonDataTransferObject, IPgUpProject
     public sealed class Batch : IPgUpStage
     {
         [JsonPropertyName("workdir")] public string WorkingDirectory { get; set; } = ".";
-        [JsonPropertyName("scripts")] public string[] ScriptFiles { get; set; } = [];
+        [JsonPropertyName("scripts"), JsonRequired] public string[] ScriptFiles { get; set; } = [];
         [JsonPropertyName("customExecutor")] public CustomExecutor? CustomExecutor { get; set; }
         IEnumerable<string> IPgUpStage.GetScriptFiles() => ScriptFiles;
 
@@ -61,7 +61,7 @@ public sealed class PgUpProjectJson : BasicJsonDataTransferObject, IPgUpProject
     [DebuggerDisplay("{CommandText}")]
     public sealed class CustomExecutor : IPgUpCustomExecutor
     {
-        [JsonPropertyName("parameters"), JsonRequired] public CustomExecutorParameters Paraneters { get; set; } 
+        [JsonPropertyName("parameters"), JsonRequired] public CustomExecutorParameters Paraneters { get; set; }
         [JsonPropertyName("command"), JsonRequired] public string CommandText { get; set; } = string.Empty;
 
         string IPgUpCustomExecutor.GetFilePathParameterName() => Paraneters.FilePathParameterName;
@@ -81,7 +81,7 @@ public sealed class PgUpProjectJson : BasicJsonDataTransferObject, IPgUpProject
 
     bool IPgUpProject.HasDefaultParameterValue(string key, out string value)
     {
-        if (Parameters.TryGetValue(key, out var data) && 
+        if (Parameters.TryGetValue(key, out var data) &&
             data.Default != null)
         {
             value = data.Default;

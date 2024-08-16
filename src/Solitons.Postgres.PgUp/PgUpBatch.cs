@@ -1,11 +1,9 @@
 ﻿using System.IO.Compression;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.RegularExpressions;
 using Solitons.CommandLine;
 using Solitons.Data;
 
-namespace Solitons.Postgres.PgUp.Models;
+namespace Solitons.Postgres.PgUp;
 
 public sealed class PgUpBatch
 {
@@ -33,7 +31,7 @@ public sealed class PgUpBatch
     }
 
     public PgUpBatch(
-        IPgUpStage stage, 
+        IPgUpStage stage,
         DirectoryInfo workDir,
         PgUpScriptPreprocessor preProcessor)
     {
@@ -59,7 +57,7 @@ public sealed class PgUpBatch
 
             var path = Path.Combine(workDir.FullName, _workDir);
             path = Path.Combine(path, fileName);
-            
+
             if (false == File.Exists(path))
             {
                 throw new CliExitException(
