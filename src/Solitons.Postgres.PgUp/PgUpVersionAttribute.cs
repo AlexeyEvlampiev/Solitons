@@ -13,16 +13,16 @@ public sealed class PgUpVersionAttribute : Attribute
 
     public PgUpVersionAttribute(string version)
     {
-        Verion = Version.Parse(version);
+        Version = Version.Parse(version);
     }
 
     private PgUpVersionAttribute(Version version, Type type)
     {
         _type = type;
-        Verion = version;
+        Version = version;
     }
 
-    public Version Verion { get;  }
+    public Version Version { get;  }
 
     public static PgUpVersionAttribute FromJson(string pgUpJson)
     {
@@ -43,7 +43,7 @@ public sealed class PgUpVersionAttribute : Attribute
                     .OfType<PgUpVersionAttribute>()
                     .SingleOrDefault();
                 if (att is null ||
-                    att.Verion != version ||
+                    att.Version != version ||
                     typeof(IPgUpProject).IsAssignableFrom(type) == false)
                 {
                     return [];
@@ -69,7 +69,8 @@ public sealed class PgUpVersionAttribute : Attribute
         }
         catch (JsonException e)
         {
-            throw new CliExitException($"Invalid pgup.json file. {e.Message} Path: {e.Path}. Line: {e.LineNumber}");
+            var message = e.Message.Replace(_type.ToString(), $"PgUp JSON v{Version}");
+            throw new CliExitException($"Invalid pgup.json file. {message} (path: {e.Path}. line: {e.LineNumber})");
         }
         catch (Exception e)
         {

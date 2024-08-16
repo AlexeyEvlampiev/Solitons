@@ -85,7 +85,7 @@ COMMENT ON TABLE "system".migration_script IS 'Stores the relative paths and exe
 -- Create a unique index on the migration script path for efficiency.
 
 -- Index to ensure uniqueness of migration script paths.
-CREATE UNIQUE INDEX IF NOT EXISTS ux_migration_script_path ON "system".migration_script (LOWER(path));
+CREATE INDEX IF NOT EXISTS ux_migration_script_path ON "system".migration_script (LOWER(path));
 COMMENT ON INDEX system.ux_migration_script_path IS 'Ensures unique file paths for migration scripts by comparing them in a case-insensitive manner.';
 
 

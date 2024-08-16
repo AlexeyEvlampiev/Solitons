@@ -34,6 +34,10 @@ public interface IPgUpProject
             var project = PgUpSerializer.Deserialize(pgUpJson, parameters);
             return project;
         }
+        catch (CliExitException)
+        {
+            throw;
+        }
         catch (Exception e)
         {
             throw new CliExitException($"Failed to load project file. {e.Message}");
