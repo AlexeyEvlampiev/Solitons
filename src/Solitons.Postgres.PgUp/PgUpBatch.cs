@@ -46,10 +46,8 @@ public sealed class PgUpBatch
         if (false == _batchWorkingDirectory.Exists)
         {
             throw new CliExitException(
-                $"The batch working directory '{_batchWorkingDirectory.FullName}' was not found. " +
+                $"The pgup batch working directory '{_batchWorkingDirectory.FullName}' was not found. " +
                 $"Please ensure the directory exists and try again.");
-
-
         }
 
         CustomExecCommand = batch.GetCustomExecCommandText();
