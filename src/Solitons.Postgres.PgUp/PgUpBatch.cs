@@ -8,10 +8,10 @@ namespace Solitons.Postgres.PgUp;
 
 public sealed class PgUpBatch
 {
-    private delegate bool RunOrderMatch(string fileFullName);
+    private delegate bool FileMatchPredicate(string fileFullName);
     private readonly DirectoryInfo _batchWorkingDirectory;
-    private readonly byte[] _scripts;
-    private readonly string[] _runOrders;
+    private readonly byte[] _compressedScripts;
+    private readonly string[] _fileOrderPatterns;
 
 
     public sealed record Script(string RelativePath, string Content, string Checksum)
@@ -40,19 +40,22 @@ public sealed class PgUpBatch
         ThrowIf.ArgumentNull(batch);
         ThrowIf.ArgumentNull(pgUpWorkingDirectory);
         ThrowIf.ArgumentNull(preProcessor);
-        _runOrders = batch.GetRunOrder().ToArray();
+        _fileOrderPatterns = batch.GetRunOrder().ToArray();
 
         _batchWorkingDirectory = new DirectoryInfo(Path.Combine(pgUpWorkingDirectory.FullName, batch.GetWorkingDirectory()));
         if (false == _batchWorkingDirectory.Exists)
         {
             throw new CliExitException(
-                $"Specified pgup working directory not found. Directory: '{_batchWorkingDirectory.FullName}'");
+                $"The batch working directory '{_batchWorkingDirectory.FullName}' was not found. " +
+                $"Please ensure the directory exists and try again.");
+
+
         }
 
         CustomExecCommand = batch.GetCustomExecCommandText();
 
 
-        RunOrderMatch[] runOrder = batch
+        FileMatchPredicate[] fileMatchers = batch
             .GetRunOrder()
             .Select(pattern =>
             {
@@ -73,23 +76,26 @@ public sealed class PgUpBatch
                 try
                 {
                     var regex = new Regex(pattern.Replace("\\", "/"), RegexOptions.Compiled | RegexOptions.IgnoreCase);
-                    return new RunOrderMatch(IsMatch);
+                    return new FileMatchPredicate(IsMatch);
                     bool IsMatch(string fileFullName) => regex.IsMatch(fileFullName);
                 }
                 catch (ArgumentException ex)
                 {
                     throw new CliExitException(
-                        $"Invalid runOrder file pattern defined for the '{_batchWorkingDirectory}' directory. '{pattern}': {ex.Message}");
+                        $"The file pattern '{pattern}' in the directory '{_batchWorkingDirectory.FullName}' is invalid. " +
+                        $"{ex.Message} Please correct the pattern and try again.");
+
                 }
             })
             .ToArray();
 
         string[] scriptFiles = batch.GetFileDiscoveryMode() switch
         {
-            FileDiscoveryMode.MatchOnly => DiscoverFilesByRunOrder(runOrder),
-            FileDiscoveryMode.ShallowDiscovery => DiscoverFiles(runOrder, SearchOption.TopDirectoryOnly),
-            FileDiscoveryMode.DeepDiscovery => DiscoverFiles(runOrder, SearchOption.AllDirectories),
-            _ => throw new InvalidOperationException("Invalid file discovery mode.")
+            FileDiscoveryMode.MatchOnly => GetFilesInRunOrder(fileMatchers),
+            FileDiscoveryMode.ShallowDiscovery => DiscoverFiles(fileMatchers, SearchOption.TopDirectoryOnly),
+            FileDiscoveryMode.DeepDiscovery => DiscoverFiles(fileMatchers, SearchOption.AllDirectories),
+            _ => throw new InvalidOperationException(
+                "The specified file discovery mode is not valid.")
         };
 
 
@@ -103,7 +109,10 @@ public sealed class PgUpBatch
         {
             if (false == File.Exists(scriptFullName))
             {
-                throw new CliExitException($"SQL script not found: '{scriptFullName}'. Verify path and filename.");
+                throw new CliExitException(
+                    $"The SQL script '{scriptFullName}' could not be found. " +
+                    $"Verify the file path and name, then try again.");
+
             }
 
             var content = File.ReadAllText(scriptFullName);
@@ -120,7 +129,7 @@ public sealed class PgUpBatch
         zipStream.Flush();
         writer.Flush();
         memory.Position = 0;
-        _scripts = memory.ToArray();
+        _compressedScripts = memory.ToArray();
     }
 
 
@@ -129,7 +138,7 @@ public sealed class PgUpBatch
 
     public IEnumerable<Script> GetScripts()
     {
-        using var memory = new MemoryStream(_scripts);
+        using var memory = new MemoryStream(_compressedScripts);
         using var zipStream = new GZipStream(memory, CompressionMode.Decompress);
         using var reader = new BinaryReader(zipStream);
         int scriptCount = reader.ReadInt32();
@@ -143,7 +152,7 @@ public sealed class PgUpBatch
     }
 
 
-    private HashSet<string> FindSqlFiles(SearchOption searchOption)
+    private HashSet<string> GetSqlFiles(SearchOption searchOption)
     {
         return _batchWorkingDirectory
             .EnumerateFiles("*.sql", searchOption)
@@ -151,19 +160,22 @@ public sealed class PgUpBatch
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
     }
 
-    private string[] DiscoverFilesByRunOrder(RunOrderMatch[] runOrder)
+    private string[] GetFilesInRunOrder(FileMatchPredicate[] runOrder)
     {
-        var allFiles = FindSqlFiles(SearchOption.AllDirectories);
-        var orderedFiles = runOrder
+        var allSqlFiles = GetSqlFiles(SearchOption.AllDirectories);
+        var matchedFiles = runOrder
             .SelectMany((isMatch, index) =>
             {
-                var matches = allFiles
+                var matches = allSqlFiles
                     .Where(fileFullName => isMatch(fileFullName))
                     .ToList();
                 if (matches.Any() == false)
                 {
-                    var pattern = _runOrders[index];
-                    throw new CliExitException($"No files found that match the '{pattern}' pattern.");
+                    var pattern = _fileOrderPatterns[index];
+                    throw new CliExitException(
+                        $"No files matching the pattern '{pattern}' were found in the '{_batchWorkingDirectory}' working directory. " +
+                        $"Please check the pattern and the directory contents, then try again.");
+
                 }
                 return matches;
             })
@@ -172,12 +184,12 @@ public sealed class PgUpBatch
 
 
 
-        return orderedFiles;
+        return matchedFiles;
     }
 
-    private string[] DiscoverFiles(RunOrderMatch[] runOrder, SearchOption searchOption)
+    private string[] DiscoverFiles(FileMatchPredicate[] runOrder, SearchOption searchOption)
     {
-        var allFiles = FindSqlFiles(searchOption);
+        var allFiles = GetSqlFiles(searchOption);
         return allFiles
             .OrderBy(fileFullName =>
             {
