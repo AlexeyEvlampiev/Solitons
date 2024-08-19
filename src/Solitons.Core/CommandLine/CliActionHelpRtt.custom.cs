@@ -97,7 +97,7 @@ internal partial class CliActionHelpRtt
     public static string Build(string tool, IEnumerable<CliAction> actions)
     {
         return actions
-            .Select(a => Build(tool, actions))
+            .Select(a => Build(tool, a))
             .Join(Enumerable
                 .Range(0, 3)
                 .Select(_ => Environment.NewLine)
