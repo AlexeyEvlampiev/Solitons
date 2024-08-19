@@ -4,7 +4,6 @@ using Azure.Messaging.EventGrid;
 using Azure;
 using Solitons.Diagnostics;
 using Azure.Core;
-using Azure.Identity;
 using Azure.Messaging;
 
 namespace Solitons.AzProvider.Diagnostics;

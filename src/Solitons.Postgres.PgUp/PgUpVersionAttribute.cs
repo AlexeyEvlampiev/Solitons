@@ -1,6 +1,4 @@
 ﻿using System.Text.Json;
-using NJsonSchema.Generation;
-using NJsonSchema.Validation;
 using Solitons.Collections;
 using Solitons.CommandLine;
 
