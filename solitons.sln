@@ -17,7 +17,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Solitons.Postgres", "src\So
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "playground", "playground", "{3977AEC2-889B-4922-A033-F974971B18CB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectPlan", "playground\ProjectPlan\ProjectPlan.csproj", "{7C7E66D7-5DBD-4819-B1C8-C143223C89BA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProjectPlan", "playground\ProjectPlan\ProjectPlan.csproj", "{7C7E66D7-5DBD-4819-B1C8-C143223C89BA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PanelReview", "playground\PanelReview\PanelReview.csproj", "{E0FC8949-28A1-4D5D-831B-0C62D25A6B1D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -49,6 +51,10 @@ Global
 		{7C7E66D7-5DBD-4819-B1C8-C143223C89BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7C7E66D7-5DBD-4819-B1C8-C143223C89BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7C7E66D7-5DBD-4819-B1C8-C143223C89BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E0FC8949-28A1-4D5D-831B-0C62D25A6B1D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E0FC8949-28A1-4D5D-831B-0C62D25A6B1D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E0FC8949-28A1-4D5D-831B-0C62D25A6B1D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E0FC8949-28A1-4D5D-831B-0C62D25A6B1D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -56,6 +62,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{A35C9134-E336-4EAC-82CB-4D81EEFB1412} = {3A6FE3BF-C00B-444A-BF2D-A168485AC092}
 		{7C7E66D7-5DBD-4819-B1C8-C143223C89BA} = {3977AEC2-889B-4922-A033-F974971B18CB}
+		{E0FC8949-28A1-4D5D-831B-0C62D25A6B1D} = {3977AEC2-889B-4922-A033-F974971B18CB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {81797626-BC18-47F8-843A-040AB8F23657}

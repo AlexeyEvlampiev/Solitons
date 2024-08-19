@@ -22,6 +22,8 @@ public sealed class PgUpProjectJson : BasicJsonDataTransferObject, IPgUpProject
     [JsonPropertyName("transactions"), JsonRequired]
     public Transaction[] Transactions { get; set; } = [];
 
+
+
     [DebuggerDisplay("{Default}")]
     public sealed class ParameterData
     {
@@ -44,19 +46,21 @@ public sealed class PgUpProjectJson : BasicJsonDataTransferObject, IPgUpProject
     public sealed class Batch : IPgUpBatch
     {
         [JsonPropertyName("workdir")] public string WorkingDirectory { get; set; } = ".";
-        [JsonPropertyName("scripts"), JsonRequired] public string[] ScriptFiles { get; set; } = [];
+        [JsonPropertyName("fileDiscoveryMode")] public FileDiscoveryMode FileDiscoveryMode { get; set; }
+        [JsonPropertyName("runOrder"), JsonRequired] public string[] ScriptFiles { get; set; } = [];
         [JsonPropertyName("customExec")] public string? CustomExecCommandText{ get; set; }
 
         [DebuggerHidden]
-        IEnumerable<string> IPgUpBatch.GetScriptFiles() => ScriptFiles;
+        IEnumerable<string> IPgUpBatch.GetRunOrder() => ScriptFiles;
 
         [DebuggerHidden]
         string IPgUpBatch.GetWorkingDirectory() => WorkingDirectory;
 
         [DebuggerHidden]
         string? IPgUpBatch.GetCustomExecCommandText() => CustomExecCommandText;
-    }
 
+        FileDiscoveryMode IPgUpBatch.GetFileDiscoveryMode() => FileDiscoveryMode;
+    }
 
     bool IPgUpProject.HasDefaultParameterValue(string key, out string value)
     {

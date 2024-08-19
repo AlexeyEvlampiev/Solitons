@@ -15,7 +15,8 @@
       "batches": [
         {
           "workdir": "pre-deployment",
-          "scripts": [ "pre-deployment.sql" ]
+          "fileDiscoveryMode": "matchOnly",
+          "runOrder": [ "pre-deployment.sql" ]
         }
       ]
     },
@@ -24,15 +25,17 @@
       "batches": [
         {
           "workdir": "migrations",
+          "fileDiscoveryMode": "matchOnly",
           "customExec": "SELECT system.migration_script_execute(@json);",
-          "scripts": [
+          "runOrder": [
             "00-00-00.sql",
             "00-00-01.sql"
           ]
         },
         {
           "workdir": "setup",
-          "scripts": [ "setup.sql" ]
+          "fileDiscoveryMode": "deepDiscovery",
+          "runOrder": [ "setup.sql" ]
         }
       ]
     },
@@ -41,7 +44,8 @@
       "batches": [
         {
           "workdir": "post-deployment",
-          "scripts": [ "post-deployment.sql" ]
+          "fileDiscoveryMode": "deepDiscovery",
+          "runOrder": [ "post-deployment.sql" ]
         }
       ]
     }

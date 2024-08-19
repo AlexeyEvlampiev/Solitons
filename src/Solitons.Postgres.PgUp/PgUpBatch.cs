@@ -2,19 +2,19 @@
 using System.Text.RegularExpressions;
 using Solitons.CommandLine;
 using Solitons.Data;
+using Solitons.Postgres.PgUp.Models;
 
 namespace Solitons.Postgres.PgUp;
 
 public sealed class PgUpBatch
 {
-    private readonly string[] _scriptFiles;
-    private readonly string _workDir;
+    private readonly DirectoryInfo _batchWorkingDirectory;
     private readonly byte[] _scripts;
 
 
     public sealed record Script(string RelativePath, string Content, string Checksum)
     {
-        public void Serialize(BinaryWriter writer)
+        public void Write(BinaryWriter writer)
         {
             writer.Write(RelativePath);
             writer.Write(Content);
@@ -32,53 +32,62 @@ public sealed class PgUpBatch
 
     public PgUpBatch(
         IPgUpBatch batch,
-        DirectoryInfo workDir,
+        DirectoryInfo pgUpWorkingDirectory,
         PgUpScriptPreprocessor preProcessor)
     {
+        ThrowIf.ArgumentNull(batch);
+        ThrowIf.ArgumentNull(pgUpWorkingDirectory);
+        ThrowIf.ArgumentNull(preProcessor);
+
+        _batchWorkingDirectory = new DirectoryInfo(Path.Combine(pgUpWorkingDirectory.FullName, batch.GetWorkingDirectory()));
+        if (false == _batchWorkingDirectory.Exists)
+        {
+            throw new CliExitException(
+                $"Specified pgup working directory not found. Directory: '{_batchWorkingDirectory.FullName}'");
+        }
+
         CustomExecCommand = batch.GetCustomExecCommandText();
-        _scriptFiles = batch
-            .GetScriptFiles()
-            .ToArray();
-        _workDir = batch.GetWorkingDirectory();
+
+        string[] scriptFiles = batch.GetFileDiscoveryMode() switch
+        {
+            FileDiscoveryMode.MatchOnly => DiscoverFilesByRunOrder(FindSqlFiles(SearchOption.AllDirectories), batch.GetRunOrder()),
+            FileDiscoveryMode.ShallowDiscovery => DiscoverFilesShallow(batch.GetRunOrder()),
+            FileDiscoveryMode.DeepDiscovery => DiscoverFilesDeep(batch.GetRunOrder()),
+            _ => throw new InvalidOperationException("Invalid file discovery mode.")
+        };
+
+
+
         using var memory = new MemoryStream();
         using var zipStream = new GZipStream(memory, CompressionLevel.SmallestSize);
         using var writer = new BinaryWriter(zipStream);
         using var alg = new DbCommandTextHasher();
-        writer.Write(_scriptFiles.Length);
-        foreach (var fileName in _scriptFiles)
+        writer.Write(scriptFiles.Length);
+        foreach (var scriptFullName in scriptFiles)
         {
-            if (Path.IsPathRooted(fileName))
+            if (false == File.Exists(scriptFullName))
             {
-                throw new NotImplementedException();
+                throw new CliExitException($"SQL script not found: '{scriptFullName}'. Verify path and filename.");
             }
 
-            var path = Path.Combine(workDir.FullName, _workDir);
-            path = Path.Combine(path, fileName);
-
-            if (false == File.Exists(path))
-            {
-                throw new CliExitException(
-                    $"The SQL script specified at '{path}' in the pgup.json file was not found. " +
-                    $"Please verify the path and filename are correct.");
-
-            }
-
-            var content = File.ReadAllText(path);
+            var content = File.ReadAllText(scriptFullName);
             var checksum = alg.ComputeHash(content);
 
             content = preProcessor.Transform(content);
             var relativePath = Path
-                .GetRelativePath(workDir.FullName, path)
+                .GetRelativePath(pgUpWorkingDirectory.FullName, scriptFullName)
                 .Convert(p => Regex.Replace(p, @"\\", "/"));
 
             var script = new Script(relativePath, content, checksum);
-            script.Serialize(writer);
+            script.Write(writer);
         }
         zipStream.Flush();
         writer.Flush();
         memory.Position = 0;
         _scripts = memory.ToArray();
     }
+
+
 
     public string? CustomExecCommand { get; }
 
@@ -97,4 +106,94 @@ public sealed class PgUpBatch
         return scripts;
     }
 
+
+    private string[] FindSqlFiles(SearchOption searchOption)
+    {
+        return _batchWorkingDirectory
+            .GetFiles("*.sql", searchOption)
+            .Select(f => f.FullName.Replace("\\", "/"))
+            .ToArray();
+    }
+
+    private string[] DiscoverFilesByRunOrder(string[] allFiles, IEnumerable<string> runOrder)
+    {
+        var orderedFiles = runOrder
+            .SelectMany(pattern =>
+        {
+            if (File.Exists(Path.Combine(_batchWorkingDirectory.FullName, pattern)))
+            {
+                return [Path.Combine(_batchWorkingDirectory.FullName, pattern)];
+            }
+
+            try
+            {
+                var regex = new Regex(pattern.Replace("\\", "/"));
+                return allFiles.Where(path => regex.IsMatch(path)).ToArray();
+            }
+            catch (ArgumentException ex)
+            {
+                throw new CliExitException(
+                    $"Invalid runOrder file pattern defined for the '{_batchWorkingDirectory}' directory. '{pattern}': {ex.Message}");
+            }
+        }).ToList();
+
+        var remainingFiles = allFiles.Except(orderedFiles)
+            .OrderBy(f => f)
+            .ToArray();
+
+        return orderedFiles.Concat(remainingFiles).ToArray();
+    }
+
+    private string[] DiscoverFilesShallow(IEnumerable<string> runOrder)
+    {
+        // Find all .sql files in the top directory only
+        var files = FindSqlFiles(SearchOption.TopDirectoryOnly);
+
+        // Order the files based on the provided runOrder patterns
+        var orderedFiles = files
+            .OrderBy(f =>
+            {
+                foreach (var pattern in runOrder)
+                {
+                    if (Regex.IsMatch(f, pattern))
+                    {
+                        return 0; // Matches a pattern in runOrder, so prioritize it
+                    }
+                }
+                return 1; // No match found in runOrder, so deprioritize
+            })
+            .ThenBy(f => f) // Secondary sorting alphabetically
+            .ToArray();
+
+        // Further refine the order using the DiscoverFilesByRunOrder method
+        return DiscoverFilesByRunOrder(orderedFiles, runOrder);
+    }
+
+
+    private string[] DiscoverFilesDeep(IEnumerable<string> runOrder)
+    {
+        // Find all .sql files in all directories (including nested ones)
+        var files = FindSqlFiles(SearchOption.AllDirectories);
+
+        // Order the files based on the provided runOrder patterns
+        var orderedFiles = files
+            .OrderBy(f =>
+            {
+                foreach (var pattern in runOrder)
+                {
+                    if (Regex.IsMatch(f, pattern))
+                    {
+                        return 0; // Matches a pattern in runOrder, so prioritize it
+                    }
+                }
+                return 1; // No match found in runOrder, so deprioritize
+            })
+            .ThenBy(f => f) // Secondary sorting alphabetically
+            .ToArray();
+
+        // Further refine the order using the DiscoverFilesByRunOrder method
+        return DiscoverFilesByRunOrder(orderedFiles, runOrder);
+    }
+
 }
+
