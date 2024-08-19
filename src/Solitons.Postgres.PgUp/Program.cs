@@ -21,7 +21,8 @@ public class Program
         return CliProcessor
             .Setup(config => config
                 .UseCommandsFrom<Program>()
-                .UseLogo(PgUpResource.AsciiLogo))
+                .UseLogo(PgUpResource.AsciiLogo)
+                .UseDescription("Postgres database deployment tool."))
             .Process();
     }
 

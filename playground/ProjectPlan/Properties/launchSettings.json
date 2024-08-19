@@ -8,6 +8,10 @@
       "commandName": "Project",
       "commandLineArgs": "deploy pgup.json --connection \"%DEV_POSTGRES_CONNECTION_STRING%\" --overwrite --force -p.dbManagerPwd postgres"
     },
+    "help": {
+      "commandName": "Project",
+      "commandLineArgs": "-?"
+    },
     "WSL": {
       "commandName": "WSL2",
       "distributionName": "Ubuntu-20.04",

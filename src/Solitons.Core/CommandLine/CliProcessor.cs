@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
 
@@ -17,7 +18,8 @@ public sealed class CliProcessor : ICliProcessorCallback
     private readonly List<Source> _sources = new();
     private readonly CliAction[] _actions;
     private ICliProcessorCallback _callback;
-    private string _logo;
+    private string _logo = string.Empty;
+    private string _description = string.Empty;
 
 
     private CliProcessor(
@@ -71,9 +73,11 @@ public sealed class CliProcessor : ICliProcessorCallback
             BindingFlags binding = BindingFlags.Instance | BindingFlags.Public) =>
             UseCommandsFrom(target, [], binding);
 
+
         IOptions UseCommandsFrom(Type declaringType, CliCommandAttribute[] rootCommands, BindingFlags binding = BindingFlags.Static | BindingFlags.Public);
         IOptions UseCommandsFrom(object target, CliCommandAttribute[] rootCommands, BindingFlags binding = BindingFlags.Instance | BindingFlags.Public);
-        IOptions UseLogo(string asciiHeaderText);
+        IOptions UseLogo(string logo);
+        IOptions UseDescription(string description);
         internal IOptions UseCallback(ICliProcessorCallback callback);
     }
 
@@ -124,9 +128,17 @@ public sealed class CliProcessor : ICliProcessorCallback
             return this;
         }
 
-        public IOptions UseLogo(string text)
+        public IOptions UseLogo(string logo)
         {
-            _processor._logo = text;
+            _processor._logo = logo;
+            return this;
+        }
+
+        public IOptions UseDescription(string description)
+        {
+            _processor._description = description
+                .DefaultIfNullOrWhiteSpace(String.Empty)
+                .Trim();
             return this;
         }
 
@@ -199,6 +211,14 @@ public sealed class CliProcessor : ICliProcessorCallback
     void ICliProcessorCallback.ShowHelp(string commandLine)
     {
         var anyMatchesFound = _actions.Any(a => a.IsMatch(commandLine));
+        if (false == anyMatchesFound &&
+            CliHelpOptionAttribute.IsRootHelpCommand(commandLine))
+        {
+            var help = CliHelpRtt.Build(_logo, _description, _actions);
+            Console.WriteLine(help);
+            return;
+        }
+
         _actions
             .Where(a => false == anyMatchesFound || a.IsMatch(commandLine))
             .GroupBy(a => a.CalcSimilarity(commandLine))

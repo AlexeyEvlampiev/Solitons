@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Solitons.CommandLine;
@@ -9,8 +11,12 @@ internal partial class CliHelpRtt
 
     sealed record Command(string Path, string Description);
 
-    private CliHelpRtt(CliAction[] actions)
+    private CliHelpRtt(string logo, string description, CliAction[] actions)
     {
+        var path = Environment.GetCommandLineArgs().FirstOrDefault("tool");
+        Tool = Path.GetFileName(path);
+        Logo = logo;
+        Description = description;
         _actions = actions;
         Commands = _actions
             .OrderBy(_ => _)
@@ -22,10 +28,13 @@ internal partial class CliHelpRtt
     }
 
     private IEnumerable<Command> Commands { get; }
+    public string Logo { get; }
+    public string Description { get; }
+    public string Tool { get; }
 
-    public static string Build(CliAction[] actions)
+    public static string Build(string logo, string description, CliAction[] actions)
     {
-        var rtt = new CliHelpRtt(actions);
+        var rtt = new CliHelpRtt(logo, description, actions);
         return rtt.ToString();
     }
 }

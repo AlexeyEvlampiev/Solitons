@@ -3,15 +3,17 @@
 <#@ import namespace="System.Linq" #>
 <#@ import namespace="System.Text" #>
 <#@ import namespace="System.Collections.Generic" #>
-Usage: toolname COMMAND [ARGS] [OPTIONS]
+<#= Logo #>
+Usage: <#= Tool #> COMMAND [ARGS] [OPTIONS]
 
 Description:
-  Brief description of what the tool does.
+  <#= Description #>
 
 Options:
   -h, --help  Show this message and exit.
 
 Commands:<# foreach(var cmd in Commands){ #> 
+
   <#= cmd.Path #>        <#= cmd.Description #> <# } #> 
 
 For detailed information on a specific command, use 'toolname COMMAND --help'.

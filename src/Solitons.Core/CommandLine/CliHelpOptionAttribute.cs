@@ -4,11 +4,23 @@ namespace Solitons.CommandLine;
 internal sealed class CliHelpOptionAttribute() : CliOptionAttribute(HelpFlagExpression)
 {
     private const string HelpFlagExpression = "--help|-h|-?";
-    public static bool IsMatch(string commandLine)
+    private static readonly string Pattern;
+
+    static CliHelpOptionAttribute()
     {
-        var pattern = Regex
+        Pattern = Regex
             .Replace(HelpFlagExpression, @"\?", "\\?")
             .Convert(p => $@"(?<=\s|^)(?:{p})(?=\s|$)");
-        return Regex.IsMatch(commandLine, pattern);
+    }
+
+
+    public static bool IsMatch(string commandLine)
+    {
+        return Regex.IsMatch(commandLine, Pattern);
+    }
+
+    public static bool IsRootHelpCommand(string commandLine)
+    {
+        return Regex.IsMatch(commandLine, @$"^\S+\s+{Pattern}\s*$");
     }
 }
