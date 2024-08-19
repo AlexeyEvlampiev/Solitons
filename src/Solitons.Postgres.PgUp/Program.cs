@@ -1,4 +1,5 @@
-﻿using System.Reactive;
+﻿using System.ComponentModel;
+using System.Reactive;
 using Solitons.CommandLine;
 
 namespace Solitons.Postgres.PgUp;
@@ -8,6 +9,7 @@ public class Program
 {
     private static readonly TimeSpan DefaultActionTimeout = TimeSpan.FromMinutes(10);
 
+    public const string DeployCommandDescription = "Deploys postgres database following to the pgup.json deployment plan.";
     public const string InitializeProjectCommand = "init|initialize";
     public const string ProjectDirectoryArgumentDescription = "File directory where to initialize the new pgup project.";
     public const string InitializeProjectCommandDescription = "Creates a new pgup project structure in the specified directory.";
@@ -28,6 +30,7 @@ public class Program
 
     [CliCommand("deploy")]
     [CliArgument(nameof(projectFile), "PgUp project file.")]
+    [Description(DeployCommandDescription)]
     public static Task<int> DeployAsync(
         string projectFile,
         [CliOption("--host")] string host,
@@ -48,6 +51,7 @@ public class Program
 
     [CliCommand("deploy")]
     [CliArgument(nameof(projectFile), "PgUp project file.")]
+    [Description(DeployCommandDescription)]
     public static Task<int> DeployAsync(
         string projectFile,
         [CliOption("--connection")] string connectionString,
@@ -67,6 +71,7 @@ public class Program
 
     [CliCommand("deploy")]
     [CliArgument(nameof(projectFile), "PgUp project file.")]
+    [Description(DeployCommandDescription)]
     public static  Task<int> DeployAsync(
         string projectFile,
         [CliOption("--connection")] string connectionString,

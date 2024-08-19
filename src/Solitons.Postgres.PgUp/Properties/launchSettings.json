@@ -4,9 +4,13 @@
       "commandName": "Project",
       "commandLineArgs": ""
     },
-    "help": {
+    "help root": {
       "commandName": "Project",
       "commandLineArgs": "-?"
+    },
+    "help deploy": {
+      "commandName": "Project",
+      "commandLineArgs": "deploy -?"
     },
     "init .": {
       "commandName": "Project",

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Solitons.CommandLine;
@@ -12,6 +13,7 @@ internal partial class CliActionHelpRtt
     {
         _action = action;
         Tool = tool;
+        Description = action.Description;
         Segments = action.CommandSegments;
         UsageOptions = CommandOptions(action.CommandSegments).ToList();
 
@@ -83,12 +85,23 @@ internal partial class CliActionHelpRtt
     public IEnumerable<object> Segments { get; }
 
     public IEnumerable<string> Arguments { get; }
+    public string Description { get; }
 
 
     public static string Build(string tool, CliAction action)
     {
         var rtt = new CliActionHelpRtt(tool, action);
         return rtt.ToString().Trim();
+    }
+
+    public static string Build(string tool, IEnumerable<CliAction> actions)
+    {
+        return actions
+            .Select(a => Build(tool, actions))
+            .Join(Enumerable
+                .Range(0, 3)
+                .Select(_ => Environment.NewLine)
+                .Join(""));
     }
 
 }

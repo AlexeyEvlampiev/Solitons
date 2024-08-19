@@ -25,7 +25,9 @@ namespace Solitons.CommandLine
         /// </summary>
         public override string TransformText()
         {
-            this.Write("Usage:");
+            this.Write("Description:\r\n  ");
+            this.Write(this.ToStringHelper.ToStringWithCulture(Description));
+            this.Write("\r\n\r\nUsage:");
  foreach(var option in UsageOptions){ 
             this.Write(" \r\n  ");
             this.Write(this.ToStringHelper.ToStringWithCulture(Tool));

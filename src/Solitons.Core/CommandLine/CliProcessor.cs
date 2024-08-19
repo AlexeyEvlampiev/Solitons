@@ -219,12 +219,13 @@ public sealed class CliProcessor : ICliProcessorCallback
             return;
         }
 
-        _actions
+        var text = _actions
             .Where(a => false == anyMatchesFound || a.IsMatch(commandLine))
             .GroupBy(a => a.CalcSimilarity(commandLine))
             .OrderByDescending(similarActions => similarActions.Key)
             .Take(3)
             .SelectMany(similarActions => similarActions)
-            .ForEach((action) =>action.ShowHelp());
+            .Convert(selected => CliActionHelpRtt.Build("tool", selected));
+        Console.WriteLine(text);
     }
 }

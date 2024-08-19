@@ -3,6 +3,9 @@
 <#@ import namespace="System.Linq" #>
 <#@ import namespace="System.Text" #>
 <#@ import namespace="System.Collections.Generic" #>
+Description:
+  <#= Description #>
+
 Usage:<# foreach(var option in UsageOptions){ #> 
   <#= Tool #> <#= option #> <# } #> 
   <# if(Arguments.Any()) { #>  
