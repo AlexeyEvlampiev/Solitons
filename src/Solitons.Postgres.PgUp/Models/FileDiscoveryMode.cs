@@ -1,5 +1,8 @@
-﻿namespace Solitons.Postgres.PgUp.Models;
+﻿using System.Text.Json.Serialization;
 
+namespace Solitons.Postgres.PgUp.Models;
+
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum FileDiscoveryMode
 {
     /// <summary>
