@@ -25,9 +25,9 @@ namespace Solitons.Postgres.PgUp.Formatting
         /// </summary>
         public override string TransformText()
         {
-            this.Write("=== PgUp TRANSACTION ");
+            this.Write("  _____ ___ __  __\r\n |_   _| _ \\\\ \\/ /\r\n   | | |   / >  <   ");
             this.Write(this.ToStringHelper.ToStringWithCulture(DisplayName));
-            this.Write(" ");
+            this.Write(" \r\n   |_| |_|_\\/_/\\_\\");
             return this.GenerationEnvironment.ToString();
         }
     }

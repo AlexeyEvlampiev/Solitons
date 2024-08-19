@@ -110,7 +110,7 @@ public sealed class PgUpBatch
     private string[] FindSqlFiles(SearchOption searchOption)
     {
         return _batchWorkingDirectory
-            .GetFiles("*.sql", searchOption)
+            .EnumerateFiles("*.sql", searchOption)
             .Select(f => f.FullName.Replace("\\", "/"))
             .ToArray();
     }

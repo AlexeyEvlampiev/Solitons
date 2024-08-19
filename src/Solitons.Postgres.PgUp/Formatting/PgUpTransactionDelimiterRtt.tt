@@ -3,4 +3,7 @@
 <#@ import namespace="System.Linq" #>
 <#@ import namespace="System.Text" #>
 <#@ import namespace="System.Collections.Generic" #>
-=== PgUp TRANSACTION <#= DisplayName #> 
+  _____ ___ __  __
+ |_   _| _ \\ \/ /
+   | | |   / >  <   <#= DisplayName #> 
+   |_| |_|_\/_/\_\
