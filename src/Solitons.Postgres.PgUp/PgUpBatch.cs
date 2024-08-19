@@ -89,9 +89,9 @@ public sealed class PgUpBatch
 
         string[] scriptFiles = batch.GetFileDiscoveryMode() switch
         {
-            FileDiscoveryMode.MatchOnly => GetFilesInRunOrder(fileMatchers),
-            FileDiscoveryMode.ShallowDiscovery => DiscoverFiles(fileMatchers, SearchOption.TopDirectoryOnly),
-            FileDiscoveryMode.DeepDiscovery => DiscoverFiles(fileMatchers, SearchOption.AllDirectories),
+            FileDiscoveryMode.None => GetFilesInRunOrder(fileMatchers),
+            FileDiscoveryMode.Shallow => DiscoverFiles(fileMatchers, SearchOption.TopDirectoryOnly),
+            FileDiscoveryMode.Recursive => DiscoverFiles(fileMatchers, SearchOption.AllDirectories),
             _ => throw new InvalidOperationException(
                 "The specified file discovery mode is not valid.")
         };

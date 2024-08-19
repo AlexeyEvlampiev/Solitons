@@ -7,8 +7,6 @@ namespace Solitons.CommandLine;
 
 internal partial class CliHelpRtt
 {
-    private readonly CliAction[] _actions;
-
     sealed record Command(string Path, string Description);
 
     private CliHelpRtt(string logo, string description, CliAction[] actions)
@@ -17,9 +15,8 @@ internal partial class CliHelpRtt
         Tool = Path.GetFileName(path);
         Logo = logo;
         Description = description;
-        _actions = actions;
-        Commands = _actions
-            .OrderBy(_ => _)
+        Commands = actions
+            .OrderBy(cmd => cmd)
             .Select(a => new Command(
                 a.FullPath,
                 a.Description))
