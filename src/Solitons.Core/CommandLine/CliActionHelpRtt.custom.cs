@@ -9,10 +9,10 @@ internal partial class CliActionHelpRtt
     private readonly CliAction _action;
     private const string Tab = "\t\t\t";
 
-    private CliActionHelpRtt(string tool, CliAction action)
+    private CliActionHelpRtt(string executableName, CliAction action)
     {
         _action = action;
-        Tool = tool;
+        ExecutableName = executableName;
         Description = action.Description;
         Segments = action.CommandSegments;
         UsageOptions = CommandOptions(action.CommandSegments).ToList();
@@ -81,7 +81,7 @@ internal partial class CliActionHelpRtt
         }
     }
 
-    public string Tool { get; }
+    public string ExecutableName { get; }
     public IEnumerable<object> Segments { get; }
 
     public IEnumerable<string> Arguments { get; }

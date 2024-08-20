@@ -30,7 +30,7 @@ namespace Solitons.CommandLine
             this.Write("\r\n\r\nUsage:");
  foreach(var option in UsageOptions){ 
             this.Write(" \r\n  ");
-            this.Write(this.ToStringHelper.ToStringWithCulture(Tool));
+            this.Write(this.ToStringHelper.ToStringWithCulture(ExecutableName));
             this.Write(" ");
             this.Write(this.ToStringHelper.ToStringWithCulture(option));
             this.Write(" ");
