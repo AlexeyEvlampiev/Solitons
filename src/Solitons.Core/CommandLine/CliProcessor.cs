@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -162,10 +163,15 @@ public sealed class CliProcessor : ICliProcessorCallback
             commandLine = CliTokenSubstitutionPreprocessor
                 .SubstituteTokens(commandLine, out var preProcessor)
                 .Trim();
+            var executableName = Regex
+                .Match(commandLine, @"^\S+")
+                .Convert( m => preProcessor.GetSubstitution(m.Value))
+                .Convert(Path.GetFileName)
+                .DefaultIfNullOrWhiteSpace("cli");
 
             if (CliHelpOptionAttribute.IsMatch(commandLine))
             {
-                _callback.ShowHelp(commandLine);
+                _callback.ShowHelp(executableName, commandLine);
                 return 0;
             }
 
@@ -181,7 +187,7 @@ public sealed class CliProcessor : ICliProcessorCallback
             if (selectedActions.Count != 1)
             {
                 Console.WriteLine("No matching commands found. See closest commands description below. ");
-                _callback.ShowHelp(commandLine);
+                _callback.ShowHelp(executableName, commandLine);
                 return 1;
             }
 
@@ -208,13 +214,19 @@ public sealed class CliProcessor : ICliProcessorCallback
 
     }
 
-    void ICliProcessorCallback.ShowHelp(string commandLine)
+    void ICliProcessorCallback.ShowHelp(
+        string executableName, 
+        string commandLine)
     {
         var anyMatchesFound = _actions.Any(a => a.IsMatch(commandLine));
         if (false == anyMatchesFound &&
             CliHelpOptionAttribute.IsRootHelpCommand(commandLine))
         {
-            var help = CliHelpRtt.Build(_logo, _description, _actions);
+            var help = CliHelpRtt.Build(
+                executableName, 
+                _logo, 
+                _description, 
+                _actions);
             Console.WriteLine(help);
             return;
         }
@@ -225,7 +237,8 @@ public sealed class CliProcessor : ICliProcessorCallback
             .OrderByDescending(similarActions => similarActions.Key)
             .Take(3)
             .SelectMany(similarActions => similarActions)
-            .Convert(selected => CliActionHelpRtt.Build("tool", selected));
+            .Convert(selected => CliActionHelpRtt.Build(executableName, selected));
         Console.WriteLine(text);
     }
+
 }

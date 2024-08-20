@@ -4,7 +4,7 @@
 <#@ import namespace="System.Text" #>
 <#@ import namespace="System.Collections.Generic" #>
 <#= Logo #>
-Usage: <#= Tool #> COMMAND [ARGS] [OPTIONS]
+Usage: <#= ExecutableName #> COMMAND [ARGS] [OPTIONS]
 
 Description:
   <#= Description #>

@@ -9,10 +9,9 @@ internal partial class CliHelpRtt
 {
     sealed record Command(string Path, string Description);
 
-    private CliHelpRtt(string logo, string description, CliAction[] actions)
+    private CliHelpRtt(string executableName, string logo, string description, CliAction[] actions)
     {
-        var path = Environment.GetCommandLineArgs().FirstOrDefault("tool");
-        Tool = Path.GetFileName(path);
+        ExecutableName = executableName;
         Logo = logo;
         Description = description;
         Commands = actions
@@ -27,11 +26,14 @@ internal partial class CliHelpRtt
     private IEnumerable<Command> Commands { get; }
     public string Logo { get; }
     public string Description { get; }
-    public string Tool { get; }
+    public string ExecutableName { get; }
 
-    public static string Build(string logo, string description, CliAction[] actions)
+    public static string Build(
+        string executableName, 
+        string logo, 
+        string description, CliAction[] actions)
     {
-        var rtt = new CliHelpRtt(logo, description, actions);
+        var rtt = new CliHelpRtt(executableName, logo, description, actions);
         return rtt.ToString();
     }
 }

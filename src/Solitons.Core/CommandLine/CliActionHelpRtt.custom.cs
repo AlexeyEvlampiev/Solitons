@@ -88,16 +88,16 @@ internal partial class CliActionHelpRtt
     public string Description { get; }
 
 
-    public static string Build(string tool, CliAction action)
+    public static string Build(string executableName, CliAction action)
     {
-        var rtt = new CliActionHelpRtt(tool, action);
+        var rtt = new CliActionHelpRtt(executableName, action);
         return rtt.ToString().Trim();
     }
 
-    public static string Build(string tool, IEnumerable<CliAction> actions)
+    public static string Build(string executableName, IEnumerable<CliAction> actions)
     {
         return actions
-            .Select(a => Build(tool, a))
+            .Select(a => Build(executableName, a))
             .Join(Enumerable
                 .Range(0, 3)
                 .Select(_ => Environment.NewLine)
