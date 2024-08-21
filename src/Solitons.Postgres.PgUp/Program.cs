@@ -132,6 +132,14 @@ public class Program
                 timeout ?? DefaultActionTimeout);
     }
 
+    [CliCommand("template list|ls")]
+    [Description(DeployCommandDescription)]
+    [CliCommandExample("template list", description: "Displays all project templates.")]
+    public static Task<int> ListTemplatesAsync()
+    {
+        throw new NotImplementedException();
+    }
+
     sealed class PgUpParametersOptionAttribute()
         : CliOptionAttribute("--parameter|-p", "Defines parameters for customizing deployment scripts."), ICliMapOption
     {

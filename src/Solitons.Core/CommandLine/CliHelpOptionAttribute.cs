@@ -1,9 +1,10 @@
 ﻿using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
-internal sealed class CliHelpOptionAttribute() : CliOptionAttribute(HelpFlagExpression)
+internal sealed class CliHelpOptionAttribute() : CliOptionAttribute(HelpFlagExpression, HelpFlagDescription)
 {
     private const string HelpFlagExpression = "--help|-h|-?";
+    private const string HelpFlagDescription = "Displays the help information for commands and options.";
     private static readonly string Pattern;
 
     static CliHelpOptionAttribute()

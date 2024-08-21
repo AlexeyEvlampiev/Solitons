@@ -24,6 +24,10 @@
       "commandName": "Project",
       "commandLineArgs": "deploy --connection --overwrite -?"
     },
+    "help template list": {
+      "commandName": "Project",
+      "commandLineArgs": "template list -?"
+    },
     "WSL": {
       "commandName": "WSL2",
       "distributionName": "Ubuntu-20.04",

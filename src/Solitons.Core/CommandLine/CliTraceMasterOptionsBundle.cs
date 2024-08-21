@@ -5,7 +5,7 @@ namespace Solitons.CommandLine;
 
 internal sealed class CliTraceMasterOptionsBundle : CliMasterOptionBundle
 {
-    [CliOption("--trace-level|-trace")]
+    [CliOption("--trace-level|-trace", "Specifies the level of detail for tracing output (e.g., Off, Error, Warning, Info, Verbose).")]
     public TraceLevel TraceLevel { get; set; } = TraceLevel.Off;
 
     public override void OnExecutingAction(string commandLine)
