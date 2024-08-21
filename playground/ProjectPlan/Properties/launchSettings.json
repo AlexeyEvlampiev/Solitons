@@ -20,6 +20,10 @@
       "commandName": "Project",
       "commandLineArgs": "deploy --connection -?"
     },
+    "help deploy --connection --overwrite": {
+      "commandName": "Project",
+      "commandLineArgs": "deploy --connection --overwrite -?"
+    },
     "WSL": {
       "commandName": "WSL2",
       "distributionName": "Ubuntu-20.04",
