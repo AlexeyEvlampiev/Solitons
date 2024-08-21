@@ -33,6 +33,9 @@ public class Program
     [CliArgument(nameof(projectFile), "PgUp configuration file.")]
     [Description(DeployCommandDescription)]
     [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD%")]
+    [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD% --timeout 00:30:00")]
+    [CliCommandExample("deploy pgup.json --host localhost --port 5432 --management-database postgres --username %ADMIN_USR% --password %ADMIN_PWD% --timeout 00:30:00")]
+    [CliCommandExample("deploy pgup.json --host localhost --port 5432 --management-database postgres --username %ADMIN_USR% --password %ADMIN_PWD% --timeout 00:30:00 --parameter[dbName] my_database")]
     public static Task<int> DeployAsync(
         string projectFile,
         ConnectionBuilderBundle connection,
@@ -130,7 +133,7 @@ public class Program
         [CliOption("--port", "Specifies the port number on which the PostgreSQL server is listening.")]
         public int Port { get; set; } = 5432;
 
-        [CliOption("--maintenance-database|--mdb", "The name of the maintenance database used for administrative tasks, typically postgres.")]
+        [CliOption("--maintenance-database|-mdb", "The name of the maintenance database used for administrative tasks, typically postgres.")]
         public string MaintenanceDatabase { get; set; } = "postgres";
 
         [CliOption("--username|--user|-usr|-u", "The username to connect to the PostgreSQL maintenance database.")]
