@@ -124,8 +124,8 @@ internal sealed class CliAction : IComparable<CliAction>
             .Where(s => s.IsPrintable())
             .Join(" ");
 
-        CommandExactMatchExpression = CliActionRegexRtt.Build(this, CliActionRegexRttMode.Default);
-        CommandFuzzyMatchExpression = CliActionRegexRtt.Build(this, CliActionRegexRttMode.Similarity);
+        CommandExactMatchExpression = CliActionRegexRtt.Build(this, CliActionMatchMode.Default);
+        CommandFuzzyMatchExpression = CliActionRegexRtt.Build(this, CliActionMatchMode.Similarity);
         _commandExactRegex = new Regex(CommandExactMatchExpression, RegexOptions.Compiled);
         _commandFuzzyRegex = new Regex(CommandFuzzyMatchExpression, RegexOptions.Compiled);
     }
@@ -264,5 +264,11 @@ internal sealed class CliAction : IComparable<CliAction>
 
     internal int IndexOf(ICliCommandSegment segment) => Array.IndexOf(_commandSegments, segment);
 
-    public override string ToString() => $"{_method.Name}";
+    public override string ToString()
+    {
+        return Examples
+            .Select(e => e.Example)
+            .FirstOrDefault()
+            .DefaultIfNullOrWhiteSpace(_method.Name);
+    }
 }

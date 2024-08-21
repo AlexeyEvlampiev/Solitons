@@ -17,7 +17,7 @@ internal partial class CliActionRegexRtt
 
 
     //[DebuggerNonUserCode]
-    private CliActionRegexRtt(CliAction action, CliActionRegexRttMode mode)
+    private CliActionRegexRtt(CliAction action, CliActionMatchMode mode)
     {
         Mode = mode;
         _action = action;
@@ -44,7 +44,7 @@ internal partial class CliActionRegexRtt
 
 
 
-    internal static string Build(CliAction action, CliActionRegexRttMode mode) => new CliActionRegexRtt(action, mode)
+    internal static string Build(CliAction action, CliActionMatchMode mode) => new CliActionRegexRtt(action, mode)
         .ToString()
 #if DEBUG
         .Convert(p => Regex.Replace(p, @"((?<=\n)[^\S\n]+\n+)+", ""))
@@ -52,19 +52,19 @@ internal partial class CliActionRegexRtt
         .Trim();
 
 
-    internal CliActionRegexRttMode Mode { get; }
+    internal CliActionMatchMode Mode { get; }
 
     private IEnumerable<ICliCommandSegment> CommandSegments { get; }
 
     private IEnumerable<CliSubCommand> SubCommands { get; }
 
-    public bool IsDefaultMode => Mode == CliActionRegexRttMode.Default;
-    public bool IsSimilarityMode => Mode == CliActionRegexRttMode.Similarity;
+    public bool IsDefaultMode => Mode == CliActionMatchMode.Default;
+    public bool IsSimilarityMode => Mode == CliActionMatchMode.Similarity;
 
     private IEnumerable<Option> Options => _action
         .Operands
         .Where(operand => operand is not CliArgumentInfo)
-        .Select(operand => new Option(operand.Name, operand.NamedGroupPattern));
+        .Select(operand => new Option(operand.Name, operand.GetNamedGroupPattern(CliActionMatchMode.Similarity)));
 
 
 

@@ -122,22 +122,22 @@ internal abstract class CliOperandInfo
 
     public string OperandKeyPattern { get; }
 
-    public string NamedGroupPattern
+    public string GetNamedGroupPattern(CliActionMatchMode mode)
     {
-        get
+        if (Converter is CliFlagOperandTypeConverter)
         {
-            if (Converter is CliFlagOperandTypeConverter)
-            {
-                return $"(?<{Name}>(?:{OperandKeyPattern}))";
-            }
-
-            if (Converter is CliMapOperandTypeConverter)
-            {
-                return Converter.ToMatchPattern(OperandKeyPattern);
-            }
-
-            return $@"(?:(?:{OperandKeyPattern})\s+(?<{Name}>[^-]\S*))";
+            return $"(?<{Name}>(?:{OperandKeyPattern}))";
         }
+
+        if (Converter is CliMapOperandTypeConverter)
+        {
+            return Converter.ToMatchPattern(OperandKeyPattern);
+        }
+
+        var scalarPattern = mode == CliActionMatchMode.Default
+            ? $@"(?:(?:{OperandKeyPattern})\s+(?<{Name}>[^-]\S*))"
+            : $@"(?:({OperandKeyPattern})(?:\s+(?:[^-]\S*))?)";
+        return scalarPattern;
     }
 
     public Type ParameterType { get; }

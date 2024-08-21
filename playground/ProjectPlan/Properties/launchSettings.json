@@ -16,6 +16,10 @@
       "commandName": "Project",
       "commandLineArgs": "deploy -?"
     },
+    "help deploy --connection": {
+      "commandName": "Project",
+      "commandLineArgs": "deploy --connection -?"
+    },
     "WSL": {
       "commandName": "WSL2",
       "distributionName": "Ubuntu-20.04",

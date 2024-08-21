@@ -231,11 +231,16 @@ public sealed class CliProcessor : ICliProcessorCallback
             return;
         }
 
+        var similarGroups = _actions
+            .Where(a => false == anyMatchesFound || a.IsMatch(commandLine))
+            .GroupBy(a => a.CalcSimilarity(commandLine))
+            .ToList();
+
         var text = _actions
             .Where(a => false == anyMatchesFound || a.IsMatch(commandLine))
             .GroupBy(a => a.CalcSimilarity(commandLine))
             .OrderByDescending(similarActions => similarActions.Key)
-            .Take(3)
+            .Take(1)
             .SelectMany(similarActions => similarActions)
             .Convert(selected => CliActionHelpRtt.Build(executableName, selected));
         Console.WriteLine(text);

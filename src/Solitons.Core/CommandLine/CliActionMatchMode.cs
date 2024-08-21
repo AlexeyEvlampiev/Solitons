@@ -1,6 +1,6 @@
 ﻿namespace Solitons.CommandLine;
 
-internal enum CliActionRegexRttMode
+internal enum CliActionMatchMode
 {
     Default,
     Similarity
