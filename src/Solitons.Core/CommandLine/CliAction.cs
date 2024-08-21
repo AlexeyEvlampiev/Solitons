@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -34,6 +35,7 @@ internal sealed class CliAction : IComparable<CliAction>
         
         _masterOptions = ThrowIf.ArgumentNull(masterOptions);
         var attributes = method.GetCustomAttributes().ToArray();
+        Examples = attributes.OfType<CliCommandExampleAttribute>().ToImmutableArray();
         _commandSegments = attributes
             .SelectMany(attribute =>
             {
@@ -127,6 +129,8 @@ internal sealed class CliAction : IComparable<CliAction>
         _commandExactRegex = new Regex(CommandExactMatchExpression, RegexOptions.Compiled);
         _commandFuzzyRegex = new Regex(CommandFuzzyMatchExpression, RegexOptions.Compiled);
     }
+
+    public ImmutableArray<CliCommandExampleAttribute> Examples { get; }
 
     public string CommandExactMatchExpression { get; }
     public string CommandFuzzyMatchExpression { get; }

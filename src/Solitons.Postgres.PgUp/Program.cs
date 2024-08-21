@@ -32,10 +32,10 @@ public class Program
     [CliCommand("deploy")]
     [CliArgument(nameof(projectFile), "PgUp configuration file.")]
     [Description(DeployCommandDescription)]
-    [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD%")]
-    [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD% --timeout 00:30:00")]
-    [CliCommandExample("deploy pgup.json --host localhost --port 5432 --management-database postgres --username %ADMIN_USR% --password %ADMIN_PWD% --timeout 00:30:00")]
-    [CliCommandExample("deploy pgup.json --host localhost --port 5432 --management-database postgres --username %ADMIN_USR% --password %ADMIN_PWD% --timeout 00:30:00 --parameter[dbName] my_database")]
+    [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD%", description: "Deploys using the specified admin credentials.")]
+    [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD% --timeout 00:30:00", description: "Deploys with a custom timeout of 30 minutes.")]
+    [CliCommandExample("deploy pgup.json --host localhost --port 5432 --management-database postgres --username %ADMIN_USR% --password %ADMIN_PWD% --timeout 00:30:00", description: "Specifies port, management database, and timeout.")]
+    [CliCommandExample("deploy pgup.json --host localhost --port 5432 --management-database postgres --username %ADMIN_USR% --password %ADMIN_PWD% --timeout 00:30:00 --parameter[dbName] my_database", description: "Overrides default parameters such as the database name.")]
     public static Task<int> DeployAsync(
         string projectFile,
         ConnectionBuilderBundle connection,
@@ -56,8 +56,8 @@ public class Program
     [CliCommand("deploy")]
     [CliArgument(nameof(projectFile), "PgUp configuration file.")]
     [Description(DeployCommandDescription)]
-    [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD% --overwrite")]
-    [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD% --overwrite --force")]
+    [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD% --overwrite", description: "Deploys by forcibly overwriting the existing database, resulting in the loss of all current data.")]
+    [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD% --overwrite --force", description: "Deploys by forcibly overwriting the existing database, ignoring warnings, and proceeding without confirmation, resulting in the loss of all current data.")]
     public static Task<int> DeployAsync(
         string projectFile,
         ConnectionBuilderBundle connection,

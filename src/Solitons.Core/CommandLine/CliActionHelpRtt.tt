@@ -9,8 +9,14 @@ Description:
 Usage:<# foreach(var option in UsageOptions){ #> 
   <#= ExecutableName #> <#= option #> <# } #> 
   <# if(Arguments.Any()) { #>  
+
 Arguments: <# foreach(string argument in Arguments){ #>  
   <#= argument #> <# } #>  
 <# } #>  
 Options:<# foreach(string option in Options){ #>  
   <#= option #> <# } #>  
+<# foreach(var example in Examples ){ #> 
+
+Example <#= example.Index #>: <#= example.Description #>
+<#= ExecutableName #> <#= example.Command #>
+<# } #>

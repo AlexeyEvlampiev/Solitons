@@ -7,7 +7,9 @@ namespace Solitons.CommandLine;
 internal partial class CliActionHelpRtt
 {
     private readonly CliAction _action;
-    private const string Tab = "\t\t\t";
+    private const string Tab = "   ";
+
+    sealed record Example(int Index, string Description, string Command);
 
     private CliActionHelpRtt(string executableName, CliAction action)
     {
@@ -86,6 +88,9 @@ internal partial class CliActionHelpRtt
 
     public IEnumerable<string> Arguments { get; }
     public string Description { get; }
+
+    private IEnumerable<Example> Examples => _action.Examples
+        .Select((item, index) => new Example(index + 1, item.Description, item.Example));
 
 
     public static string Build(string executableName, CliAction action)

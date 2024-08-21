@@ -37,7 +37,7 @@ namespace Solitons.CommandLine
  } 
             this.Write(" \r\n  ");
  if(Arguments.Any()) { 
-            this.Write("  \r\nArguments: ");
+            this.Write("  \r\n\r\nArguments: ");
  foreach(string argument in Arguments){ 
             this.Write("  \r\n  ");
             this.Write(this.ToStringHelper.ToStringWithCulture(argument));
@@ -51,7 +51,18 @@ namespace Solitons.CommandLine
             this.Write(this.ToStringHelper.ToStringWithCulture(option));
             this.Write(" ");
  } 
-            this.Write("  ");
+            this.Write("  \r\n");
+ foreach(var example in Examples ){ 
+            this.Write(" \r\n\r\nExample ");
+            this.Write(this.ToStringHelper.ToStringWithCulture(example.Index));
+            this.Write(": ");
+            this.Write(this.ToStringHelper.ToStringWithCulture(example.Description));
+            this.Write("\r\n");
+            this.Write(this.ToStringHelper.ToStringWithCulture(ExecutableName));
+            this.Write(" ");
+            this.Write(this.ToStringHelper.ToStringWithCulture(example.Command));
+            this.Write("\r\n");
+ } 
             return this.GenerationEnvironment.ToString();
         }
     }

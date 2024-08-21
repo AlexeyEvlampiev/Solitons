@@ -71,7 +71,9 @@ public sealed class PgUpManager
             {
                 if (false == forceOverwrite)
                 {
-                    var confirmed = CliPrompt.GetYesNoAnswer("Sure?");
+                    var confirmed = CliPrompt.GetYesNoAnswer(
+                        "This will overwrite the existing database, resulting in complete data loss. " +
+                        "Are you sure you want to proceed? (yes/no)");
                     if (!confirmed)
                     {
                         throw new CliExitException("Operation cancelled by user")
