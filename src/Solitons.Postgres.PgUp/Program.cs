@@ -29,6 +29,15 @@ public class Program
             .Process();
     }
 
+    [CliCommand("init|initialize")]
+    [CliArgument(nameof(projectDir), "PgUp project directory")]
+    public static void Initialize(
+        string projectDir,
+        [CliOption("--template")]string template = "basic")
+    {
+        PgUpDirectoryManager.Initialize(projectDir, template);
+    } 
+
     [CliCommand("deploy")]
     [CliArgument(nameof(projectFile), "PgUp configuration file.")]
     [Description(DeployCommandDescription)]

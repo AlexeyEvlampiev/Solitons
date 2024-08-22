@@ -22,6 +22,52 @@ namespace Solitons;
 
 public static partial class Extensions
 {
+    /// <summary>
+    /// Copies the contents of the source directory to the destination directory.
+    /// </summary>
+    /// <param name="sourceDirectory">The source directory whose contents are to be copied.</param>
+    /// <param name="destinationDirectory">The destination directory where the contents should be copied to.</param>
+    /// <param name="overwriteFiles">If true, overwrites existing files in the destination directory; otherwise, skips them.</param>
+    /// <param name="includeSubdirectories">If true, copies all subdirectories and their contents recursively.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="sourceDirectory"/> or <paramref name="destinationDirectory"/> is null.</exception>
+    /// <exception cref="DirectoryNotFoundException">Thrown if <paramref name="sourceDirectory"/> does not exist.</exception>
+
+    public static void CopyContentsTo(
+        this DirectoryInfo sourceDirectory,
+        DirectoryInfo destinationDirectory,
+        bool overwriteFiles = false,
+        bool includeSubdirectories = false)
+    {
+        // Validate parameters
+        if (sourceDirectory == null)
+            throw new ArgumentNullException(nameof(sourceDirectory));
+        if (destinationDirectory == null)
+            throw new ArgumentNullException(nameof(destinationDirectory));
+        if (!sourceDirectory.Exists)
+            throw new DirectoryNotFoundException($"The source directory '{sourceDirectory.FullName}' does not exist.");
+
+        // Ensure the destination directory exists
+        if (!destinationDirectory.Exists)
+            destinationDirectory.Create();
+
+        // Copy each file in the source directory
+        foreach (FileInfo file in sourceDirectory.GetFiles())
+        {
+            string destinationFilePath = Path.Combine(destinationDirectory.FullName, file.Name);
+            file.CopyTo(destinationFilePath, overwriteFiles);
+        }
+
+        // If includeSubdirectories is true, copy each subdirectory recursively
+        if (includeSubdirectories)
+        {
+            foreach (DirectoryInfo subdirectory in sourceDirectory.GetDirectories())
+            {
+                DirectoryInfo destinationSubdirectory = destinationDirectory.CreateSubdirectory(subdirectory.Name);
+                subdirectory.CopyContentsTo(destinationSubdirectory, overwriteFiles, includeSubdirectories);
+            }
+        }
+    }
+
     public static CancellationToken JoinTimeout(
         this CancellationToken cancellation, 
         TimeSpan timeout)

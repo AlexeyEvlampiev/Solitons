@@ -158,6 +158,7 @@ internal sealed class CliAction : IComparable<CliAction>
             var csv = unrecognizedParameterGroup
                 .Captures
                 .Select(c => c.Value.Trim())
+                .Select(preProcessor.GetSubstitution)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .Join(", ");
             throw new CliExitException(

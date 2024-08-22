@@ -19,6 +19,19 @@ public sealed class CliTokenSubstitutionPreprocessor
     {
         var dictionary = new Dictionary<string, string>(StringComparer.Ordinal);
         cliTokenSubstitutionPreprocessor = new CliTokenSubstitutionPreprocessor(dictionary);
+
+        commandLine = Regex.Replace(
+            commandLine,
+            @"(?:""$variable""|$variable)".Replace("$variable", "%[^%]+%"),
+            match =>
+            {
+                var key = Guid.NewGuid().ToString("N");
+                var value = match.Value.Trim('"').Trim('%');
+                value = Environment.GetEnvironmentVariable(value) ?? match.Value;
+                dictionary[key] = value;
+                return key;
+            });
+
         commandLine = Regex.Replace(
             commandLine,
         @"""([^""]*)""",
@@ -31,19 +44,7 @@ public sealed class CliTokenSubstitutionPreprocessor
                 return key;
             });
 
-        commandLine = Regex.Replace(
-            commandLine,
-            @"%(?<variable>[^%]+)%",
-            match =>
-            {
-                var group = match.Groups["variable"];
-                Debug.Assert(group.Success);
-                var key = Guid.NewGuid().ToString("N");
-                var value = group.Value;
-                value = Environment.GetEnvironmentVariable(value) ?? value;
-                dictionary[key] = value;
-                return key;
-            });
+
         return commandLine;
     }
 

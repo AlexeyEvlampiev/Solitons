@@ -176,7 +176,8 @@ internal abstract class CliOperandInfo
             return false;
         }
 
-        throw new NotImplementedException();
+        Debug.WriteLine($"{Name}");
+        throw new CliExitException($"{this.Name} parameter is required.");
     }
 
 

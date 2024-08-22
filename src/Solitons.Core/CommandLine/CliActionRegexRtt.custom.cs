@@ -64,7 +64,7 @@ internal partial class CliActionRegexRtt
     private IEnumerable<Option> Options => _action
         .Operands
         .Where(operand => operand is not CliArgumentInfo)
-        .Select(operand => new Option(operand.Name, operand.GetNamedGroupPattern(CliActionMatchMode.Similarity)));
+        .Select(operand => new Option(operand.Name, operand.GetNamedGroupPattern(Mode)));
 
 
 
