@@ -5,6 +5,7 @@ using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using Npgsql;
 using Solitons.CommandLine;
+using Solitons.Data;
 using Solitons.Postgres.PgUp.Formatting;
 
 namespace Solitons.Postgres.PgUp;
@@ -70,6 +71,7 @@ public sealed class PgUpSession(TimeSpan timeout) : IPgUpSession
         connection.Notice += (_, args) => Console.WriteLine(args.Notice.MessageText);
         await connection.OpenAsync(_cancellation);
         await using var transaction = await connection.BeginTransactionAsync(_cancellation);
+        using var hasher = new SqlCommandTextHasher();
 
         foreach (var batch in pgUpTransaction.GetBatches())
         {
@@ -77,8 +79,9 @@ public sealed class PgUpSession(TimeSpan timeout) : IPgUpSession
             foreach (var script in batch.GetScripts())
             {
                 Console.WriteLine(PgUpScriptDisplayRtt.Build(script.RelativePath));
-                if (script.Content.IsNullOrWhiteSpace())
+                if (hasher.IsEmpty(script.Content))
                 {
+                    Console.WriteLine(@"The SQL script contains only whitespace, comments, or empty content. Skipping processing.");
                     continue;
                 }
                 await using var command = builder.Build(script.RelativePath, script.Content, script.Checksum, connection);

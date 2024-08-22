@@ -101,7 +101,7 @@ public sealed class PgUpBatch
         using var memory = new MemoryStream();
         using var zipStream = new GZipStream(memory, CompressionLevel.SmallestSize);
         using var writer = new BinaryWriter(zipStream);
-        using var alg = new DbCommandTextHasher();
+        using var alg = new SqlCommandTextHasher();
         writer.Write(scriptFiles.Length);
         foreach (var scriptFullName in scriptFiles)
         {

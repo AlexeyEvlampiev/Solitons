@@ -27,7 +27,7 @@ public sealed class DbCommandTextHasher_ComputeHash_Should
     ")]
     public void Work(string command)
     {
-        using var alg = new DbCommandTextHasher();
+        using var alg = new SqlCommandTextHasher();
         var expectedHash = alg.ComputeHash("SELECT * FROM public.test");
         var actualHash = alg.ComputeHash(command);
         Assert.Equal(expectedHash, actualHash);
