@@ -42,10 +42,11 @@ namespace Solitons.Postgres.PgUp
                             fsi.Delete();
                         }
                     });
-                processor.Process($@"pgup init ""{workingDir.FullName}""  --template {template}");
-
+                var exitCode = processor.Process($@"pgup init ""{workingDir.FullName}""  --template {template}");
+                Assert.Equal(0, exitCode);
                 var pgUpProjectPath = Path.Combine(workingDir.FullName, "pgup.json");
-                processor.Process($@"pgup deploy ""{pgUpProjectPath}"" --connection ""%DEV_POSTGRES_CONNECTION_STRING%"" --overwrite --force");
+                exitCode = processor.Process($@"pgup deploy ""{pgUpProjectPath}"" --connection ""%DEV_POSTGRES_CONNECTION_STRING%"" --overwrite --force");
+                Assert.Equal(0, exitCode);
             }
         }
     }

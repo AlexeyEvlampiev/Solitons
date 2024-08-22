@@ -2,7 +2,7 @@
   "version": "1.0",
   "parameters": {
     "dbPrefix": { "default": "" },
-    "dbName": { "default": "${dbPrefix}mypgupdb" },
+    "dbName": { "default": "${dbPrefix}my_basic_db" },
     "dbOwner": { "default": "${dbName}" },
     "dbManager": { "default": "${dbName}_manager" },
     "dbManagerPwd": { "default": "postgres" }
@@ -12,37 +12,40 @@
   "transactions": [
     {
       "displayName": "Pre-deployment",
-      "stages": [
+      "batches": [
         {
           "workdir": "pre-deployment",
-          "scripts": [ "pre-deployment.sql" ]
+          "fileDiscoveryMode": "none",
+          "runOrder": [ "pre-deployment.sql" ]
         }
       ]
     },
     {
       "displayName": "Upgrade",
-      "stages": [
+      "batches": [
         {
           "workdir": "migrations",
-          "customExecutor": {
-            "filePathParameter": "path",
-            "fileContentParameter": "sql",
-            "command": "SELECT system.migration_script_execute(@path, @sql);"
-          },
-          "scripts": [ "migration.sql" ]
+          "fileDiscoveryMode": "none",
+          "customExec": "SELECT system.migration_script_execute(@json);",
+          "runOrder": [
+            "00-00-00.sql",
+            "00-00-01.sql"
+          ]
         },
         {
           "workdir": "setup",
-          "scripts": [ "setup.sql" ]
+          "fileDiscoveryMode": "recursive",
+          "runOrder": [ "setup.sql" ]
         }
       ]
     },
     {
       "displayName": "Post-deployment",
-      "stages": [
+      "batches": [
         {
           "workdir": "post-deployment",
-          "scripts": [ "post-deployment.sql" ]
+          "fileDiscoveryMode": "recursive",
+          "runOrder": [ "post-deployment.sql" ]
         }
       ]
     }
