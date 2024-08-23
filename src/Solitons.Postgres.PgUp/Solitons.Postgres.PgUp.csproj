@@ -50,34 +50,34 @@
       <Generator>TextTemplatingFilePreprocessor</Generator>
       <LastGenOutput>PgUpScriptDisplayRtt.cs</LastGenOutput>
     </None>
-    <None Update="Templates\basic\pgup.json">
+    <None Update="templates\basic\pgup.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Templates\basic\migrations\migration.sql">
+    <None Update="templates\basic\migrations\migration.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Templates\basic\post-deployment\post-deployment.sql">
+    <None Update="templates\basic\post-deployment\post-deployment.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Templates\basic\pre-deployment\pre-deployment.sql">
+    <None Update="templates\basic\pre-deployment\pre-deployment.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Templates\basic\setup\setup.sql">
+    <None Update="templates\basic\setup\setup.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Templates\solitons\lob\migrations\migration.sql">
+    <None Update="templates\solitons\lob\migrations\migration.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Templates\solitons\lob\pgup.json">
+    <None Update="templates\solitons\lob\pgup.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Templates\solitons\lob\post-deployment\post-deployment.sql">
+    <None Update="templates\solitons\lob\post-deployment\post-deployment.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Templates\solitons\lob\pre-deployment\pre-deployment.sql">
+    <None Update="templates\solitons\lob\pre-deployment\pre-deployment.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Templates\solitons\lob\setup\setup.sql">
+    <None Update="templates\solitons\lob\setup\setup.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Formatting\PgUpTransactionDelimiterRtt.tt">
@@ -98,7 +98,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Templates\azure\" />
+    <Folder Include="templates\azure\" />
   </ItemGroup>
 
 </Project>

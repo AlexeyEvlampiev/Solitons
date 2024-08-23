@@ -2,7 +2,7 @@
   "version": "1.0",
   "parameters": {
     "dbPrefix": { "default": "" },
-    "dbName": { "default": "${dbPrefix}my_basic_db" },
+    "dbName": { "default": "${dbPrefix}mybasicdb" },
     "dbOwner": { "default": "${dbName}" },
     "dbManager": { "default": "${dbName}_manager" },
     "dbManagerPwd": { "default": "postgres" }
@@ -26,11 +26,8 @@
         {
           "workdir": "migrations",
           "fileDiscoveryMode": "none",
-          "customExec": "SELECT system.migration_script_execute(@json);",
-          "runOrder": [
-            "00-00-00.sql",
-            "00-00-01.sql"
-          ]
+          "customExec": "SELECT public.migration_script_execute(@json);",
+          "runOrder": [ "migration.00-00-00.sql" ]
         },
         {
           "workdir": "setup",

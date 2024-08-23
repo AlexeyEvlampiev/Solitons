@@ -12,7 +12,7 @@ namespace Solitons.Postgres.PgUp
                     .UseCommandsFrom<Program>());
             var templates =
                 Path
-                    .Combine(".", "Templates")
+                    .Combine(".", "templates")
                     .Convert(path => new DirectoryInfo(path))
                     .Convert(dir =>
                     {
