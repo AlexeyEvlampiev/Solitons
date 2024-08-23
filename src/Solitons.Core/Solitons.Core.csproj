@@ -1,0 +1,191 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Solitons.Core</PackageId>
+    <VersionPrefix>1.0.7</VersionPrefix>
+    <VersionSuffix>$(VersionSuffix)</VersionSuffix>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Solitons</RootNamespace>
+    <Authors>Alexey Evlampiev</Authors>
+    <Company>Solitons</Company>
+    <Description>
+      Solitons.Core is a robust .NET class library, purpose-built to accelerate the development of cutting-edge cloud software systems. This library offers a suite of interfaces, algorithms, and utility functions for streamlined development, focusing on data processing and visualization.
+
+      This library acts as a catalyst for constructing contemporary cloud applications by simplifying complex processes. Key features include asynchronous logging, media content type negotiation, serialization, run-time code generation, and cloud database management.
+
+      The broad spectrum of features provided by Solitons.Core is aimed at reducing development time and resource consumption, enabling developers to focus on delivering high-quality, modern cloud computing solutions. With its comprehensive set of utilities and its emphasis on efficiency, Solitons.Core is a highly valuable tool for the open source community.
+    </Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+    <RunAnalyzersDuringLiveAnalysis>false</RunAnalyzersDuringLiveAnalysis>
+    <RunAnalyzers>false</RunAnalyzers>
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <PackageProjectUrl>https://solitons.z6.web.core.windows.net</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/AlexeyEvlampiev/Solitons.Core</RepositoryUrl>
+    <PackageIcon>Solitons.png</PackageIcon>
+    <PackageIconUrl />
+    <Nullable>enable</Nullable>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>
+      .NET;.NETCore;C#;CloudIntegration;DataTransfer;ObjectSerialization;ErrorLogging;Authentication;Authorization;DataPipeline;MiddlewareDevelopment;SystemConfiguration;RESTfulAPI;CodingStandards;OperationalExcellence;SoftwareArchitecture;CloudComputing;DataEngineering;SecurityManagement;SolitonsCore;Solitons;Microservices;DevSecOps;AgileDevelopment;ContinuousIntegration;ContinuousDeployment;Cloud;UtilityLibrary;CoreExtensions;DevelopmentTools;OpenSource;CommunityProject;Collaboration;LearningResources;Documentation;SoftwareDevelopment;Programming;CodeLibrary
+    </PackageTags>
+
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DocumentationFile></DocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="CommandLine\Common\**" />
+    <Compile Remove="Data\Web\**" />
+    <Compile Remove="Net\Http\Common\**" />
+    <EmbeddedResource Remove="CommandLine\Common\**" />
+    <EmbeddedResource Remove="Data\Web\**" />
+    <EmbeddedResource Remove="Net\Http\Common\**" />
+    <None Remove="CommandLine\Common\**" />
+    <None Remove="Data\Web\**" />
+    <None Remove="Net\Http\Common\**" />
+  </ItemGroup>
+
+  <!-- Dependencies for .NET 6 -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+    <!-- Latest stable release for .NET 6 -->
+    <PackageReference Include="System.Reactive" Version="6.0.0" />
+  </ItemGroup>
+
+  <!-- Dependencies for .NET 7 -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net7.0'">
+    <!-- Assuming a similar versioning pattern, use the same version for .NET 7 -->
+    <PackageReference Include="System.Reactive" Version="[6,)" />
+  </ItemGroup>
+
+  <!-- Dependencies for .NET 8 -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <!-- Placeholder for future .NET 8 compatible version -->
+    <PackageReference Include="System.Reactive" Version="6.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\Solitons.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+    <None Include="Data\Common\Postgres\SolitonsPgScriptRttOptions.generated.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>SolitonsPgScriptRttOptions.tt</DependentUpon>
+    </None>
+    <None Include="Extensions.Numbers.generated.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Extensions.Numbers.tt</DependentUpon>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="CommandLine\CliActionHelpRtt.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CliActionHelpRtt.tt</DependentUpon>
+    </Compile>
+    <Compile Update="CommandLine\CliActionRegexRtt.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CliActionRegexRtt.tt</DependentUpon>
+    </Compile>
+    <Compile Update="CommandLine\CliHelpRtt.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CliHelpRtt.tt</DependentUpon>
+    </Compile>
+    <Compile Update="Common\Azure\ResourceManager\AutoScaleSettingsRtt.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>AutoScaleSettingsRtt.tt</DependentUpon>
+    </Compile>
+    <Compile Update="Data\Common\Postgres\LoggingPgScriptRtt.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>LoggingPgScriptRtt.tt</DependentUpon>
+    </Compile>
+    <Compile Update="Data\Common\Postgres\CommonPgScriptRtt.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CommonPgScriptRtt.tt</DependentUpon>
+    </Compile>
+    <Compile Update="Data\Common\Postgres\SolitonsPgScriptRttOptions.generated.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>SolitonsPgScriptRttOptions.tt</DependentUpon>
+    </Compile>
+    <Compile Update="Extensions.Numbers.generated.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Extensions.Numbers.tt</DependentUpon>
+    </Compile>
+    <Compile Update="Text\RegexPatterns.generated.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>RegexPatterns.tt</DependentUpon>
+    </Compile>
+    <Compile Update="Web\HttpRequestHeaders.generated.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>HttpRequestHeaders.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="CommandLine\CliActionHelpRtt.tt">
+      <Generator>TextTemplatingFilePreprocessor</Generator>
+      <LastGenOutput>CliActionHelpRtt.cs</LastGenOutput>
+    </None>
+    <None Update="CommandLine\CliActionRegexRtt.tt">
+      <Generator>TextTemplatingFilePreprocessor</Generator>
+      <LastGenOutput>CliActionRegexRtt.cs</LastGenOutput>
+    </None>
+    <None Update="CommandLine\CliHelpRtt.tt">
+      <Generator>TextTemplatingFilePreprocessor</Generator>
+      <LastGenOutput>CliHelpRtt.cs</LastGenOutput>
+    </None>
+    <None Update="Common\Azure\ResourceManager\AutoScaleSettingsRtt.tt">
+      <Generator>TextTemplatingFilePreprocessor</Generator>
+      <LastGenOutput>AutoScaleSettingsRtt.cs</LastGenOutput>
+    </None>
+    <None Update="Data\Common\Postgres\LoggingPgScriptRtt.tt">
+      <Generator>TextTemplatingFilePreprocessor</Generator>
+      <LastGenOutput>LoggingPgScriptRtt.cs</LastGenOutput>
+    </None>
+    <None Update="Data\Common\Postgres\CommonPgScriptRtt.tt">
+      <Generator>TextTemplatingFilePreprocessor</Generator>
+      <LastGenOutput>CommonPgScriptRtt.cs</LastGenOutput>
+    </None>
+    <None Update="Data\Common\Postgres\SolitonsPgScriptRttOptions.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>SolitonsPgScriptRttOptions.generated.cs</LastGenOutput>
+    </None>
+    <None Update="Extensions.Numbers.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Extensions.Numbers.generated.cs</LastGenOutput>
+    </None>
+    <None Update="Text\RegexPatterns.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>RegexPatterns.generated.cs</LastGenOutput>
+    </None>
+    <None Update="Web\HttpRequestHeaders.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>HttpRequestHeaders.generated.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+
+</Project>

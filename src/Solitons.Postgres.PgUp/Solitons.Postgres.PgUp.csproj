@@ -1,0 +1,104 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>pgup</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NJsonSchema" Version="11.0.2" />
+    <PackageReference Include="Npgsql" Version="8.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Solitons.Core\Solitons.Core.csproj" />
+    <ProjectReference Include="..\Solitons.Postgres\Solitons.Postgres.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Formatting\PgUpConnectionDisplayRtt.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PgUpConnectionDisplayRtt.tt</DependentUpon>
+    </Compile>
+    <Compile Update="Formatting\PgUpScriptDisplayRtt.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PgUpScriptDisplayRtt.tt</DependentUpon>
+    </Compile>
+    <Compile Update="Formatting\PgUpTransactionDelimiterRtt.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PgUpTransactionDelimiterRtt.tt</DependentUpon>
+    </Compile>
+    <Compile Update="PgUpResource.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PgUpResource.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Formatting\PgUpConnectionDisplayRtt.tt">
+      <Generator>TextTemplatingFilePreprocessor</Generator>
+      <LastGenOutput>PgUpConnectionDisplayRtt.cs</LastGenOutput>
+    </None>
+    <None Update="Formatting\PgUpScriptDisplayRtt.tt">
+      <Generator>TextTemplatingFilePreprocessor</Generator>
+      <LastGenOutput>PgUpScriptDisplayRtt.cs</LastGenOutput>
+    </None>
+    <None Update="templates\basic\pgup.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="templates\basic\migrations\migration.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="templates\basic\post-deployment\post-deployment.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="templates\basic\pre-deployment\pre-deployment.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="templates\basic\setup\setup.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="templates\solitons\lob\migrations\migration.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="templates\solitons\lob\pgup.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="templates\solitons\lob\post-deployment\post-deployment.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="templates\solitons\lob\pre-deployment\pre-deployment.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="templates\solitons\lob\setup\setup.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Formatting\PgUpTransactionDelimiterRtt.tt">
+      <Generator>TextTemplatingFilePreprocessor</Generator>
+      <LastGenOutput>PgUpTransactionDelimiterRtt.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="PgUpResource.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>PgUpResource.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="templates\azure\" />
+  </ItemGroup>
+
+</Project>
