@@ -107,10 +107,12 @@ BEGIN
         RAISE EXCEPTION 'Required JSON property missing: "checksum"';
     END IF;
 
-    SELECT ms.* INTO v_migration_script FOR UPDATE
+    SELECT ms.*
+    INTO v_migration_script
     FROM public.migration_script AS ms
     WHERE ms."checksum" = v_checksum
-    LIMIT 1;
+    LIMIT 1
+    FOR UPDATE;
 
     IF FOUND THEN
         IF v_path = (v_migration_script).path THEN
@@ -140,7 +142,7 @@ ALTER FUNCTION public.migration_script_execute(jsonb) OWNER TO ${dbname};
 -- Add comments to describe the function's purpose and usage.
 
 -- Function to execute a SQL statement if the provided migration script path is new.
-COMMENT ON FUNCTION public.migration_script_execute("path" text, "sql" text) IS
+COMMENT ON FUNCTION public.migration_script_execute(p_request jsonb) IS
 'Executes or skips SQL commands based on migration script checksum and path changes in JSONB input. Requires "filePath", "command", and "checksum". Returns script ID or -1 if skipped.';
 
 

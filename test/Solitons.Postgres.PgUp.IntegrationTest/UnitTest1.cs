@@ -26,22 +26,14 @@ namespace Solitons.Postgres.PgUp
                     })
                     .ToList();
             Assert.True(templates.Count > 0);
-            var workingDir = Directory.CreateDirectory("target");
+            
             foreach (var template in templates)
             {
-                workingDir
-                    .EnumerateFileSystemInfos("*", SearchOption.AllDirectories)
-                    .ForEach(fsi =>
-                    {
-                        if (fsi is DirectoryInfo di)
-                        {
-                            di.Delete(true);
-                        }
-                        else
-                        {
-                            fsi.Delete();
-                        }
-                    });
+                var workingDir = Path
+                    .GetTempPath()
+                    .Convert(root => Path.Combine(root, Guid.NewGuid().ToString()))
+                    .Convert(Directory.CreateDirectory);
+
                 var exitCode = processor.Process($@"pgup init ""{workingDir.FullName}""  --template {template}");
                 Assert.Equal(0, exitCode);
                 var pgUpProjectPath = Path.Combine(workingDir.FullName, "pgup.json");

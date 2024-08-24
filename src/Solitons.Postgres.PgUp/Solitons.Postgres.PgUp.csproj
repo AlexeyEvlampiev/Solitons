@@ -9,6 +9,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="templates\azure\**" />
+    <EmbeddedResource Remove="templates\azure\**" />
+    <None Remove="templates\azure\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="NJsonSchema" Version="11.0.2" />
     <PackageReference Include="Npgsql" Version="8.0.3" />
   </ItemGroup>
@@ -53,7 +59,7 @@
     <None Update="templates\basic\pgup.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="templates\basic\migrations\migration.sql">
+    <None Update="templates\basic\migrations\migration.00-00-00.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="templates\basic\post-deployment\post-deployment.sql">
@@ -95,10 +101,6 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>PgUpResource.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="templates\azure\" />
   </ItemGroup>
 
 </Project>
