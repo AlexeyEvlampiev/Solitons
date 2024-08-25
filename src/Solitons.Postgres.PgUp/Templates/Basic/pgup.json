@@ -14,8 +14,8 @@
       "displayName": "Pre-deployment",
       "batches": [
         {
-          "workDir": "pre-deployment",
-          "fileScanMode": "none",
+          "scriptDir": "pre-deployment",
+          "discoveryMode": "none",
           "executionOrder": [ "pre-deployment.sql" ]
         }
       ]
@@ -24,14 +24,14 @@
       "displayName": "Upgrade",
       "batches": [
         {
-          "workDir": "migrations",
-          "fileScanMode": "none",
+          "scriptDir": "migrations",
+          "discoveryMode": "none",
           "customCommand": "SELECT public.execute_migration_script(@json);",
           "executionOrder": [ "migration.00-00-00.sql" ]
         },
         {
-          "workDir": "setup",
-          "fileScanMode": "recursive",
+          "scriptDir": "setup",
+          "discoveryMode": "recursive",
           "executionOrder": [ "setup.sql" ]
         }
       ]
@@ -40,8 +40,8 @@
       "displayName": "Post-deployment",
       "batches": [
         {
-          "workDir": "post-deployment",
-          "fileScanMode": "recursive",
+          "scriptDir": "post-deployment",
+          "discoveryMode": "recursive",
           "executionOrder": [ "post-deployment.sql" ]
         }
       ]
