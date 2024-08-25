@@ -59,6 +59,22 @@ If you prefer to build PgUp from source, you will need to have the .NET SDK and 
    dotnet build
    ```
 
+## Initializing a New PgUp Project
+
+To start using PgUp, you can initialize a new project in any directory. This will create a directory structure with initial SQL scripts and a `pgup.json` file that you can extend or modify as needed.
+
+1. **Initialize with a basic template:**
+   ```bash
+   pgup init . --template basic
+   ```
+
+2. **Initialize without specifying a template (uses basec template by default):**
+   ```bash
+   pgup init .
+   ```
+
+These commands will set up your project directory, ready for you to customize according to your deployment needs.
+
 ## Usage
 
 PgUp provides a powerful and flexible interface for managing PostgreSQL database deployments. Below are some common examples of how to use the tool:
@@ -66,7 +82,7 @@ PgUp provides a powerful and flexible interface for managing PostgreSQL database
 ### Deploying a PostgreSQL Database
 
 ```bash
-pgup deploy --project pgup.json --host localhost --username admin --password secret
+pgup deploy pgup.json --host localhost --username admin --password secret
 ```
 
 This command deploys the database according to the specifications in the `pgup.json` configuration file.
@@ -74,15 +90,15 @@ This command deploys the database according to the specifications in the `pgup.j
 ### Managing Deployment Parameters
 
 ```bash
-pgup deploy --project pgup.json --host localhost --username admin --password secret --parameter[dbName] my_custom_database
+pgup deploy --project pgup.json --host localhost --username admin --password secret --parameter[databaseName] mydb
 ```
 
-This command overrides the `dbName` parameter in the `pgup.json` file with a custom value for this deployment.
+This command overrides the `databaseName` parameter in the `pgup.json` file with a custom value for this deployment.
 
 ### Performing a Forced Overwrite
 
 ```bash
-pgup deploy --project pgup.json --connection "Host=localhost;Username=postgres;Password=secret" --overwrite --force
+pgup deploy pgup.json --connection "Host=localhost;Username=postgres;Password=secret" --overwrite --force
 ```
 
 This command forcefully overwrites the existing database, resulting in the loss of all current data.
@@ -95,7 +111,7 @@ Here are some practical examples of how PgUp can be utilized:
 
 1. **Deploying with Custom Parameters:**
    ```bash
-   pgup deploy --project pgup.json --host localhost --username admin --password secret --parameter[dbOwner] new_owner --timeout 00:30:00
+   pgup deploy pgup.json --host localhost --username admin --password secret --parameter[databaseName] dev_db  --timeout 00:30:00
    ```
 
 2. **Rollback After Unit Testing:**
