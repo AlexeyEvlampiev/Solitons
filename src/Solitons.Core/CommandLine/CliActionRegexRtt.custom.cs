@@ -74,10 +74,14 @@ internal partial class CliActionRegexRtt
 
     private string GetSegmentPattern(ICliCommandSegment segment) => segment.BuildPattern();
 
-    private string GetSegmentGroupName(CliSubCommand cmd)
+    private string GetSegmentGroupName(ICliCommandSegment cmd)
     {
+        if (cmd is CliArgumentInfo arg)
+        {
+            return ":";
+        }
         var guid = Guid.NewGuid().ToString("N");
-        return $"id{guid}";
+        return $"<id{guid}>";
     }
 
 

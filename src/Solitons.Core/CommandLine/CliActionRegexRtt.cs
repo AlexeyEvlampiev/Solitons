@@ -49,11 +49,10 @@ namespace Solitons.CommandLine
 
 
             this.Write("# --- COMMANDS ---\r\n(?: \r\n  \\s+ \r\n  (?: ");
- foreach(var command in SubCommands){ 
-            this.Write(" \r\n    (?<");
-            this.Write(this.ToStringHelper.ToStringWithCulture(GetSegmentGroupName(command)));
-            this.Write(">");
-            this.Write(this.ToStringHelper.ToStringWithCulture(GetSegmentPattern(command)));
+ foreach(var segment in CommandSegments){ 
+            this.Write(" \r\n    (?");
+            this.Write(this.ToStringHelper.ToStringWithCulture(GetSegmentGroupName(segment)));
+            this.Write(this.ToStringHelper.ToStringWithCulture(GetSegmentPattern(segment)));
             this.Write(")|");
  } 
             this.Write(" \r\n    [^\\s-]\\S*\r\n  )\r\n)*\r\n\r\n\r\n# --- PARAMETERS ---\r\n(?: \r\n  \\s+ \r\n  (?: ");
