@@ -84,7 +84,7 @@ GRANT INSERT, UPDATE, DELETE ON TABLE public.migration_script TO ${dbOwner};
 -- Create a function to execute migration scripts if they are new.
 
 -- Function to execute SQL commands associated with migration scripts.
-CREATE OR REPLACE FUNCTION public.migration_script_execute(p_data jsonb) RETURNS BIGINT
+CREATE OR REPLACE FUNCTION public.execute_migration_script(p_data jsonb) RETURNS BIGINT
 AS
 $migration_script_execute$
 DECLARE
@@ -137,12 +137,12 @@ END;
 $migration_script_execute$ LANGUAGE plpgsql;
 
 -- Set function ownership for consistency.
-ALTER FUNCTION public.migration_script_execute(jsonb) OWNER TO ${dbname};
+ALTER FUNCTION public.execute_migration_script(jsonb) OWNER TO ${dbname};
 
 -- Add comments to describe the function's purpose and usage.
 
 -- Function to execute a SQL statement if the provided migration script path is new.
-COMMENT ON FUNCTION public.migration_script_execute(p_request jsonb) IS
+COMMENT ON FUNCTION public.execute_migration_script(p_request jsonb) IS
 'Executes or skips SQL commands based on migration script checksum and path changes in JSONB input. Requires "filePath", "command", and "checksum". Returns script ID or -1 if skipped.';
 
 

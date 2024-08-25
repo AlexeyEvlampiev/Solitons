@@ -1,22 +1,22 @@
 {
   "version": "1.0",
   "parameters": {
-    "dbPrefix": { "default": "" },
-    "dbName": { "default": "${dbPrefix}mybasicdb" },
-    "dbOwner": { "default": "${dbName}" },
-    "dbManager": { "default": "${dbName}_manager" },
-    "dbManagerPwd": { "default": "postgres" }
+    "databasePrefix": { "default": "" },
+    "databaseName": { "default": "${databasePrefix}mybasicdb" },
+    "databaseOwner": { "default": "${databaseName}" },
+    "databaseAdmin": { "default": "${databaseName}_admin" },
+    "databaseAdminPassword": { "default": "postgres" }
   },
-  "databaseName": "${dbName}",
-  "databaseOwner": "${dbOwner}",
+  "databaseName": "${databaseName}",
+  "databaseOwner": "${databaseOwner}",
   "transactions": [
     {
       "displayName": "Pre-deployment",
       "batches": [
         {
-          "workdir": "pre-deployment",
-          "fileDiscoveryMode": "none",
-          "runOrder": [ "pre-deployment.sql" ]
+          "workDir": "pre-deployment",
+          "fileScanMode": "none",
+          "executionOrder": [ "pre-deployment.sql" ]
         }
       ]
     },
@@ -24,15 +24,15 @@
       "displayName": "Upgrade",
       "batches": [
         {
-          "workdir": "migrations",
-          "fileDiscoveryMode": "none",
-          "customExec": "SELECT public.migration_script_execute(@json);",
-          "runOrder": [ "migration.00-00-00.sql" ]
+          "workDir": "migrations",
+          "fileScanMode": "none",
+          "customCommand": "SELECT public.execute_migration_script(@json);",
+          "executionOrder": [ "migration.00-00-00.sql" ]
         },
         {
-          "workdir": "setup",
-          "fileDiscoveryMode": "recursive",
-          "runOrder": [ "setup.sql" ]
+          "workDir": "setup",
+          "fileScanMode": "recursive",
+          "executionOrder": [ "setup.sql" ]
         }
       ]
     },
@@ -40,9 +40,9 @@
       "displayName": "Post-deployment",
       "batches": [
         {
-          "workdir": "post-deployment",
-          "fileDiscoveryMode": "recursive",
-          "runOrder": [ "post-deployment.sql" ]
+          "workDir": "post-deployment",
+          "fileScanMode": "recursive",
+          "executionOrder": [ "post-deployment.sql" ]
         }
       ]
     }

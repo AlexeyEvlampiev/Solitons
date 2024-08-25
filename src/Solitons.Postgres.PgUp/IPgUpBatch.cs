@@ -7,6 +7,6 @@ public interface IPgUpBatch
     IEnumerable<string> GetRunOrder();
     string GetWorkingDirectory();
     string? GetCustomExecCommandText();
-    FileDiscoveryMode GetFileDiscoveryMode();
+    FileScanMode GetFileDiscoveryMode();
 
 }

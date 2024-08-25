@@ -3,7 +3,7 @@
 namespace Solitons.Postgres.PgUp.Models;
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
-public enum FileDiscoveryMode
+public enum FileScanMode
 {
     /// <summary>
     /// This mode specifies that only the files or patterns explicitly listed in runOrder should be matched and executed.
