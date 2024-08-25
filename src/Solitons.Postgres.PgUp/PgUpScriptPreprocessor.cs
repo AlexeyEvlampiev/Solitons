@@ -16,10 +16,12 @@ public class PgUpScriptPreprocessor(IReadOnlyDictionary<string, string> paramete
         var unresolvedParametersCsv = regex
             .Matches(input)
             .Select(m => m.Groups[1].Value)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
             .Join(", ");
         if (unresolvedParametersCsv.IsPrintable())
         {
-            throw new NotImplementedException();
+            throw new InvalidOperationException(
+                $"The following parameters could not be substituted: '{unresolvedParametersCsv}'. Please ensure they are defined in the pgup project file.");
         }
         return input;
     }

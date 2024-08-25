@@ -35,7 +35,7 @@ public class Program
         string projectDir,
         [CliOption("--template")]string template = "basic")
     {
-        PgUpDirectoryManager.Initialize(projectDir, template);
+        PgUpTemplateManager.Initialize(projectDir, template);
     } 
 
     [CliCommand("deploy")]
@@ -51,7 +51,7 @@ public class Program
         [PgUpParametersOption] Dictionary<string, string>? parameters = null,
         [CliOption("--timeout")] TimeSpan? timeout = null)
     {
-        return PgUpManager
+        return PgUpDatabaseManager
             .DeployAsync(
                 projectFile,
                 connection.ToString(),
@@ -80,7 +80,7 @@ public class Program
         [PgUpParametersOption] Dictionary<string, string>? parameters = null,
         [CliOption("--timeout")] TimeSpan? timeout = null)
     {
-        return PgUpManager
+        return PgUpDatabaseManager
             .DeployAsync(
                 projectFile,
                 connection.ToString(),
@@ -104,7 +104,7 @@ public class Program
         [PgUpParametersOption] Dictionary<string, string>? parameters = null,
         [CliOption("--timeout")] TimeSpan? timeout = null)
     {
-        return PgUpManager
+        return PgUpDatabaseManager
             .DeployAsync(
                 projectFile,
                 connectionString,
@@ -131,7 +131,7 @@ public class Program
         [CliOption("--timeout")] TimeSpan? timeout = null)
     {
 
-        return PgUpManager
+        return PgUpDatabaseManager
             .DeployAsync(
                 projectFile,
                 connectionString,

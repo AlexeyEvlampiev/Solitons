@@ -7,7 +7,7 @@ using Solitons.Reactive;
 
 namespace Solitons.Postgres.PgUp;
 
-public sealed class PgUpManager
+public sealed class PgUpDatabaseManager
 {
     private readonly IPgUpProject _project;
     private readonly IPgUpSession _session;
@@ -15,7 +15,7 @@ public sealed class PgUpManager
     private readonly Dictionary<string, string> _parameters;
 
     [DebuggerStepThrough]
-    private PgUpManager(
+    private PgUpDatabaseManager(
         IPgUpProject project,
         IPgUpSession session,
         NpgsqlConnectionStringBuilder connectionStringBuilder,
@@ -88,7 +88,7 @@ public sealed class PgUpManager
 
             var workingDir = new FileInfo(projectFile).Directory ?? new DirectoryInfo(".");
             Debug.Assert(workingDir.Exists);
-            var instance = new PgUpManager(project, session, builder, parameters);
+            var instance = new PgUpDatabaseManager(project, session, builder, parameters);
             return await instance.DeployAsync(workingDir);
         }
         catch (Exception e) when(e is OperationCanceledException ||

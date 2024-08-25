@@ -1,8 +1,9 @@
 ﻿using Solitons.CommandLine;
 
+
 namespace Solitons.Postgres.PgUp;
 
-internal sealed class PgUpDirectoryManager
+internal sealed class PgUpTemplateManager
 {
     public static void Initialize(string projectDir, string template)
     {
@@ -43,4 +44,26 @@ internal sealed class PgUpDirectoryManager
 
         sourceDir.CopyContentsTo(targetDir, includeSubdirectories: true);
     }
+
+    public static IEnumerable<Template> GetTemplateDirectories()
+    {
+        return Directory
+            .EnumerateDirectories(".", "templates", SearchOption.AllDirectories)
+            .Select(path => new DirectoryInfo(path))
+            .GroupBy(root => root, root => root
+                .GetDirectories("*", SearchOption.AllDirectories)
+                .Where(di => di.Exists && di.EnumerateFiles("pgup.json", SearchOption.TopDirectoryOnly)
+                    .Any()))
+            .SelectMany(group =>
+            {
+                var root = group.Key;
+                return group
+                    .SelectMany(t => t)
+                    .Select(di => new Template(
+                        Path.GetRelativePath(root.FullName, di.FullName).ToLower(),
+                        di));
+            });
+    }
+
+    public sealed record Template(string Name, DirectoryInfo Root);
 }
