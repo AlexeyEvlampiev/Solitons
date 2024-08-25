@@ -63,7 +63,7 @@ public sealed class PgUpDatabaseManager
         try
         {
             var project = await IPgUpProject.LoadAsync(projectFile, parameters);
-            IPgUpSession session = new PgUpSession(timeout);
+            IPgUpSession session = new PgUpSession(project.DatabaseOwner, timeout);
             await session.TestConnectionAsync(connectionString);
 
             

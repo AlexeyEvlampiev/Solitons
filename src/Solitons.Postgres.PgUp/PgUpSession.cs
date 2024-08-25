@@ -10,7 +10,7 @@ using Solitons.Postgres.PgUp.Formatting;
 
 namespace Solitons.Postgres.PgUp;
 
-public sealed class PgUpSession(TimeSpan timeout) : IPgUpSession
+public sealed class PgUpSession(string databaseOwner, TimeSpan timeout) : IPgUpSession
 {
     private readonly CancellationToken _cancellation = new CancellationTokenSource(timeout).Token;
 
@@ -84,6 +84,8 @@ public sealed class PgUpSession(TimeSpan timeout) : IPgUpSession
                     Console.WriteLine(@"The SQL script contains only whitespace, comments, or empty content. Skipping processing.");
                     continue;
                 }
+
+                await connection.ExecuteNonQueryAsync($"SET ROLE {databaseOwner};", _cancellation);
                 await using var command = builder.Build(script.RelativePath, script.Content, script.Checksum, connection);
                 await command.ExecuteNonQueryAsync(_cancellation);
             }
