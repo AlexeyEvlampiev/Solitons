@@ -41,6 +41,7 @@ public interface IPgUpProject
         catch (Exception e)
         {
             CliExit.With($"Failed to load project file. {e.Message}");
+            throw;
         }
     }
 }
