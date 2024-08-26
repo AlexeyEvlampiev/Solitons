@@ -1,4 +1,5 @@
-﻿using Solitons.CommandLine;
+﻿using System.Diagnostics;
+using Solitons.CommandLine;
 
 
 namespace Solitons.Postgres.PgUp;
@@ -13,17 +14,18 @@ internal sealed class PgUpTemplateManager
             targetDir = new DirectoryInfo(projectDir);
             if (targetDir.Exists == false)
             {
-                throw new CliExitException($"'{targetDir.Name}' directory does not exist.");
+                CliExit.With($"'{targetDir.Name}' directory does not exist.");
             }
         }
         catch (Exception e)
         {
-            throw new CliExitException($"'{projectDir}' is not a valid directory path.");
+            CliExit.With($"'{projectDir}' is not a valid directory path.");
+            throw;
         }
 
         if (targetDir.EnumerateFileSystemInfos().Any())
         {
-            throw new CliExitException($"'{targetDir.Name}' directory is not empty..");
+            CliExit.With($"'{targetDir.Name}' directory is not empty..");
         }
 
         var root = new DirectoryInfo("templates");
@@ -39,7 +41,7 @@ internal sealed class PgUpTemplateManager
             .FirstOrDefault();
         if (sourceDir is null)
         {
-            throw new CliExitException($"The '{template}' template is not found.");
+            CliExit.With($"The '{template}' template is not found.");
         }
 
         sourceDir.CopyContentsTo(targetDir, includeSubdirectories: true);

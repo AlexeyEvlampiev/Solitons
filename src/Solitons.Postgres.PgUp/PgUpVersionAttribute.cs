@@ -28,9 +28,9 @@ public sealed class PgUpVersionAttribute : Attribute
         string? versionText = jsonObject.GetProperty("version").GetString();
         if (string.IsNullOrWhiteSpace(versionText))
         {
-            throw new CliExitException("PgUp version is missing. Ensure that the version json element is present in the pgup.json file.");
+            CliExit.With("PgUp version is missing. Ensure that the version json element is present in the pgup.json file.");
         }
-        var version = Version.Parse(versionText);
+        var version = Version.Parse(versionText!);
         return typeof(PgUpVersionAttribute)
             .Assembly
             .GetTypes()
@@ -68,13 +68,14 @@ public sealed class PgUpVersionAttribute : Attribute
         catch (JsonException e)
         {
             var message = e.Message.Replace(_type.ToString(), $"PgUp JSON v{Version}");
-            throw new CliExitException($"Invalid pgup.json file. {message} (path: {e.Path}. line: {e.LineNumber})");
+            CliExit.With($"Invalid pgup.json file. {message} (path: {e.Path}. line: {e.LineNumber})");
+            throw;
         }
         catch (Exception e)
         {
-            throw new CliExitException($"Failed to parse pgup.json file. {e.Message}");
+            CliExit.With($"Failed to parse pgup.json file. {e.Message}");
+            throw;
         }
-        
     }
 
     public string Serialize(IPgUpProject project) => JsonSerializer.Serialize(project);

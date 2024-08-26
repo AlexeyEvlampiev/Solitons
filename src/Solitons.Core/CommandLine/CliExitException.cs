@@ -2,12 +2,7 @@
 
 namespace Solitons.CommandLine;
 
-public sealed class CliExitException : Exception
+internal sealed class CliExitException(string message) : Exception(message)
 {
-    public CliExitException(string message) : base(message)
-    {
-
-    }
-
     public int ExitCode { get; init; } = 1;
 }

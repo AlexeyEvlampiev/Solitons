@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Reactive;
 using System.Reactive.Linq;
 using Npgsql;
 using Solitons.CommandLine;
@@ -55,7 +56,8 @@ public sealed class PgUpDatabaseManager
                 builder.Timeout = Convert.ToInt32(timeout.TotalSeconds);
                 using var _ = new NpgsqlConnection(builder.ConnectionString);
             })
-            .CatchAndThrow(e => new CliExitException("Invalid connection string."));
+            .Catch(CliExit.AsObservable<NpgsqlConnectionStringBuilder>(
+                "Invalid connection string."));
         
         Console.WriteLine(PgUpConnectionDisplayRtt.Build(builder));
         Console.WriteLine();
@@ -76,10 +78,7 @@ public sealed class PgUpDatabaseManager
                         "Are you sure you want to proceed? (yes/no)");
                     if (!confirmed)
                     {
-                        throw new CliExitException("Operation cancelled by user")
-                        {
-                            ExitCode = 0
-                        };
+                        CliExit.With(0,"Operation cancelled by user");
                     }
                 }
 
@@ -128,17 +127,18 @@ public sealed class PgUpDatabaseManager
                 await _session.ExecuteAsync(pgUpTrx, connectionString);
             }
 
+            return 0;
         }
         catch (OperationCanceledException)
         {
-            throw new CliExitException("PgUp deployment timeout");
+            CliExit.With("PgUp deployment timeout");
+            throw;
         }
         catch (NpgsqlException e)
         {
-            throw new CliExitException(e.Message);
+            CliExit.With(e.Message);
+            throw;
         }
-
-        return 0;
     }
 
 
