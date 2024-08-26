@@ -98,6 +98,11 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>CliActionHelpRtt.tt</DependentUpon>
     </Compile>
+    <Compile Update="CommandLine\CliActionRegexMatchRankerRtt.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CliActionRegexMatchRankerRtt.tt</DependentUpon>
+    </Compile>
     <Compile Update="CommandLine\CliActionRegexRtt.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -149,6 +154,10 @@
     <None Update="CommandLine\CliActionHelpRtt.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>
       <LastGenOutput>CliActionHelpRtt.cs</LastGenOutput>
+    </None>
+    <None Update="CommandLine\CliActionRegexMatchRankerRtt.tt">
+      <Generator>TextTemplatingFilePreprocessor</Generator>
+      <LastGenOutput>CliActionRegexMatchRankerRtt.cs</LastGenOutput>
     </None>
     <None Update="CommandLine\CliActionRegexRtt.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>
