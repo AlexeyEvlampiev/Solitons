@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -8,70 +7,68 @@ namespace Solitons.CommandLine;
 
 internal partial class CliActionRegexMatchRankerRtt
 {
-    private readonly Regex _regex;
-    private readonly string _executableGroupName;
-    private readonly string _optimalMatchGroupName;
+    private static readonly string ExecutableGroupName;
+    private static readonly string OptimalMatchGroupName;
+
+    static CliActionRegexMatchRankerRtt()
+    {
+        var postfix = typeof(CliActionRegexMatchRankerRtt).GUID.ToString("N");
+        ExecutableGroupName = $"executable_{postfix}";
+        OptimalMatchGroupName = $"optimal_{postfix}";
+    }
 
 
     private CliActionRegexMatchRankerRtt(ICliActionRegexMatchProvider provider)
     {
-        var postfix = GetType().GUID.ToString("N");
-        _executableGroupName = $"executable_{postfix}";
-        _optimalMatchGroupName = $"optimal_{postfix}";
-
-        CommandSegmentRegularExpressions = provider
+        var segments = provider
             .GetCommandSegments()
+            .ToArray();
+
+        CommandSegmentRegularExpressions = segments
             .Select(segment =>
             {
-                if (segment is ICliSubCommandInfo cmd)
+                if (segment is CliSubCommandData cmd)
                 {
-                    return cmd
-                        .GetAliases()
-                        .Distinct(StringComparer.OrdinalIgnoreCase)
-                        .Select(a => a.ToLower().Trim())
-                        .OrderByDescending(a => a.Length)
-                        .Join("|")
-                        .DefaultIfNullOrWhiteSpace("(?:$)*");
+                    return cmd.ToRegularExpression();
                 }
 
-                if (segment is ICliArgumentInfo arg)
+                if (segment is CliArgumentData arg)
                 {
-
+                    return arg.ToRegularExpression(segments.OfType<CliSubCommandData>());
                 }
 
                 throw new InvalidOperationException("Oops...");
             })
             .ToArray();
 
-
-        var pattern = ToString();
-        Pattern = pattern;
-        _regex = new Regex(pattern,
-            RegexOptions.Compiled |
-            RegexOptions.IgnorePatternWhitespace |
-            RegexOptions.Singleline);
-
+        OptionRegularExpressions = Array.Empty<string>();
     }
 
-    [DebuggerStepThrough]
-    public static CliActionRegexMatchRankerRtt Create(ICliActionRegexMatchProvider provider) => new(provider);
 
     public string Pattern { get; }
     private IReadOnlyList<string> CommandSegmentRegularExpressions { get; }
     public IReadOnlyList<string> OptionRegularExpressions { get; }
 
-    public int Rank(string commandLine)
+    public static int Rank(string commandLine, int optimalMatchRank, ICliActionRegexMatchProvider provider)
     {
-        var match = _regex.Match(commandLine);
-        int rank = 0;
+        string pattern = new CliActionRegexMatchRankerRtt(provider);
+#if DEBUG
+        pattern = Regex.Replace(pattern, @"(?<=\S)[^\S\r\n]{2,}", " ");
+        pattern = Regex.Replace(pattern, @"(?<=\n)\s*\n", "");
+#endif
+        var regex = new Regex(pattern,
+            RegexOptions.Compiled |
+            RegexOptions.IgnorePatternWhitespace |
+            RegexOptions.Singleline);
+
+        var match = regex.Match(commandLine);
+        int rank = -1;// Exclude group 0 from count
         foreach (Group group in match.Groups)
         {
-            if (group.Success)
-            {
-                rank += group.Name.Equals(_optimalMatchGroupName, StringComparison.Ordinal)
-                    ? 100
-                    : 1;
-            }
+            if (!group.Success) continue;
+            rank += group.Name.Equals(OptimalMatchGroupName, StringComparison.Ordinal)
+                ? optimalMatchRank
+                : 1;
         }
 
         return rank;

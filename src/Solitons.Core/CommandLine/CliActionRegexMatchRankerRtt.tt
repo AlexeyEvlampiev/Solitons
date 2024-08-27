@@ -4,16 +4,16 @@
 <#@ import namespace="System.Text" #>
 <#@ import namespace="System.Collections.Generic" #>
 # --- EXECUTABLE:
-(?<<#= _executableGroupName #>>\S+)
+(?<<#= ExecutableGroupName #>>\S+)
 
 # --- OPTIMAL LOOK AHEAD MATCH
-(?<<#= _optimalMatchGroupName #>>
+(?<<#= OptimalMatchGroupName #>> 
   # --- look ahead ---
   (?= 
     # --- optimal match pattern
     (?:
       # --- command segments ---
-      <# foreach(var segmentExp in CommandSegmentRegularExpressions){ #>
+      <# foreach(var segmentExp in CommandSegmentRegularExpressions){ #> 
       \s+ (?:<#= segmentExp #>) <# }/* Loop over command segments */ #> 
       # --- command segments ---
       # --- options ---
@@ -33,7 +33,7 @@
 # --- GROUPS CAPTURE
 (?:
   \s+
-  (?:$<# foreach(var segmentExp in CommandSegmentRegularExpressions){ #>
+  (?:$<# foreach(var segmentExp in CommandSegmentRegularExpressions){ #> 
      | (<#= segmentExp #>) <# }/* Loop over command segments */ #> 
      <# foreach(var optionExp in OptionRegularExpressions ){ #> 
      | (<#= optionExp #>) <# } /* Loop over command options */#> 
