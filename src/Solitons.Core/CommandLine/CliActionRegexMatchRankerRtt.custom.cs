@@ -62,10 +62,14 @@ internal partial class CliActionRegexMatchRankerRtt
             RegexOptions.Singleline);
 
         var match = regex.Match(commandLine);
-        int rank = -1;// Exclude group 0 from count
-        foreach (Group group in match.Groups)
+        var groups = match.Groups
+            .OfType<Group>()
+            .Where(g => g.Success)
+            .Skip(1) // Exclude group 0 from count
+            .ToList();
+        int rank = 0;
+        foreach (var group in groups)
         {
-            if (!group.Success) continue;
             rank += group.Name.Equals(OptimalMatchGroupName, StringComparison.Ordinal)
                 ? optimalMatchRank
                 : 1;

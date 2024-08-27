@@ -11,7 +11,11 @@ public sealed class ICliActionRegexMatchProvider_Rank_Should
     [Theory]
     [InlineData("program run arg",3, true)]
     [InlineData("program arg run",3, false)]
-    public void Work(string commandLine, int minSuccessfulGroups, bool optimalMatchExpected)
+    [InlineData("program run run", 2, false)]
+    [InlineData("program arg arg", 2, false)]
+    [InlineData("program --hello", 1, false)]
+    [InlineData("program --hello --world", 1, false)]
+    public void HandleBasicOptionlessCommand(string commandLine, int minSuccessfulGroups, bool optimalMatchExpected)
     {
         Debug.WriteLine($"Command line: '{commandLine}'");
         Debug.WriteLine(optimalMatchExpected ? "Expected optimal match" : "No optimal match expected");
