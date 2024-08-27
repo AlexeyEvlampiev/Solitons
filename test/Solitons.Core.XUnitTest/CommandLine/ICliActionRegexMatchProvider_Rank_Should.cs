@@ -22,10 +22,10 @@ public sealed class ICliActionRegexMatchProvider_Rank_Should
         var mock = new Mock<ICliActionRegexMatchProvider>();
         mock
             .Setup(i => i.GetCommandSegments())
-            .Returns(new CliCommandSegmentData[]
+            .Returns(new CliActionRegexMatchCommandSegment[]
             {
-                new CliSubCommandData("run"),
-                new CliArgumentData()
+                new CliActionRegexMatchCommandToken("run"),
+                new CliActionRegexMatchCommandArgument()
             });
         var provider = mock.Object;
 

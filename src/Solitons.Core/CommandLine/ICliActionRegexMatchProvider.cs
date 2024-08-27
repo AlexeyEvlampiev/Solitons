@@ -9,27 +9,40 @@ namespace Solitons.CommandLine;
 
 internal interface ICliActionRegexMatchProvider
 {
-    IEnumerable<CliCommandSegmentData> GetCommandSegments();
+    IEnumerable<CliActionRegexMatchCommandSegment> GetCommandSegments();
 
-
+    IEnumerable<CliActionRegexMatchOption> GetOptions();
 
     [DebuggerStepThrough]
     public sealed int Rank(string commandLine, int optimalMatchRank = 100) => CliActionRegexMatchRankerRtt
         .Rank(commandLine, optimalMatchRank, this);
 }
 
-internal abstract record CliCommandSegmentData();
+internal abstract record CliActionRegexMatchCommandSegment();
 
-internal abstract record CliOptionData();
-
-internal sealed record CliSubCommandData : CliCommandSegmentData
+internal abstract record CliActionRegexMatchOption
 {
-    public CliSubCommandData(string alias)
+    [DebuggerNonUserCode]
+    protected CliActionRegexMatchOption(string groupName, string[] aliases)
+    {
+        GroupName = groupName;
+        Aliases = [..aliases];
+    }
+
+    public string GroupName { get; init; }
+    public ImmutableArray<string> Aliases { get; }
+
+    public abstract string ToRegularExpression();
+}
+
+internal sealed record CliActionRegexMatchCommandToken : CliActionRegexMatchCommandSegment
+{
+    public CliActionRegexMatchCommandToken(string alias)
     {
         Aliases = [..FluentArray.Create(alias)];
     }
 
-    public CliSubCommandData(params string[] aliases)
+    public CliActionRegexMatchCommandToken(params string[] aliases)
     {
         Aliases = [..aliases];
     }
@@ -43,23 +56,80 @@ internal sealed record CliSubCommandData : CliCommandSegmentData
 
     public ImmutableArray<string> Aliases { get; init; }
 
-    public void Deconstruct(out ImmutableArray<string> Aliases)
+    public void Deconstruct(out ImmutableArray<string> aliases)
     {
-        Aliases = this.Aliases;
+        aliases = this.Aliases;
     }
 }
 
-internal sealed record CliArgumentData() : CliCommandSegmentData
+internal sealed record CliActionRegexMatchCommandArgument() : CliActionRegexMatchCommandSegment
 {
-    public string ToRegularExpression(IEnumerable<CliSubCommandData> subCommands) => subCommands
+    public string ToRegularExpression(IEnumerable<CliActionRegexMatchCommandToken> subCommands) => subCommands
         .Select(sc => sc.ToRegularExpression())
         .Join("|")
         .Convert(p => $@"(?!(?:{p})\b)[^-]\S+");
 }
 
-internal sealed record CliFlagOptionData : CliOptionData;
-internal sealed record CliScalarOptionData : CliOptionData;
+internal sealed record CliActionRegexMatchFlagOption : CliActionRegexMatchOption
+{
+    [DebuggerNonUserCode]
+    public CliActionRegexMatchFlagOption(string groupName, string[] aliases) 
+        : base(groupName, aliases)
+    {
+    }
 
-internal sealed record CliVectorOptionData : CliOptionData;
+    public override string ToRegularExpression()
+    {
+        return Aliases
+            .OrderByDescending(a => a.Length)
+            .Join("|")
+            .Convert(p => $@"(?<{GroupName}>{p})(?=\s|$)");
+    }
+}
 
-internal sealed record CliMapOptionData : CliOptionData;
+internal sealed record CliActionRegexMatchScalarOption : CliActionRegexMatchOption
+{
+    public CliActionRegexMatchScalarOption(string groupName, string[] aliases) : base(groupName, aliases)
+    {
+    }
+
+    public override string ToRegularExpression()
+    {
+        throw new NotImplementedException();
+    }
+
+}
+
+internal sealed record CliActionRegexMatchVectorOption : CliActionRegexMatchOption
+{
+    public CliActionRegexMatchVectorOption(string groupName, string[] aliases) : base(groupName, aliases)
+    {
+    }
+
+    public override string ToRegularExpression()
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Deconstruct(out string GroupName)
+    {
+        GroupName = this.GroupName;
+    }
+}
+
+internal sealed record CliActionRegexMatchMapOption : CliActionRegexMatchOption
+{
+    public CliActionRegexMatchMapOption(string groupName, string[] aliases) : base(groupName, aliases)
+    {
+    }
+
+    public override string ToRegularExpression()
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Deconstruct(out string GroupName)
+    {
+        GroupName = this.GroupName;
+    }
+}

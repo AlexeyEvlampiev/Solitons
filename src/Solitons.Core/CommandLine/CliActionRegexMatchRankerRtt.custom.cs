@@ -27,21 +27,24 @@ internal partial class CliActionRegexMatchRankerRtt
         CommandSegmentRegularExpressions = segments
             .Select(segment =>
             {
-                if (segment is CliSubCommandData cmd)
+                if (segment is CliActionRegexMatchCommandToken cmd)
                 {
                     return cmd.ToRegularExpression();
                 }
 
-                if (segment is CliArgumentData arg)
+                if (segment is CliActionRegexMatchCommandArgument arg)
                 {
-                    return arg.ToRegularExpression(segments.OfType<CliSubCommandData>());
+                    return arg.ToRegularExpression(segments.OfType<CliActionRegexMatchCommandToken>());
                 }
 
                 throw new InvalidOperationException("Oops...");
             })
             .ToArray();
 
-        OptionRegularExpressions = Array.Empty<string>();
+        OptionRegularExpressions = provider
+            .GetOptions()
+            .Select(option => option.ToRegularExpression())
+            .ToArray();
     }
 
 
