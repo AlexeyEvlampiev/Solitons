@@ -89,8 +89,6 @@ internal sealed class CliActionSchema
 
     public interface IOption
     {
-        string RegexGroupName { get; }
-        OptionType OptionType { get; }
         string BuildRegularExpression();
     }
 

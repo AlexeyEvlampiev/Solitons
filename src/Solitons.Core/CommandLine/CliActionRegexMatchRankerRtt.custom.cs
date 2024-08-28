@@ -14,9 +14,9 @@ internal partial class CliActionRegexMatchRankerRtt
             .ToArray();
 
         CommandSegmentRegularExpressions = segments
-            .Select(segment => segment.IsArgument 
+            .Select((segment, index) => segment.IsArgument 
                 ? segment.BuildRegularExpression() 
-                : $"({segment.BuildRegularExpression()})")
+                : $"(?<{GenGroupName(index)}>{segment.BuildRegularExpression()})")
             .ToArray();
 
         OptionRegularExpressions = schema
@@ -24,6 +24,8 @@ internal partial class CliActionRegexMatchRankerRtt
             .Select(option => option.BuildRegularExpression())
             .ToArray();
     }
+
+    private string GenGroupName(int index) => $"segment_{GetType().GUID:N}_{index}";
 
     private IReadOnlyList<string> CommandSegmentRegularExpressions { get; }
     public IReadOnlyList<string> OptionRegularExpressions { get; }
