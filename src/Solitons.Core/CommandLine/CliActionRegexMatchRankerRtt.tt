@@ -4,39 +4,33 @@
 <#@ import namespace="System.Text" #>
 <#@ import namespace="System.Collections.Generic" #>
 ^\s*\S+ # EXECUTABLE PATH
-\S+
-
-# --- OPTIMAL LOOK AHEAD MATCH
 (?:
-  # --- look ahead ---
-  (?= 
-    # --- optimal match pattern
+    # --- OPTIMAL MATCH
+    (?<<#= OptimalMatchGroupName #>>
+      (?:
+        # --- command segments ---
+        <# foreach(var segmentExp in CommandSegmentRegularExpressions){ #> 
+        \s+ <#= segmentExp #> <# }/* Loop over command segments */ #> 
+        # --- command segments ---
+        # --- options ---
+        (
+          \s+
+          (?:$ <# foreach(var optionExp in OptionRegularExpressions ){ #> 
+             | (?: <#= optionExp #>) <# } /* Loop over command options */#> 
+          )
+        )*
+        # --- options ---
+      )
+      \s*$
+    ) |
+    # --- FUZZY MATCH
     (?:
-      # --- command segments ---
-      <# foreach(var segmentExp in CommandSegmentRegularExpressions){ #> 
-      \s+ <#= segmentExp #> <# }/* Loop over command segments */ #> 
-      # --- command segments ---
-      # --- options ---
-      (
-        \s+
-        (?:$ <# foreach(var optionExp in OptionRegularExpressions ){ #> 
-          | (?: <#= optionExp #>) <# } /* Loop over command options */#> 
-        )
-      )*
-      # --- options ---
-    )
-    # --- optimal match pattern
-  )
-  # --- look ahead ---
-)?
-
-# --- GROUPS CAPTURE
-(?:
-  \s+
-  (?:$<# foreach(var segmentExp in CommandSegmentRegularExpressions){ #> 
-     | <#= segmentExp #> <# }/* Loop over command segments */ #> 
-     <# foreach(var optionExp in OptionRegularExpressions ){ #> 
-     | (<#= optionExp #>) <# } /* Loop over command options */#> 
-     | \S+
-  )    
-)*
+      \s+
+      (?:$<# foreach(var segmentExp in CommandSegmentRegularExpressions){ #> 
+         | <#= segmentExp #> <# }/* Loop over command segments */ #> 
+         <# foreach(var optionExp in OptionRegularExpressions ){ #> 
+         | (<#= optionExp #>) <# } /* Loop over command options */#> 
+         | \S+
+      )    
+    )*
+)

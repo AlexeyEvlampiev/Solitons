@@ -8,12 +8,12 @@ namespace Solitons.CommandLine;
 public sealed class CliActionSchema_Rank_Should
 {
     [Theory]
-    [InlineData("program run arg",2 * 2)]
-    //[InlineData("program arg run",3, false)]
-    //[InlineData("program run run", 2, false)]
-    //[InlineData("program arg arg", 2, false)]
-    //[InlineData("program --hello", 1, false)]
-    //[InlineData("program --hello --world", 1, false)]
+    [InlineData("program run arg",2 + 1 /* optimal match */ )]
+    [InlineData("program arg run",2)]
+    [InlineData("program run run", 1)]
+    [InlineData("program arg arg", 1)]
+    [InlineData("program --hello", 0)]
+    [InlineData("program --hello --world", 0)]
     public void HandleBasicOptionlessCommand(string commandLine, int expectedRank)
     {
         Debug.WriteLine(commandLine);
@@ -21,13 +21,8 @@ public sealed class CliActionSchema_Rank_Should
             .AddSubCommand(["run"])
             .AddArgument("arg");
 
-        FluentArray
-            .Create(0, 10, 100)
-            .ForEach(optimalMatchRank =>
-            {
-                var actualRank = schema.Rank(commandLine);
-                Assert.Equal(expectedRank, actualRank);
-            });
+        var actualRank = schema.Rank(commandLine);
+        Assert.Equal(expectedRank, actualRank);
     }
 
     //[Theory]

@@ -29,5 +29,5 @@ internal partial class CliActionRegexMatchRankerRtt
 
     private IReadOnlyList<string> CommandSegmentRegularExpressions { get; }
     public IReadOnlyList<string> OptionRegularExpressions { get; }
-
+    public string OptimalMatchGroupName => $"optimal_match_group_{GetType().GUID:N}";
 }

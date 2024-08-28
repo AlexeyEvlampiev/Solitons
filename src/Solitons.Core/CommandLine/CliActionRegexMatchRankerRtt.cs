@@ -25,36 +25,35 @@ namespace Solitons.CommandLine
         /// </summary>
         public override string TransformText()
         {
-            this.Write("^\\s*\\S+ # EXECUTABLE PATH\r\n\\S+\r\n\r\n# --- OPTIMAL LOOK AHEAD MATCH\r\n(?:\r\n  # --- lo" +
-                    "ok ahead ---\r\n  (?= \r\n    # --- optimal match pattern\r\n    (?:\r\n      # --- comm" +
-                    "and segments ---\r\n      ");
+            this.Write("^\\s*\\S+ # EXECUTABLE PATH\r\n(?:\r\n    # --- OPTIMAL MATCH\r\n    (?<");
+            this.Write(this.ToStringHelper.ToStringWithCulture(OptimalMatchGroupName));
+            this.Write(">\r\n      (?:\r\n        # --- command segments ---\r\n        ");
  foreach(var segmentExp in CommandSegmentRegularExpressions){ 
-            this.Write(" \r\n      \\s+ ");
+            this.Write(" \r\n        \\s+ ");
             this.Write(this.ToStringHelper.ToStringWithCulture(segmentExp));
             this.Write(" ");
  }/* Loop over command segments */ 
-            this.Write(" \r\n      # --- command segments ---\r\n      # --- options ---\r\n      (\r\n        \\s" +
-                    "+\r\n        (?:$ ");
+            this.Write(" \r\n        # --- command segments ---\r\n        # --- options ---\r\n        (\r\n    " +
+                    "      \\s+\r\n          (?:$ ");
  foreach(var optionExp in OptionRegularExpressions ){ 
-            this.Write(" \r\n          | (?: ");
+            this.Write(" \r\n             | (?: ");
             this.Write(this.ToStringHelper.ToStringWithCulture(optionExp));
             this.Write(") ");
  } /* Loop over command options */
-            this.Write(" \r\n        )\r\n      )*\r\n      # --- options ---\r\n    )\r\n    # --- optimal match p" +
-                    "attern\r\n  )\r\n  # --- look ahead ---\r\n)?\r\n\r\n# --- GROUPS CAPTURE\r\n(?:\r\n  \\s+\r\n  (" +
-                    "?:$");
+            this.Write(" \r\n          )\r\n        )*\r\n        # --- options ---\r\n      )\r\n      \\s*$\r\n    )" +
+                    " |\r\n    # --- FUZZY MATCH\r\n    (?:\r\n      \\s+\r\n      (?:$");
  foreach(var segmentExp in CommandSegmentRegularExpressions){ 
-            this.Write(" \r\n     | ");
+            this.Write(" \r\n         | ");
             this.Write(this.ToStringHelper.ToStringWithCulture(segmentExp));
             this.Write(" ");
  }/* Loop over command segments */ 
-            this.Write(" \r\n     ");
+            this.Write(" \r\n         ");
  foreach(var optionExp in OptionRegularExpressions ){ 
-            this.Write(" \r\n     | (");
+            this.Write(" \r\n         | (");
             this.Write(this.ToStringHelper.ToStringWithCulture(optionExp));
             this.Write(") ");
  } /* Loop over command options */
-            this.Write(" \r\n     | \\S+\r\n  )    \r\n)*");
+            this.Write(" \r\n         | \\S+\r\n      )    \r\n    )*\r\n)");
             return this.GenerationEnvironment.ToString();
         }
     }
