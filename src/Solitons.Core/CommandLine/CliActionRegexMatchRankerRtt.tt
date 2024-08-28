@@ -13,7 +13,7 @@
         \s+ <#= segmentExp #> <# }/* Loop over command segments */ #> 
         # --- command segments ---
         # --- options ---
-        (
+        (?:
           \s+
           (?:$ <# foreach(var optionExp in OptionRegularExpressions ){ #> 
              | (?: <#= optionExp #>) <# } /* Loop over command options */#> 
@@ -29,7 +29,7 @@
       (?:$<# foreach(var segmentExp in CommandSegmentRegularExpressions){ #> 
          | <#= segmentExp #> <# }/* Loop over command segments */ #> 
          <# foreach(var optionExp in OptionRegularExpressions ){ #> 
-         | (<#= optionExp #>) <# } /* Loop over command options */#> 
+         | (?:<#= optionExp #>) <# } /* Loop over command options */#> 
          | \S+
       )    
     )*

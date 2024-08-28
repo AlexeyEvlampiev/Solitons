@@ -33,8 +33,8 @@ namespace Solitons.CommandLine
             this.Write(this.ToStringHelper.ToStringWithCulture(segmentExp));
             this.Write(" ");
  }/* Loop over command segments */ 
-            this.Write(" \r\n        # --- command segments ---\r\n        # --- options ---\r\n        (\r\n    " +
-                    "      \\s+\r\n          (?:$ ");
+            this.Write(" \r\n        # --- command segments ---\r\n        # --- options ---\r\n        (?:\r\n  " +
+                    "        \\s+\r\n          (?:$ ");
  foreach(var optionExp in OptionRegularExpressions ){ 
             this.Write(" \r\n             | (?: ");
             this.Write(this.ToStringHelper.ToStringWithCulture(optionExp));
@@ -49,7 +49,7 @@ namespace Solitons.CommandLine
  }/* Loop over command segments */ 
             this.Write(" \r\n         ");
  foreach(var optionExp in OptionRegularExpressions ){ 
-            this.Write(" \r\n         | (");
+            this.Write(" \r\n         | (?:");
             this.Write(this.ToStringHelper.ToStringWithCulture(optionExp));
             this.Write(") ");
  } /* Loop over command options */

@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Reactive;
 using System.Reactive.Linq;
 using Npgsql;
 using Solitons.CommandLine;

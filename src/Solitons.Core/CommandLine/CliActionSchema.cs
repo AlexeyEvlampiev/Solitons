@@ -154,7 +154,7 @@ internal sealed class CliActionSchema
                 case (OptionType.Flag):
                     return $@"(?<{RegexGroupName}>{token})";
                 case (OptionType.Scalar):
-                    return $@"(?:{token}\s+)(?<{RegexGroupName}>(?:[^\s-]\S*)?)";
+                    return $@"(?:{token})\s*(?<{RegexGroupName}>(?:[^\s-]\S*)?)";
                 case (OptionType.Map):
                 {
                     var pattern = $@"(?:{token})(?:$don-notation|$accessor-notation)"
