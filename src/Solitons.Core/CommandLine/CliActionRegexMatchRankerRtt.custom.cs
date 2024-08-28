@@ -7,8 +7,8 @@ namespace Solitons.CommandLine;
 
 internal partial class CliActionRegexMatchRankerRtt
 {
-    private static readonly string ExecutableGroupName;
-    private static readonly string OptimalMatchGroupName;
+    internal static readonly string ExecutableGroupName;
+    internal static readonly string OptimalMatchGroupName;
 
     static CliActionRegexMatchRankerRtt()
     {
@@ -18,32 +18,19 @@ internal partial class CliActionRegexMatchRankerRtt
     }
 
 
-    private CliActionRegexMatchRankerRtt(ICliActionRegexMatchProvider provider)
+    internal CliActionRegexMatchRankerRtt(CliActionSchema schema)
     {
-        var segments = provider
-            .GetCommandSegments()
+        var segments = schema
+            .CommandSegments
             .ToArray();
 
         CommandSegmentRegularExpressions = segments
-            .Select(segment =>
-            {
-                if (segment is CliActionRegexMatchCommandToken cmd)
-                {
-                    return cmd.ToRegularExpression();
-                }
-
-                if (segment is CliActionRegexMatchCommandArgument arg)
-                {
-                    return arg.ToRegularExpression(segments.OfType<CliActionRegexMatchCommandToken>());
-                }
-
-                throw new InvalidOperationException("Oops...");
-            })
+            .Select(segment => segment.BuildRegularExpression())
             .ToArray();
 
-        OptionRegularExpressions = provider
-            .GetOptions()
-            .Select(option => option.ToRegularExpression())
+        OptionRegularExpressions = schema
+            .Options
+            .Select(option => option.BuildRegularExpression())
             .ToArray();
     }
 
@@ -52,9 +39,9 @@ internal partial class CliActionRegexMatchRankerRtt
     private IReadOnlyList<string> CommandSegmentRegularExpressions { get; }
     public IReadOnlyList<string> OptionRegularExpressions { get; }
 
-    public static int Rank(string commandLine, int optimalMatchRank, ICliActionRegexMatchProvider provider)
+    public static int Rank(string commandLine, int optimalMatchRank, CliActionSchema schema)
     {
-        string pattern = new CliActionRegexMatchRankerRtt(provider);
+        string pattern = new CliActionRegexMatchRankerRtt(schema);
 #if DEBUG
         pattern = Regex.Replace(pattern, @"(?<=\S)[^\S\r\n]{2,}", " ");
         pattern = Regex.Replace(pattern, @"(?<=\n)\s*\n", "");

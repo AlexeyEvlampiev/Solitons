@@ -3,63 +3,81 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
-using Solitons.Collections;
+using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
 
+
 internal interface ICliActionRegexMatchProvider
 {
-    IEnumerable<CliActionRegexMatchCommandSegment> GetCommandSegments();
+    IEnumerable<CommandSegment> GetCommandSegments();
 
-    IEnumerable<CliActionRegexMatchOption> GetOptions();
+    IEnumerable<Option> GetOptions();
 
-    [DebuggerStepThrough]
-    public sealed int Rank(string commandLine, int optimalMatchRank = 100) => CliActionRegexMatchRankerRtt
-        .Rank(commandLine, optimalMatchRank, this);
+    int Rank(string commandLine, int optimalMatchRank = 100);
+
+    internal static string JoinAliases(string[] aliases) =>
+        aliases
+            .Where(a => a.IsPrintable())
+            .Select(a => a.Trim().ToLower())
+            .Distinct(StringComparer.Ordinal)
+            .Select(a => Regex.Replace(a, @"[?]", "[?]"))
+            .OrderByDescending(a => a.Length)
+            .Join("|")
+            .DefaultIfNullOrWhiteSpace("(?:$)*");
+
+    public static SubCommand CreateSubCommand(IEnumerable<string> aliases) => new([..aliases]);
+
+    internal abstract record CommandSegment();
+    internal sealed record SubCommand(ImmutableArray<string> Aliases) : CommandSegment;
+    internal sealed record Argument() : CommandSegment;
+
+    internal abstract record Option(ImmutableArray<string> Aliases);
+    internal sealed record FlagOption(ImmutableArray<string> Aliases) : Option(Aliases);
+    internal sealed record ScalarOption(ImmutableArray<string> Aliases) : Option(Aliases);
+    internal sealed record VectorOption(ImmutableArray<string> Aliases, bool EnableCsv) : Option(Aliases);
+    internal sealed record MapOption(ImmutableArray<string> Aliases) : Option(Aliases);
 }
 
+
 internal abstract record CliActionRegexMatchCommandSegment();
+
+
 
 internal abstract record CliActionRegexMatchOption
 {
     [DebuggerNonUserCode]
     protected CliActionRegexMatchOption(string groupName, string[] aliases)
     {
-        GroupName = groupName;
+        RegularExpressionGroupName = groupName;
         Aliases = [..aliases];
+        AliasesRegularExpression = ICliActionRegexMatchProvider.JoinAliases(aliases);
     }
 
-    public string GroupName { get; init; }
+    public string RegularExpressionGroupName { get; }
     public ImmutableArray<string> Aliases { get; }
+    public string AliasesRegularExpression { get; }
 
     public abstract string ToRegularExpression();
 }
 
 internal sealed record CliActionRegexMatchCommandToken : CliActionRegexMatchCommandSegment
 {
-    public CliActionRegexMatchCommandToken(string alias)
-    {
-        Aliases = [..FluentArray.Create(alias)];
-    }
+    [DebuggerStepThrough]
+    public CliActionRegexMatchCommandToken(string alias) : this([alias]) { }
 
     public CliActionRegexMatchCommandToken(params string[] aliases)
     {
         Aliases = [..aliases];
+        AliasesRegularExpression = ICliActionRegexMatchProvider.JoinAliases(aliases);
     }
 
-    public string ToRegularExpression() => Aliases
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Select(a => a.ToLower().Trim())
-            .OrderByDescending(a => a.Length)
-            .Join("|")
-            .DefaultIfNullOrWhiteSpace("(?:$)*");
+    public string ToRegularExpression() => AliasesRegularExpression;
 
-    public ImmutableArray<string> Aliases { get; init; }
+    public ImmutableArray<string> Aliases { get;  }
 
-    public void Deconstruct(out ImmutableArray<string> aliases)
-    {
-        aliases = this.Aliases;
-    }
+
+    public string AliasesRegularExpression { get; }
 }
 
 internal sealed record CliActionRegexMatchCommandArgument() : CliActionRegexMatchCommandSegment
@@ -67,7 +85,7 @@ internal sealed record CliActionRegexMatchCommandArgument() : CliActionRegexMatc
     public string ToRegularExpression(IEnumerable<CliActionRegexMatchCommandToken> subCommands) => subCommands
         .Select(sc => sc.ToRegularExpression())
         .Join("|")
-        .Convert(p => $@"(?!(?:{p})\b)[^-]\S+");
+        .Convert(p => $@"(?!(?:{p})\b)[^-]\S*");
 }
 
 internal sealed record CliActionRegexMatchFlagOption : CliActionRegexMatchOption
@@ -78,26 +96,16 @@ internal sealed record CliActionRegexMatchFlagOption : CliActionRegexMatchOption
     {
     }
 
-    public override string ToRegularExpression()
-    {
-        return Aliases
-            .OrderByDescending(a => a.Length)
-            .Join("|")
-            .Convert(p => $@"(?<{GroupName}>{p})(?=\s|$)");
-    }
+    public override string ToRegularExpression() => 
+        $@"(?<{RegularExpressionGroupName}>{AliasesRegularExpression})(?=\s|$)";
 }
 
 internal sealed record CliActionRegexMatchScalarOption : CliActionRegexMatchOption
 {
-    public CliActionRegexMatchScalarOption(string groupName, string[] aliases) : base(groupName, aliases)
-    {
-    }
+    public CliActionRegexMatchScalarOption(string groupName, string[] aliases) : base(groupName, aliases) { }
 
-    public override string ToRegularExpression()
-    {
-        throw new NotImplementedException();
-    }
-
+    public override string ToRegularExpression() =>
+        $@"(?:{AliasesRegularExpression})(?:\s+(?<{RegularExpressionGroupName}>[^-]\S*))?";
 }
 
 internal sealed record CliActionRegexMatchVectorOption : CliActionRegexMatchOption
@@ -110,11 +118,6 @@ internal sealed record CliActionRegexMatchVectorOption : CliActionRegexMatchOpti
     {
         throw new NotImplementedException();
     }
-
-    public void Deconstruct(out string GroupName)
-    {
-        GroupName = this.GroupName;
-    }
 }
 
 internal sealed record CliActionRegexMatchMapOption : CliActionRegexMatchOption
@@ -125,11 +128,8 @@ internal sealed record CliActionRegexMatchMapOption : CliActionRegexMatchOption
 
     public override string ToRegularExpression()
     {
-        throw new NotImplementedException();
-    }
-
-    public void Deconstruct(out string GroupName)
-    {
-        GroupName = this.GroupName;
+        return @$"(?:{AliasesRegularExpression})(?:$dot-notation|$accessor-notation)?"
+            .Replace("$dot-notation", @$"\.(?<{RegularExpressionGroupName}>\S+(?:\s+[^-]\S*)?)")
+            .Replace("$accessor-notation", @$"(?<{RegularExpressionGroupName}>\[\S*\](?:\s+[^-]\S*)?)");
     }
 }
