@@ -3,18 +3,18 @@
 <#@ import namespace="System.Linq" #>
 <#@ import namespace="System.Text" #>
 <#@ import namespace="System.Collections.Generic" #>
-# --- EXECUTABLE:
-(?<<#= ExecutableGroupName #>>\S+)
+^\s*\S+ # EXECUTABLE PATH
+\S+
 
 # --- OPTIMAL LOOK AHEAD MATCH
-(?<<#= OptimalMatchGroupName #>> 
+(?:
   # --- look ahead ---
   (?= 
     # --- optimal match pattern
     (?:
       # --- command segments ---
       <# foreach(var segmentExp in CommandSegmentRegularExpressions){ #> 
-      \s+ (?:<#= segmentExp #>) <# }/* Loop over command segments */ #> 
+      \s+ <#= segmentExp #> <# }/* Loop over command segments */ #> 
       # --- command segments ---
       # --- options ---
       (
@@ -34,7 +34,7 @@
 (?:
   \s+
   (?:$<# foreach(var segmentExp in CommandSegmentRegularExpressions){ #> 
-     | (<#= segmentExp #>) <# }/* Loop over command segments */ #> 
+     | <#= segmentExp #> <# }/* Loop over command segments */ #> 
      <# foreach(var optionExp in OptionRegularExpressions ){ #> 
      | (<#= optionExp #>) <# } /* Loop over command options */#> 
      | \S+

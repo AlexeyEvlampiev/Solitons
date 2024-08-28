@@ -14,7 +14,7 @@ internal sealed class CliActionSchema
         throw new NotImplementedException();
     }
 
-    public int Rank(string commandLine, int optimalMatchRank = 10)
+    public int Rank(string commandLine)
     {
         string pattern = new CliActionRegexMatchRankerRtt(this);
 #if DEBUG
@@ -32,14 +32,7 @@ internal sealed class CliActionSchema
             .Where(g => g.Success)
             .Skip(1) // Exclude group 0 from count
             .ToList();
-        int rank = 0;
-        foreach (var group in groups)
-        {
-            rank += group.Name.Equals(CliActionRegexMatchRankerRtt.OptimalMatchGroupName, StringComparison.Ordinal)
-                ? optimalMatchRank
-                : 1;
-        }
-
+        int rank = groups.Count;
         return rank;
     }
 
@@ -90,6 +83,8 @@ internal sealed class CliActionSchema
     public interface ICommandSegment
     {
         string BuildRegularExpression();
+
+        public sealed bool IsArgument => this is Argument;
     }
 
     public interface IOption

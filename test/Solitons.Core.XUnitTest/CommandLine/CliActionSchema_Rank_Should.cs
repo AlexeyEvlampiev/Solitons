@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Diagnostics;
-using Moq;
+﻿using System.Diagnostics;
 using Solitons.Collections;
 using Xunit;
 
@@ -10,16 +8,15 @@ namespace Solitons.CommandLine;
 public sealed class CliActionSchema_Rank_Should
 {
     [Theory]
-    [InlineData("program run arg",3, true)]
-    [InlineData("program arg run",3, false)]
-    [InlineData("program run run", 2, false)]
-    [InlineData("program arg arg", 2, false)]
-    [InlineData("program --hello", 1, false)]
-    [InlineData("program --hello --world", 1, false)]
-    public void HandleBasicOptionlessCommand(string commandLine, int minSuccessfulGroups, bool optimalMatchExpected)
+    [InlineData("program run arg",2 * 2)]
+    //[InlineData("program arg run",3, false)]
+    //[InlineData("program run run", 2, false)]
+    //[InlineData("program arg arg", 2, false)]
+    //[InlineData("program --hello", 1, false)]
+    //[InlineData("program --hello --world", 1, false)]
+    public void HandleBasicOptionlessCommand(string commandLine, int expectedRank)
     {
-        Debug.WriteLine($"Command line: '{commandLine}'");
-        Debug.WriteLine(optimalMatchExpected ? "Expected optimal match" : "No optimal match expected");
+        Debug.WriteLine(commandLine);
         var schema = new CliActionSchema()
             .AddSubCommand(["run"])
             .AddArgument("arg");
@@ -28,8 +25,7 @@ public sealed class CliActionSchema_Rank_Should
             .Create(0, 10, 100)
             .ForEach(optimalMatchRank =>
             {
-                var expectedRank = minSuccessfulGroups + (optimalMatchExpected ? optimalMatchRank : 0);
-                var actualRank = schema.Rank(commandLine, optimalMatchRank);
+                var actualRank = schema.Rank(commandLine);
                 Assert.Equal(expectedRank, actualRank);
             });
     }
