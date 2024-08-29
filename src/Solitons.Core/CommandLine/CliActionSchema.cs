@@ -45,7 +45,13 @@ internal sealed class CliActionSchema
 
     public CliActionSchema AddSubCommand(IEnumerable<string> aliases)
     {
-        _items.Add(new SubCommand(aliases));
+        aliases = aliases
+            .Where(s => s.IsPrintable())
+            .ToList();
+        if (aliases.Any())
+        {
+            _items.Add(new SubCommand(aliases));
+        }
         return this;
     }
 

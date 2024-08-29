@@ -104,4 +104,20 @@ public sealed class CliActionSchema_Rank_Should
         var actualRank = schema.Rank(commandLine);
         Assert.Equal(expectedRank, actualRank);
     }
+
+    [Theory]
+    [InlineData("program --parameter[key] value", 1 + 1 /* optimal match */ )]
+    [InlineData("program --parameter.key value", 1 + 1 /* optimal match */ )]
+    [InlineData("program --parameter.key1 value1 --parameter.key2 value2", 1 + 1 /* optimal match */ )]
+    [InlineData("program --parameter[key1] value1 --parameter[key2] value2", 1 + 1 /* optimal match */ )]
+    public void HandleScenario006(string commandLine, int expectedRank)
+    {
+        Debug.WriteLine(commandLine);
+        var schema = new CliActionSchema()
+            .AddSubCommand([""])
+            .AddMapOption("parameters", ["--parameter", "-param", "-p"]);
+
+        var actualRank = schema.Rank(commandLine);
+        Assert.Equal(expectedRank, actualRank);
+    }
 }
