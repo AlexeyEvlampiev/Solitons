@@ -37,11 +37,42 @@ public sealed class ParquetAsyncLogger : BufferedAsyncLogger
         BlobContainerClient container, 
         Action<Options> config)
     {
+        ThrowIf.ArgumentNull(container);
+        ThrowIf.ArgumentNull(config);
+        if (false == container.Exists())
+        {
+            throw new ArgumentException("The specified Blob container does not exist.", nameof(container));
+        }
         return new ParquetAsyncLogger(OpenStreamAsync, config);
         Task<Stream> OpenStreamAsync()
         {
             var blob = container.GetBlobClient($"{Guid.NewGuid():N}.parquet");
             return blob.OpenWriteAsync(false);
+        }
+    }
+
+    /// <summary>
+    /// Creates an instance of <see cref="ParquetAsyncLogger"/> that logs to a local directory.
+    /// </summary>
+    /// <param name="directory">The directory where Parquet files will be stored.</param>
+    /// <param name="config">The configuration options for buffering log messages.</param>
+    /// <returns>A new instance of <see cref="IAsyncLogger"/>.</returns>
+    public static IAsyncLogger Create(
+        DirectoryInfo directory,
+        Action<Options> config)
+    {
+        ThrowIf.ArgumentNull(directory);
+        ThrowIf.ArgumentNull(config);
+        if (false == directory.Exists)
+        {
+            throw new ArgumentException("The specified directory does not exist.");
+        }
+        var root = directory.FullName;
+        return new ParquetAsyncLogger(OpenStreamAsync, config);
+        Task<Stream> OpenStreamAsync()
+        {
+            var path = Path.Combine(root, $"{Guid.NewGuid():N}.parquet");
+            return Task.FromResult((Stream)File.OpenWrite(path));
         }
     }
 
