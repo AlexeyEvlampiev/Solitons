@@ -51,7 +51,7 @@ internal sealed class CliActionSchema
 
     public CliActionSchema AddArgument(string regexGroupName)
     {
-        _items.Add(new Argument(regexGroupName, _items.OfType<SubCommand>()));
+        _items.Add(new Argument(regexGroupName, _items.OfType<ICommandSegment>()));
         return this;
     }
 
@@ -97,19 +97,44 @@ internal sealed class CliActionSchema
         public IReadOnlyList<string> Aliases { get; } = aliases.ToArray();
     }
 
-    public sealed record Argument(string RegexGroupName, IEnumerable<SubCommand> SubCommands) : ICommandSegment
+    public sealed record Argument(string RegexGroupName, IEnumerable<ICommandSegment> SubCommands) : ICommandSegment
     {
         public string BuildRegularExpression()
         {
-            var valueExp = SubCommands
-                .SelectMany(sc => sc.Aliases)
-                .Select(a => a.Trim().ToLower())
-                .Distinct(StringComparer.Ordinal)
-                .OrderByDescending(a => a.Length)
-                .Join("|")
-                .DefaultIfNullOrWhiteSpace("$")
-                .Convert(exp => $@"(?!(?:{exp}))[^\s-]\S*");
-            return $"(?<{RegexGroupName}>{valueExp})";
+            var segments = SubCommands.ToList();
+            var selfIndex = segments.IndexOf(this);
+            if (selfIndex == -1)
+            {
+                throw new InvalidOperationException();
+            }
+
+            var preCondition = segments
+                .Take(selfIndex)
+                .Select(cs => cs.BuildRegularExpression())
+                .Select(p => $"(?:{p})")
+                .Join("\\s+")
+                .Convert(p => p.IsPrintable() ? @$"(?<=(?:{p})\s+)" : string.Empty)
+                .Convert(lookBehind
+                    =>
+                {
+                    var lookAhead = segments
+                        .OfType<SubCommand>()
+                        .Select(sc => sc.BuildRegularExpression())
+                        .Join("|")
+                        .Convert(x => $"(?!(?:{x}))");
+                    return $"{lookBehind}{lookAhead}";
+                });
+            
+
+            var postCondition = segments
+                .Skip(selfIndex + 1)
+                .Select(cs => cs.BuildRegularExpression())
+                .Select(p => $"(?:{p})")
+                .Join("\\s+")
+                .Convert(p => p.IsPrintable() ? @$"(?=\s+(?:{p}))" : string.Empty);
+
+            var pattern = $@"{preCondition}(?<{RegexGroupName}>[^\s-]\S*){postCondition}";
+            return pattern;
         }
     }
 
@@ -157,8 +182,8 @@ internal sealed class CliActionSchema
                     return $@"(?:{token})\s*(?<{RegexGroupName}>(?:[^\s-]\S*)?)";
                 case (OptionType.Map):
                 {
-                    var pattern = $@"(?:{token})(?:$don-notation|$accessor-notation)"
-                        .Replace(@"$don-notation", @$"\.(?<{RegexGroupName}>(?:\S+\s+[^\s-]\S+)?)")
+                    var pattern = $@"(?:{token})(?:$dot-notation|$accessor-notation)"
+                        .Replace(@"$dot-notation", @$"\.(?<{RegexGroupName}>(?:\S+\s+[^\s-]\S+)?)")
                         .Replace(@"$accessor-notation", @$"(?<{RegexGroupName}>(?:\[\S+\]\s+[^\s-]\S+)?)");
                     return pattern;
                 }

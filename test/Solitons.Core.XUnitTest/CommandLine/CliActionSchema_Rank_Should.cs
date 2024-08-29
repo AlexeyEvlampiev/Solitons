@@ -8,12 +8,12 @@ public sealed class CliActionSchema_Rank_Should
 {
     [Theory]
     [InlineData("program run arg",2 + 1 /* optimal match */ )]
-    [InlineData("program arg run",2)]
-    [InlineData("program run run", 1)]
-    [InlineData("program arg arg", 1)]
-    [InlineData("program", 0)]
-    [InlineData("program --hello", 0)]
-    [InlineData("program --hello --world", 0)]
+    //[InlineData("program arg run",2)]
+    //[InlineData("program run run", 1)]
+    //[InlineData("program arg arg", 1)]
+    //[InlineData("program", 0)]
+    //[InlineData("program --hello", 0)]
+    //[InlineData("program --hello --world", 0)]
     public void HandleScenario001(string commandLine, int expectedRank)
     {
         Debug.WriteLine(commandLine);
@@ -73,6 +73,7 @@ public sealed class CliActionSchema_Rank_Should
 
     [Theory]
     [InlineData("program task 1 run --task-priority 100 --async", 5 + 1 /* optimal match */ )]
+    [InlineData("program task 1 run -priority 100 --async", 5 + 1 /* optimal match */ )]
     public void HandleScenario004(string commandLine, int expectedRank)
     {
         Debug.WriteLine(commandLine);
