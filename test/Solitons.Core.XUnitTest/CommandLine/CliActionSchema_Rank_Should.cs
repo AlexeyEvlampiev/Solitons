@@ -7,7 +7,7 @@ namespace Solitons.CommandLine;
 public sealed class CliActionSchema_Rank_Should
 {
     [Theory]
-    //[InlineData("program run arg",2 + 1 /* optimal match */ )]
+    [InlineData("program run arg",2 + 1 /* optimal match */ )]
     [InlineData("program arg run",1)]
     [InlineData("program run run", 1)]
     [InlineData("program arg arg", 0)]
