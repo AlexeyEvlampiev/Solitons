@@ -116,8 +116,7 @@ public sealed class EventGridAsyncLogger : BufferedAsyncLogger
         try
         {
             // Send the pre-encoded CloudEvents directly to Event Grid
-            //await _client.SendEventsAsync(events);
-            _client.SendEventsAsync(events).GetAwaiter().GetResult();
+            await _client.SendEventsAsync(events);
         }
         catch (Exception ex)
         {
