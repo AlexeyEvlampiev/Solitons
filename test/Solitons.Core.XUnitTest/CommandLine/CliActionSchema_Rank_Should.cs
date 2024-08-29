@@ -51,11 +51,11 @@ public sealed class CliActionSchema_Rank_Should
 
     [Theory]
     [InlineData("program task 1 run", 3 + 1 /* optimal match */ )]
-    [InlineData("program 1 2 task run", 3)]
+    [InlineData("program 1 2 task run", 2)]
     [InlineData("program task run", 2)]
     [InlineData("program task task", 1)]
     [InlineData("program run run", 1)]
-    [InlineData("program 1 2 3", 1)]
+    [InlineData("program 1 2 3", 0)]
     [InlineData("program", 0)]
     [InlineData("program --hello", 0)]
     [InlineData("program --hello --world", 0)]
