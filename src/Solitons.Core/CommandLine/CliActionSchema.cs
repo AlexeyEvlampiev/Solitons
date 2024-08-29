@@ -5,17 +5,31 @@ using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
 
+/// <summary>
+/// Represents a schema for defining and parsing command-line actions.
+/// </summary>
 internal sealed class CliActionSchema
 {
     private readonly List<object> _items = new();
+    private readonly Regex _validRegexGroupNameRegex = new(@"(?is-m)^[a-z]\w*$");
     private readonly Regex _validSubCommandAliasRegex = new(@"^\w[\w\-]*$");
     private readonly Regex _validOptionAliasRegex = new(@"^--?\w[\w\-]*$");
 
+    /// <summary>
+    /// Matches the specified command line string against the schema.
+    /// </summary>
+    /// <param name="commandLine">The command line string to match.</param>
+    /// <returns>A <see cref="Match"/> object that contains information about the match.</returns>
     public Match Match(string commandLine)
     {
         throw new NotImplementedException();
     }
 
+    /// <summary>
+    /// Calculates the rank of the specified command line based on the schema.
+    /// </summary>
+    /// <param name="commandLine">The command line string to rank.</param>
+    /// <returns>An integer representing the rank.</returns>
     public int Rank(string commandLine)
     {
         string pattern = new CliActionRegexMatchRankerRtt(this);
@@ -112,6 +126,14 @@ internal sealed class CliActionSchema
         }
     }
 
+
+    private void AssertRegexGroupName(string groupName)
+    {
+        if (false == _validRegexGroupNameRegex.IsMatch(groupName))
+        {
+            throw new InvalidOperationException($"The regex group name '{groupName}' is invalid.");
+        }
+    }
     public interface ICommandSegment
     {
         string BuildRegularExpression();
