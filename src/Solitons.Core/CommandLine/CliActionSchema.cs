@@ -9,6 +9,7 @@ internal sealed class CliActionSchema
 {
     private readonly List<object> _items = new();
     private readonly Regex _validSubCommandAliasRegex = new(@"^\w[\w\-]*$");
+    private readonly Regex _validOptionAliasRegex = new(@"^--?\w[\w\-]*$");
 
     public Match Match(string commandLine)
     {
@@ -72,28 +73,44 @@ internal sealed class CliActionSchema
 
     public CliActionSchema AddFlagOption(string regexGroupName, IEnumerable<string> aliases)
     {
+        AssertOptionAliases(aliases = aliases.ToList());
         _items.Add(new Option(regexGroupName, aliases, OptionType.Flag));
         return this;
     }
 
+
     public CliActionSchema AddScalarOption(string regexGroupName, IEnumerable<string> aliases)
     {
+        AssertOptionAliases(aliases = aliases.ToList());
         _items.Add(new Option(regexGroupName, aliases, OptionType.Scalar));
         return this;
     }
 
     public CliActionSchema AddVectorOption(string regexGroupName, IEnumerable<string> aliases)
     {
+        AssertOptionAliases(aliases = aliases.ToList());
         _items.Add(new Option(regexGroupName, aliases, OptionType.Vector));
         return this;
     }
 
     public CliActionSchema AddMapOption(string regexGroupName, IEnumerable<string> aliases)
     {
+        AssertOptionAliases(aliases = aliases.ToList());
         _items.Add(new Option(regexGroupName, aliases, OptionType.Map));
         return this;
     }
 
+    private void AssertOptionAliases(IEnumerable<string> aliases)
+    {
+        var invalidAliasesCsv = aliases
+            .Where(a => false == _validOptionAliasRegex.IsMatch(a))
+            .Select(a => $"'{a}'")
+            .Join(",");
+        if (invalidAliasesCsv.IsPrintable())
+        {
+            throw new InvalidOperationException($"Invalid option aliases detected: {invalidAliasesCsv}");
+        }
+    }
 
     public interface ICommandSegment
     {
