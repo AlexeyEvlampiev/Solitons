@@ -20,9 +20,8 @@ public sealed class ParquetAsyncLogger : BufferedAsyncLogger
     private ParquetAsyncLogger(Func<Task<Stream>> streamFactory, Action<Options> config)
         : base(config)
     {
-        // Use ThrowIf for argument validation
-        ThrowIf.ArgumentNull(streamFactory, nameof(streamFactory));
-        ThrowIf.ArgumentNull(config, nameof(config));
+        ThrowIf.ArgumentNull(streamFactory);
+        ThrowIf.ArgumentNull(config);
 
         _streamFactory = streamFactory;
     }
@@ -83,7 +82,7 @@ public sealed class ParquetAsyncLogger : BufferedAsyncLogger
     /// <returns>A task that represents the asynchronous logging operation.</returns>
     protected override async Task LogAsync(IList<LogEventArgs> args)
     {
-        ThrowIf.ArgumentNull(args, nameof(args));
+        ThrowIf.ArgumentNull(args);
         if (args.Count == 0) return;
 
         try
@@ -91,7 +90,7 @@ public sealed class ParquetAsyncLogger : BufferedAsyncLogger
             var timestamp = DateTime.UtcNow;
             var schema = new ParquetSchema(
                 new DataField<DateTime>("Timestamp"),
-                new DataField<string>("LogJson"));
+                new DataField<string>("Json"));
             var column1 = new DataColumn(
                 schema.DataFields[0],
                 args.Select(_ => timestamp).ToArray());
