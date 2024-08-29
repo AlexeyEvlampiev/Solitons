@@ -8,6 +8,7 @@ namespace Solitons.CommandLine;
 internal sealed class CliActionSchema
 {
     private readonly List<object> _items = new();
+    private readonly Regex _validSubCommandAliasRegex = new(@"^\w[\w\-]*$");
 
     public Match Match(string commandLine)
     {
@@ -47,7 +48,15 @@ internal sealed class CliActionSchema
     {
         aliases = aliases
             .Where(s => s.IsPrintable())
+            .Select(s => s.Trim())
             .ToList();
+        var invalidAliasesCsv = aliases
+            .Where(a => false == _validSubCommandAliasRegex.IsMatch(a))
+            .Join(",");
+        if (invalidAliasesCsv.IsPrintable())
+        {
+            throw new InvalidOperationException($"Invalid aliases: {invalidAliasesCsv}");
+        }
         if (aliases.Any())
         {
             _items.Add(new SubCommand(aliases));
