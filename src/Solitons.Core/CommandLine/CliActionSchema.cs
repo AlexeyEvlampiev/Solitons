@@ -67,10 +67,13 @@ internal sealed class CliActionSchema
             .ToList();
         var invalidAliasesCsv = aliases
             .Where(a => false == _validSubCommandAliasRegex.IsMatch(a))
+            .Select(a => $"'{a}'")
             .Join(",");
         if (invalidAliasesCsv.IsPrintable())
         {
-            throw new InvalidOperationException($"Invalid aliases: {invalidAliasesCsv}");
+            throw new InvalidOperationException(
+                $"Invalid sub-command aliases detected: {invalidAliasesCsv}. " +
+                "Each alias must start with a word character and can include hyphens.");
         }
         if (aliases.Any())
         {
