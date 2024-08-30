@@ -25,21 +25,21 @@ namespace Solitons.CommandLine
         /// </summary>
         public override string TransformText()
         {
-            this.Write("^\\s*\\S+ # EXECUTABLE PATH\r\n(?:\r\n  # --- command segments --- ");
+            this.Write("^\\s*\\S+ # EXECUTABLE PATH\r\n# --- command segments --- ");
  foreach(var segmentExp in CommandSegmentRegularExpressions){ 
-            this.Write(" \r\n  \\s+ ");
+            this.Write(" \r\n\\s+ ");
             this.Write(this.ToStringHelper.ToStringWithCulture(segmentExp));
             this.Write(" ");
  }/* Loop over command segments */ 
-            this.Write(" \r\n  # --- command segments ---\r\n  # --- options ---\r\n  (?:\r\n    \\s+\r\n    (?:");
+            this.Write(" \r\n# --- command segments ---\r\n# --- options ---\r\n(?:\r\n  \\s+\r\n  (?:");
  foreach(var optionExp in OptionRegularExpressions ){ 
-            this.Write(" \r\n        (?: ");
+            this.Write(" \r\n    (?: ");
             this.Write(this.ToStringHelper.ToStringWithCulture(optionExp));
             this.Write(") |  ");
  } /* Loop over command options */
-            this.Write(" \r\n        (?<");
+            this.Write(" \r\n    (?<");
             this.Write(this.ToStringHelper.ToStringWithCulture(UnrecognizedToken));
-            this.Write(">\\S+)\r\n    )\r\n  )*\r\n  # --- options ---\r\n)");
+            this.Write(">\\S+)\r\n  )\r\n)*\r\n# --- options --\r\n");
             return this.GenerationEnvironment.ToString();
         }
     }

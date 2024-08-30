@@ -22,7 +22,12 @@ internal sealed class CliActionSchema
     /// <returns>A <see cref="Match"/> object that contains information about the match.</returns>
     public Match Match(string commandLine)
     {
-        throw new NotImplementedException();
+        var pattern = new CliActionRegularExpressionRtt(this).ToString();
+        var regex = new Regex(pattern, 
+            RegexOptions.Compiled | 
+            RegexOptions.Singleline | 
+            RegexOptions.IgnorePatternWhitespace);
+        return regex.Match(commandLine);
     }
 
     /// <summary>
@@ -175,7 +180,7 @@ internal sealed class CliActionSchema
                 .Select(cs => cs.BuildRegularExpression())
                 .Select(p => $"(?:{p})")
                 .Join("\\s+")
-                .Convert(p => p.IsPrintable() ? @$"(?<=(?:{p})\s+)" : string.Empty)
+                .Convert(p => p.IsPrintable() ? @$"(?<={p}\s+)" : string.Empty)
                 .Convert(lookBehind
                     =>
                 {
@@ -254,4 +259,6 @@ internal sealed class CliActionSchema
             }
         }
     }
+
+    public Group GetUnrecognizedTokens(Match match) => match.Groups[CliActionRegularExpressionRtt.UnrecognizedToken];
 }

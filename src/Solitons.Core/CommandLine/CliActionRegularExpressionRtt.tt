@@ -4,17 +4,15 @@
 <#@ import namespace="System.Text" #>
 <#@ import namespace="System.Collections.Generic" #>
 ^\s*\S+ # EXECUTABLE PATH
+# --- command segments --- <# foreach(var segmentExp in CommandSegmentRegularExpressions){ #> 
+\s+ <#= segmentExp #> <# }/* Loop over command segments */ #> 
+# --- command segments ---
+# --- options ---
 (?:
-  # --- command segments --- <# foreach(var segmentExp in CommandSegmentRegularExpressions){ #> 
-  \s+ <#= segmentExp #> <# }/* Loop over command segments */ #> 
-  # --- command segments ---
-  # --- options ---
-  (?:
-    \s+
-    (?:<# foreach(var optionExp in OptionRegularExpressions ){ #> 
-        (?: <#= optionExp #>) |  <# } /* Loop over command options */#> 
-        (?<<#= UnrecognizedToken #>>\S+)
-    )
-  )*
-  # --- options ---
-)
+  \s+
+  (?:<# foreach(var optionExp in OptionRegularExpressions ){ #> 
+    (?: <#= optionExp #>) |  <# } /* Loop over command options */#> 
+    (?<<#= UnrecognizedToken #>>\S+)
+  )
+)*
+# --- options --
