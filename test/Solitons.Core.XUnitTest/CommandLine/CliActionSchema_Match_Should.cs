@@ -41,6 +41,10 @@ public sealed class CliActionSchema_Match_Should
     [Theory]
     [InlineData("program task 123 run --timeout 00:30:00 --parameter.server localhost -p[post] 4567", true, 0)]
     [InlineData("program tsk 123 go -to 00:30:00 -p.server localhost --parameters[post] 4567", true, 0)]
+    [InlineData("program task 123 run --timeout 00:30:00 --parameter.server localhost -p[post] 4567 --hello", true, 1)]
+    [InlineData("program task 123 run --timeout 00:30:00 --parameter.server localhost -p[post] 4567 --hello --world", true, 2)]
+    [InlineData("program run 123 task --timeout 00:30:00 --parameter.server localhost -p[post] 4567", false, 0)]
+    [InlineData("hello world", false, 0)]
     public void HandleScenario002(string commandLine, bool success, int unrecognizedTokensCount)
     {
         Debug.WriteLine(commandLine);
