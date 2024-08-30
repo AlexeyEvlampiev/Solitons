@@ -11,7 +11,7 @@ namespace Solitons.CommandLine;
 /// </summary>
 internal sealed class CliActionSchema
 {
-    private readonly List<object> _items = new();
+    private readonly List<object> _fields = new();
     private readonly Regex _regex;
     private readonly Regex _rankRegex;
 
@@ -84,11 +84,11 @@ internal sealed class CliActionSchema
         return rank;
     }
 
-    public IEnumerable<ICommandSegment> CommandSegments => _items
+    public IEnumerable<ICommandSegment> CommandSegments => _fields
         .OfType<ICommandSegment>();
 
 
-    public IEnumerable<IOption> Options => _items
+    public IEnumerable<IOption> Options => _fields
         .OfType<IOption>();
 
 
@@ -145,7 +145,7 @@ internal sealed class CliActionSchema
             }
             if (aliases.Any())
             {
-                _schema._items.Add(new SubCommand(aliases));
+                _schema._fields.Add(new SubCommand(aliases));
             }
             return this;
         }
@@ -155,7 +155,7 @@ internal sealed class CliActionSchema
         public Builder AddArgument(string regexGroupName)
         {
             AssertRegexGroupName(regexGroupName);
-            _schema._items.Add(new Argument(regexGroupName, _schema._items.OfType<ICommandSegment>()));
+            _schema._fields.Add(new Argument(regexGroupName, _schema._fields.OfType<ICommandSegment>()));
             return this;
         }
 
@@ -163,7 +163,7 @@ internal sealed class CliActionSchema
         {
             AssertRegexGroupName(regexGroupName);
             AssertOptionAliases(aliases);
-            _schema._items.Add(new Option(regexGroupName, aliases, CliOptionArity.Flag));
+            _schema._fields.Add(new Option(regexGroupName, aliases, CliOptionArity.Flag));
             return this;
         }
 
@@ -172,7 +172,7 @@ internal sealed class CliActionSchema
         {
             AssertRegexGroupName(regexGroupName);
             AssertOptionAliases(aliases);
-            _schema._items.Add(new Option(regexGroupName, aliases, CliOptionArity.Scalar));
+            _schema._fields.Add(new Option(regexGroupName, aliases, CliOptionArity.Scalar));
             return this;
         }
 
@@ -180,7 +180,7 @@ internal sealed class CliActionSchema
         {
             AssertRegexGroupName(regexGroupName);
             AssertOptionAliases(aliases);
-            _schema._items.Add(new Option(regexGroupName, aliases, CliOptionArity.Vector));
+            _schema._fields.Add(new Option(regexGroupName, aliases, CliOptionArity.Vector));
             return this;
         }
 
@@ -188,7 +188,7 @@ internal sealed class CliActionSchema
         {
             AssertRegexGroupName(regexGroupName);
             AssertOptionAliases(aliases);
-            _schema._items.Add(new Option(regexGroupName, aliases, CliOptionArity.Map));
+            _schema._fields.Add(new Option(regexGroupName, aliases, CliOptionArity.Map));
             return this;
         }
 
