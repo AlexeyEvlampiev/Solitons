@@ -81,40 +81,45 @@ internal sealed class CliActionSchema
 
     public CliActionSchema AddArgument(string regexGroupName)
     {
+        AssertRegexGroupName(regexGroupName);
         _items.Add(new Argument(regexGroupName, _items.OfType<ICommandSegment>()));
         return this;
     }
 
-    public CliActionSchema AddFlagOption(string regexGroupName, IEnumerable<string> aliases)
+    public CliActionSchema AddFlagOption(string regexGroupName, IReadOnlyList<string> aliases)
     {
-        AssertOptionAliases(aliases = aliases.ToList());
+        AssertRegexGroupName(regexGroupName);
+        AssertOptionAliases(aliases);
         _items.Add(new Option(regexGroupName, aliases, OptionType.Flag));
         return this;
     }
 
 
-    public CliActionSchema AddScalarOption(string regexGroupName, IEnumerable<string> aliases)
+    public CliActionSchema AddScalarOption(string regexGroupName, IReadOnlyList<string> aliases)
     {
-        AssertOptionAliases(aliases = aliases.ToList());
+        AssertRegexGroupName(regexGroupName);
+        AssertOptionAliases(aliases);
         _items.Add(new Option(regexGroupName, aliases, OptionType.Scalar));
         return this;
     }
 
-    public CliActionSchema AddVectorOption(string regexGroupName, IEnumerable<string> aliases)
+    public CliActionSchema AddVectorOption(string regexGroupName, IReadOnlyList<string> aliases)
     {
-        AssertOptionAliases(aliases = aliases.ToList());
+        AssertRegexGroupName(regexGroupName);
+        AssertOptionAliases(aliases);
         _items.Add(new Option(regexGroupName, aliases, OptionType.Vector));
         return this;
     }
 
-    public CliActionSchema AddMapOption(string regexGroupName, IEnumerable<string> aliases)
+    public CliActionSchema AddMapOption(string regexGroupName, IReadOnlyList<string> aliases)
     {
-        AssertOptionAliases(aliases = aliases.ToList());
+        AssertRegexGroupName(regexGroupName);
+        AssertOptionAliases(aliases);
         _items.Add(new Option(regexGroupName, aliases, OptionType.Map));
         return this;
     }
 
-    private void AssertOptionAliases(IEnumerable<string> aliases)
+    private void AssertOptionAliases(IReadOnlyList<string> aliases)
     {
         var invalidAliasesCsv = aliases
             .Where(a => false == _validOptionAliasRegex.IsMatch(a))
