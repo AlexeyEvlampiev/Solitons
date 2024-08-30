@@ -12,13 +12,42 @@ namespace Solitons.CommandLine;
 internal sealed class CliActionSchema
 {
     private readonly List<object> _items = new();
-    
+    private readonly Regex _regex;
+    private readonly Regex _rankRegex;
 
-    [DebuggerNonUserCode]
+
     public CliActionSchema(Action<Builder> config)
     {
         var builder = new Builder(this);
         config.Invoke(builder);
+
+        var pattern = new CliActionRegularExpressionRtt(this)
+            .ToString()
+            .Convert(Beautify);
+
+        var rankPattern = new CliActionRegexMatchRankerRtt(this)
+            .ToString()
+            .Convert(Beautify);
+
+        _regex = new Regex(pattern,
+            RegexOptions.Compiled |
+            RegexOptions.Singleline |
+            RegexOptions.IgnorePatternWhitespace);
+
+        
+        _rankRegex = new Regex(rankPattern,
+            RegexOptions.Compiled |
+            RegexOptions.Singleline |
+            RegexOptions.IgnorePatternWhitespace);
+
+        string Beautify(string exp)
+        {
+#if DEBUG
+            exp = Regex.Replace(exp, @"(?<=\S)[^\S\r\n]{2,}", " ");
+            exp = Regex.Replace(exp, @"(?<=\n)\s*\n", "");
+#endif
+            return exp;
+        }
     }
 
     /// <summary>
@@ -26,15 +55,7 @@ internal sealed class CliActionSchema
     /// </summary>
     /// <param name="commandLine">The command line string to match.</param>
     /// <returns>A <see cref="Match"/> object that contains information about the match.</returns>
-    public Match Match(string commandLine)
-    {
-        var pattern = new CliActionRegularExpressionRtt(this).ToString();
-        var regex = new Regex(pattern, 
-            RegexOptions.Compiled | 
-            RegexOptions.Singleline | 
-            RegexOptions.IgnorePatternWhitespace);
-        return regex.Match(commandLine);
-    }
+    public Match Match(string commandLine) => _regex.Match(commandLine);
 
     /// <summary>
     /// Calculates the rank of the specified command line based on the schema.
@@ -53,7 +74,7 @@ internal sealed class CliActionSchema
             RegexOptions.IgnorePatternWhitespace |
             RegexOptions.Singleline);
 
-        var match = regex.Match(commandLine);
+        var match = _rankRegex.Match(commandLine);
         var groups = match.Groups
             .OfType<Group>()
             .Where(g => g.Success)
@@ -69,12 +90,6 @@ internal sealed class CliActionSchema
 
     public IEnumerable<IOption> Options => _items
         .OfType<IOption>();
-
-
-
-    
-
- 
 
 
 
