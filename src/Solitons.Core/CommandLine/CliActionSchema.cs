@@ -12,10 +12,14 @@ namespace Solitons.CommandLine;
 internal sealed class CliActionSchema
 {
     private readonly List<object> _items = new();
-    private readonly Regex _validRegexGroupNameRegex = new(@"(?is-m)^[a-z]\w*$");
-    private readonly Regex _validSubCommandAliasRegex = new(@"^\w[\w\-]*$");
-    private readonly Regex _validOptionAliasRegex = new(@"^(?:--?\w[\w\-]*|-\?)$");
+    
 
+    [DebuggerNonUserCode]
+    public CliActionSchema(Action<Builder> config)
+    {
+        var builder = new Builder(this);
+        config.Invoke(builder);
+    }
 
     /// <summary>
     /// Matches the specified command line string against the schema.
@@ -66,116 +70,144 @@ internal sealed class CliActionSchema
     public IEnumerable<IOption> Options => _items
         .OfType<IOption>();
 
-    public CliActionSchema AddSubCommand(IEnumerable<string> aliases)
-    {
-        aliases = aliases
-            .Where(s => s.IsPrintable())
-            .Select(s => s.Trim())
-            .ToList();
-        var invalidAliasesCsv = aliases
-            .Where(a => false == _validSubCommandAliasRegex.IsMatch(a))
-            .Select(a => $"'{a}'")
-            .Join(",");
-        if (invalidAliasesCsv.IsPrintable())
-        {
-            throw new InvalidOperationException(
-                $"Invalid sub-command aliases detected: {invalidAliasesCsv}. " +
-                "Each alias must start with a word character and can include hyphens.");
-        }
-        if (aliases.Any())
-        {
-            _items.Add(new SubCommand(aliases));
-        }
-        return this;
-    }
-
-    public CliActionSchema AddArgument(string regexGroupName)
-    {
-        AssertRegexGroupName(regexGroupName);
-        _items.Add(new Argument(regexGroupName, _items.OfType<ICommandSegment>()));
-        return this;
-    }
-
-    public CliActionSchema AddFlagOption(string regexGroupName, IReadOnlyList<string> aliases)
-    {
-        AssertRegexGroupName(regexGroupName);
-        AssertOptionAliases(aliases);
-        _items.Add(new Option(regexGroupName, aliases, OptionType.Flag));
-        return this;
-    }
 
 
-    public CliActionSchema AddScalarOption(string regexGroupName, IReadOnlyList<string> aliases)
-    {
-        AssertRegexGroupName(regexGroupName);
-        AssertOptionAliases(aliases);
-        _items.Add(new Option(regexGroupName, aliases, OptionType.Scalar));
-        return this;
-    }
+    
 
-    public CliActionSchema AddVectorOption(string regexGroupName, IReadOnlyList<string> aliases)
-    {
-        AssertRegexGroupName(regexGroupName);
-        AssertOptionAliases(aliases);
-        _items.Add(new Option(regexGroupName, aliases, OptionType.Vector));
-        return this;
-    }
+ 
 
-    public CliActionSchema AddMapOption(string regexGroupName, IReadOnlyList<string> aliases)
-    {
-        AssertRegexGroupName(regexGroupName);
-        AssertOptionAliases(aliases);
-        _items.Add(new Option(regexGroupName, aliases, OptionType.Map));
-        return this;
-    }
 
-    [DebuggerStepThrough]
-    public CliActionSchema AddOption(string regexGroupName, CliOptionArity arity, IReadOnlyList<string> aliases)
+
+    public class Builder
     {
-        if (arity == CliOptionArity.Flag)
+        private readonly Regex _validRegexGroupNameRegex = new(@"(?is-m)^[a-z]\w*$");
+        private readonly Regex _validSubCommandAliasRegex = new(@"^\w[\w\-]*$");
+        private readonly Regex _validOptionAliasRegex = new(@"^(?:--?\w[\w\-]*|-\?)$");
+        private readonly CliActionSchema _schema;
+
+        internal Builder(CliActionSchema schema)
         {
-            AddFlagOption(regexGroupName, aliases);
-        }
-        else if (arity == CliOptionArity.Scalar)
-        {
-            AddScalarOption(regexGroupName, aliases);
-        }
-        else if (arity == CliOptionArity.Vector)
-        {
-            AddVectorOption(regexGroupName, aliases);
-        }
-        else if (arity == CliOptionArity.Map)
-        {
-            AddMapOption(regexGroupName, aliases);
-        }
-        else
-        {
-            throw new InvalidOperationException();
+            _schema = schema;
         }
 
-        return this;
-    }
-
-    private void AssertOptionAliases(IReadOnlyList<string> aliases)
-    {
-        var invalidAliasesCsv = aliases
-            .Where(a => false == _validOptionAliasRegex.IsMatch(a))
-            .Select(a => $"'{a}'")
-            .Join(",");
-        if (invalidAliasesCsv.IsPrintable())
+        private void AssertOptionAliases(IReadOnlyList<string> aliases)
         {
-            throw new InvalidOperationException($"Invalid option aliases detected: {invalidAliasesCsv}");
+            var invalidAliasesCsv = aliases
+                .Where(a => false == _validOptionAliasRegex.IsMatch(a))
+                .Select(a => $"'{a}'")
+                .Join(",");
+            if (invalidAliasesCsv.IsPrintable())
+            {
+                throw new InvalidOperationException($"Invalid option aliases detected: {invalidAliasesCsv}");
+            }
         }
-    }
 
 
-    private void AssertRegexGroupName(string groupName)
-    {
-        if (false == _validRegexGroupNameRegex.IsMatch(groupName))
+        private void AssertRegexGroupName(string groupName)
         {
-            throw new InvalidOperationException($"The regex group name '{groupName}' is invalid.");
+            if (false == _validRegexGroupNameRegex.IsMatch(groupName))
+            {
+                throw new InvalidOperationException($"The regex group name '{groupName}' is invalid.");
+            }
         }
+
+
+        public Builder AddSubCommand(IEnumerable<string> aliases)
+        {
+            aliases = aliases
+                .Where(s => s.IsPrintable())
+                .Select(s => s.Trim())
+                .ToList();
+            var invalidAliasesCsv = aliases
+                .Where(a => false == _validSubCommandAliasRegex.IsMatch(a))
+                .Select(a => $"'{a}'")
+                .Join(",");
+            if (invalidAliasesCsv.IsPrintable())
+            {
+                throw new InvalidOperationException(
+                    $"Invalid sub-command aliases detected: {invalidAliasesCsv}. " +
+                    "Each alias must start with a word character and can include hyphens.");
+            }
+            if (aliases.Any())
+            {
+                _schema._items.Add(new SubCommand(aliases));
+            }
+            return this;
+        }
+
+
+
+        public Builder AddArgument(string regexGroupName)
+        {
+            AssertRegexGroupName(regexGroupName);
+            _schema._items.Add(new Argument(regexGroupName, _schema._items.OfType<ICommandSegment>()));
+            return this;
+        }
+
+        public Builder AddFlagOption(string regexGroupName, IReadOnlyList<string> aliases)
+        {
+            AssertRegexGroupName(regexGroupName);
+            AssertOptionAliases(aliases);
+            _schema._items.Add(new Option(regexGroupName, aliases, CliOptionArity.Flag));
+            return this;
+        }
+
+
+        public Builder AddScalarOption(string regexGroupName, IReadOnlyList<string> aliases)
+        {
+            AssertRegexGroupName(regexGroupName);
+            AssertOptionAliases(aliases);
+            _schema._items.Add(new Option(regexGroupName, aliases, CliOptionArity.Scalar));
+            return this;
+        }
+
+        public Builder AddVectorOption(string regexGroupName, IReadOnlyList<string> aliases)
+        {
+            AssertRegexGroupName(regexGroupName);
+            AssertOptionAliases(aliases);
+            _schema._items.Add(new Option(regexGroupName, aliases, CliOptionArity.Vector));
+            return this;
+        }
+
+        public Builder AddMapOption(string regexGroupName, IReadOnlyList<string> aliases)
+        {
+            AssertRegexGroupName(regexGroupName);
+            AssertOptionAliases(aliases);
+            _schema._items.Add(new Option(regexGroupName, aliases, CliOptionArity.Map));
+            return this;
+        }
+
+        [DebuggerStepThrough]
+        public Builder AddOption(string regexGroupName, CliOptionArity arity, IReadOnlyList<string> aliases)
+        {
+            if (arity == CliOptionArity.Flag)
+            {
+                AddFlagOption(regexGroupName, aliases);
+            }
+            else if (arity == CliOptionArity.Scalar)
+            {
+                AddScalarOption(regexGroupName, aliases);
+            }
+            else if (arity == CliOptionArity.Vector)
+            {
+                AddVectorOption(regexGroupName, aliases);
+            }
+            else if (arity == CliOptionArity.Map)
+            {
+                AddMapOption(regexGroupName, aliases);
+            }
+            else
+            {
+                throw new InvalidOperationException();
+            }
+
+            return this;
+        }
+
     }
+
+
+
     public interface ICommandSegment
     {
         string BuildRegularExpression();
@@ -257,18 +289,11 @@ internal sealed class CliActionSchema
         }
     }
 
-    public enum OptionType
-    {
-        Flag,
-        Scalar,
-        Vector,
-        Map
-    }
 
-    public sealed class Option(string regexGroupName, IEnumerable<string> aliases, OptionType optionType) : Token(aliases), IOption
+    public sealed class Option(string regexGroupName, IEnumerable<string> aliases, CliOptionArity arity) : Token(aliases), IOption
     {
         public string RegexGroupName { get; } = regexGroupName;
-        public OptionType OptionType { get; } = optionType;
+        public CliOptionArity Arity { get; } = arity;
         public string BuildRegularExpression()
         {
             var token = aliases
@@ -277,13 +302,13 @@ internal sealed class CliActionSchema
                 .OrderByDescending(a => a.Length)
                 .Join("|");
             ThrowIf.NullOrWhiteSpace(token);
-            switch (OptionType)
+            switch (Arity)
             {
-                case (OptionType.Flag):
+                case (CliOptionArity.Flag):
                     return $@"(?<{RegexGroupName}>{token})";
-                case (OptionType.Scalar):
+                case (CliOptionArity.Scalar):
                     return $@"(?:{token})\s*(?<{RegexGroupName}>(?:[^\s-]\S*)?)";
-                case (OptionType.Map):
+                case (CliOptionArity.Map):
                 {
                     var pattern = $@"(?:{token})(?:$dot-notation|$accessor-notation)"
                         .Replace(@"$dot-notation", @$"\.(?<{RegexGroupName}>(?:\S+\s+[^\s-]\S+)?)")

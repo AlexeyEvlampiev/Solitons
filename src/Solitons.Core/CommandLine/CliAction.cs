@@ -17,11 +17,11 @@ internal sealed class CliAction : IComparable<CliAction>
     private readonly MethodInfo _method;
     private readonly CliMasterOptionBundle[] _masterOptions;
 
-    private readonly object[] _commandSegments;
+    private readonly List<object> _commandSegments;
     private readonly List<CliOperandInfo> _operands = new();
     private readonly ParameterInfo[] _parameters;
     private readonly Dictionary<ParameterInfo, object> _parameterMetadata = new();
-    private readonly CliActionSchema _schema = new();
+    private readonly CliActionSchema _schema;
 
     internal CliAction(
         object? instance,
@@ -47,7 +47,7 @@ internal sealed class CliAction : IComparable<CliAction>
                 return [s];
             })
             .Where(a => a is CliCommandAttribute or CliArgumentAttribute)
-            .ToArray();
+            .ToList();
 
         _commandSegments
             .ForEach(a =>
@@ -56,12 +56,12 @@ internal sealed class CliAction : IComparable<CliAction>
                 {
                     cmd.ForEach(sc =>
                     {
-                        _schema.AddSubCommand(sc.Aliases);
+
                     });
                 }
                 else if(a is CliArgumentAttribute arg)
                 {
-                    _schema.AddArgument(arg.ParameterName);
+
 
                     var targetParameter = _parameters
                         .FirstOrDefault(p => arg.References(p))
@@ -111,16 +111,22 @@ internal sealed class CliAction : IComparable<CliAction>
                 .GetOptions(bundle.GetType()));
         }
 
+        
 
-        foreach (var operand in _operands.Where(o => o is not CliArgumentInfo))
-        {
-            _schema.AddOption(operand.Name, operand.OptionArity, operand.Aliases);
-        }
 
         Description = attributes
             .OfType<DescriptionAttribute>()
             .Select(d => d.Description)
             .FirstOrDefault(string.Empty);
+
+
+        _schema = new CliActionSchema(builder =>
+        {
+            foreach (var operand in _operands.OfType<CliOperandInfo>())
+            {
+                builder.AddOption(operand.Name, operand.OptionArity, operand.Aliases);
+            }
+        });
 
         this.FullPath = _commandSegments
             .Select(s =>
@@ -279,7 +285,7 @@ internal sealed class CliAction : IComparable<CliAction>
     }
 
 
-    internal int IndexOfSegment(object segment) => Array.IndexOf(_commandSegments, segment);
+    internal int IndexOfSegment(object segment) => _commandSegments.IndexOf(segment);
 
     public override string ToString()
     {

@@ -17,9 +17,9 @@ public sealed class CliActionSchema_Rank_Should
     public void HandleScenario001(string commandLine, int expectedRank)
     {
         Debug.WriteLine(commandLine);
-        var schema = new CliActionSchema()
+        var schema = new CliActionSchema(builder => builder
             .AddSubCommand(["run"])
-            .AddArgument("arg");
+            .AddArgument("arg"));
 
         var actualRank = schema.Rank(commandLine);
         Assert.Equal(expectedRank, actualRank);
@@ -38,10 +38,10 @@ public sealed class CliActionSchema_Rank_Should
     public void HandleScenario002(string commandLine, int expectedRank)
     {
         Debug.WriteLine(commandLine);
-        var schema = new CliActionSchema()
+        var schema = new CliActionSchema(builder => builder
             .AddSubCommand(["run"])
             .AddArgument("arg1")
-            .AddArgument("arg2");
+            .AddArgument("arg2"));
 
         var actualRank = schema.Rank(commandLine);
         Assert.Equal(expectedRank, actualRank);
@@ -62,10 +62,10 @@ public sealed class CliActionSchema_Rank_Should
     public void HandleScenario003(string commandLine, int expectedRank)
     {
         Debug.WriteLine(commandLine);
-        var schema = new CliActionSchema()
+        var schema = new CliActionSchema(builder => builder
             .AddSubCommand(["task"])
             .AddArgument("number")
-            .AddSubCommand(["run"]);
+            .AddSubCommand(["run"]));
 
         var actualRank = schema.Rank(commandLine);
         Assert.Equal(expectedRank, actualRank);
@@ -77,12 +77,12 @@ public sealed class CliActionSchema_Rank_Should
     public void HandleScenario004(string commandLine, int expectedRank)
     {
         Debug.WriteLine(commandLine);
-        var schema = new CliActionSchema()
+        var schema = new CliActionSchema(builder => builder
             .AddSubCommand(["task"])
             .AddArgument("taskNumber")
             .AddSubCommand(["run"])
             .AddScalarOption("priority", ["--task-priority", "-priority", "-p"])
-            .AddFlagOption("async", ["--async"]);
+            .AddFlagOption("async", ["--async"]));
 
         var actualRank = schema.Rank(commandLine);
         Assert.Equal(expectedRank, actualRank);
@@ -97,9 +97,9 @@ public sealed class CliActionSchema_Rank_Should
     public void HandleScenario005(string commandLine, int expectedRank)
     {
         Debug.WriteLine(commandLine);
-        var schema = new CliActionSchema()
+        var schema = new CliActionSchema(builder => builder
             .AddSubCommand(["run"])
-            .AddMapOption("parameters", ["--parameter", "-param", "-p"]);
+            .AddMapOption("parameters", ["--parameter", "-param", "-p"]));
 
         var actualRank = schema.Rank(commandLine);
         Assert.Equal(expectedRank, actualRank);
@@ -113,9 +113,9 @@ public sealed class CliActionSchema_Rank_Should
     public void HandleScenario006(string commandLine, int expectedRank)
     {
         Debug.WriteLine(commandLine);
-        var schema = new CliActionSchema()
+        var schema = new CliActionSchema(builder => builder
             .AddSubCommand([""])
-            .AddMapOption("parameters", ["--parameter", "-param", "-p"]);
+            .AddMapOption("parameters", ["--parameter", "-param", "-p"]));
 
         var actualRank = schema.Rank(commandLine);
         Assert.Equal(expectedRank, actualRank);

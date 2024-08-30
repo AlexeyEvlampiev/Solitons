@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Threading;
+using System.Reflection.Metadata;
 
 namespace Solitons.CommandLine;
 
@@ -18,7 +19,20 @@ internal abstract class CliOperandInfo
 {
     private readonly MetadataCollection _metadata = new();
 
-    protected CliOperandInfo(
+    protected CliOperandInfo(ParameterInfo parameter) 
+        : this((ICustomAttributeProvider)parameter)
+    {
+        Name = NormalizeName(parameter.Name);
+        ParameterType = parameter.ParameterType;
+    }
+
+    protected CliOperandInfo(PropertyInfo source)
+        : this((ICustomAttributeProvider)source)
+    {
+
+    }
+
+    private CliOperandInfo(
         ICustomAttributeProvider source)
     {
         using var ctorCallback = Disposable.Create(Validate);
@@ -37,8 +51,6 @@ internal abstract class CliOperandInfo
 
         if (source is ParameterInfo parameter)
         {
-            Name = NormalizeName(parameter.Name);
-            ParameterType = parameter.ParameterType;
             IsOptional = parameter.IsOptional &&
                          false == annotatedAsRequired;
             _metadata.AddRange(parameter
@@ -125,6 +137,7 @@ internal abstract class CliOperandInfo
         }
         Converter = CliOperandTypeConverter.Create(ParameterType, Name, Metadata, customTypeConverter);
     }
+
 
     public CliOptionArity OptionArity { get; }
 

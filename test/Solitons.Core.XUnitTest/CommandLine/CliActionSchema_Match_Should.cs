@@ -20,9 +20,9 @@ public sealed class CliActionSchema_Match_Should
     public void HandleScenario001(string commandLine, bool success, int unrecognizedTokensCount)
     {
         Debug.WriteLine(commandLine);
-        var schema = new CliActionSchema()
+        var schema = new CliActionSchema(builder => builder
             .AddSubCommand(["run"])
-            .AddArgument("arg");
+            .AddArgument("arg"));
 
         var match = schema.Match(commandLine);
         Assert.Equal(success, match.Success);
@@ -48,12 +48,11 @@ public sealed class CliActionSchema_Match_Should
     public void HandleScenario002(string commandLine, bool success, int unrecognizedTokensCount)
     {
         Debug.WriteLine(commandLine);
-        var schema = new CliActionSchema()
-            .AddSubCommand(["task", "tsk"])
+        var schema = new CliActionSchema(builder => builder.AddSubCommand(["task", "tsk"])
             .AddArgument("taskId")
             .AddSubCommand(["run", "go"])
             .AddScalarOption("timeout", ["--timeout", "-to"])
-            .AddMapOption("parameters", ["--parameters", "--parameter", "-p"]);
+            .AddMapOption("parameters", ["--parameters", "--parameter", "-p"]));
 
         var match = schema.Match(commandLine);
         Assert.Equal(success, match.Success);
