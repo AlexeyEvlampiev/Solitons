@@ -17,12 +17,11 @@ internal sealed class CliAction : IComparable<CliAction>
     private readonly MethodInfo _method;
     private readonly CliMasterOptionBundle[] _masterOptions;
 
-    private readonly ICliCommandSegment[] _commandSegments;
+    private readonly object[] _commandSegments;
     private readonly List<CliOperandInfo> _operands = new();
     private readonly ParameterInfo[] _parameters;
     private readonly Dictionary<ParameterInfo, object> _parameterMetadata = new();
-    private readonly Regex _commandExactRegex;
-    private readonly Regex _commandFuzzyRegex;
+    private readonly CliActionSchema _schema = new();
 
     internal CliAction(
         object? instance,
@@ -35,30 +34,45 @@ internal sealed class CliAction : IComparable<CliAction>
         
         _masterOptions = ThrowIf.ArgumentNull(masterOptions);
         var attributes = method.GetCustomAttributes().ToArray();
-        Examples = attributes.OfType<CliCommandExampleAttribute>().ToImmutableArray();
-        _commandSegments = attributes
-            .SelectMany(attribute =>
-            {
-                var commandSegments = new List<ICliCommandSegment>();
-                if (attribute is CliCommandAttribute command)
-                {
-                    commandSegments.AddRange(command.Select(subCommand => subCommand));
-                }
-                else if (attribute is CliArgumentAttribute argument)
-                {
-                    var targetParameter = _parameters
-                        .FirstOrDefault(p => argument.References(p))
-                        ?? throw new InvalidOperationException($"Target parameter '{argument.ParameterName}' not found in method '{_method.Name}'.");
+        Examples = [..attributes.OfType<CliCommandExampleAttribute>()];
 
-                    var operand = new CliArgumentInfo(targetParameter, this, argument);
-                    commandSegments.Add(operand);
+        _commandSegments = attributes
+            .SelectMany(s =>
+            {
+                if (s is CliCommandAttribute cmd)
+                {
+                    return cmd.OfType<object>();
+                }
+
+                return [s];
+            })
+            .Where(a => a is CliCommandAttribute or CliArgumentAttribute)
+            .ToArray();
+
+        _commandSegments
+            .ForEach(a =>
+            {
+                if (a is CliCommandAttribute cmd)
+                {
+                    cmd.ForEach(sc =>
+                    {
+                        _schema.AddSubCommand(sc.Aliases);
+                    });
+                }
+                else if(a is CliArgumentAttribute arg)
+                {
+                    _schema.AddArgument(arg.ParameterName);
+
+                    var targetParameter = _parameters
+                        .FirstOrDefault(p => arg.References(p))
+                            ?? throw new InvalidOperationException(
+                                $"Target parameter '{arg.ParameterName}' not found in method '{_method.Name}'.");
+
+                    var operand = new CliArgumentInfo(targetParameter, this, arg);
                     _operands.Add(operand);
                     _parameterMetadata.Add(targetParameter, operand);
                 }
-                return commandSegments;
-            })
-            .ToArray();
-
+            });
 
 
         foreach (var pi in _parameters)
@@ -97,6 +111,12 @@ internal sealed class CliAction : IComparable<CliAction>
                 .GetOptions(bundle.GetType()));
         }
 
+
+        foreach (var operand in _operands.Where(o => o is not CliArgumentInfo))
+        {
+            _schema.AddOption(operand.Name, operand.OptionArity, operand.Aliases);
+        }
+
         Description = attributes
             .OfType<DescriptionAttribute>()
             .Select(d => d.Description)
@@ -114,45 +134,38 @@ internal sealed class CliAction : IComparable<CliAction>
                     return cmd.SubCommandPattern;
                 }
 
-                if (s is CliArgumentInfo arg)
+                if (s is CliArgumentAttribute a)
                 {
-                    return $"<{arg.ArgumentRole.ToUpper()}>";
+                    return $"<{a.ArgumentRole.ToUpper()}>";
                 }
 
                 throw new InvalidOperationException("Unsupported command segment encountered.");
             })
             .Where(s => s.IsPrintable())
             .Join(" ");
-
-        CommandExactMatchExpression = CliActionRegexRtt.Build(this, CliActionMatchMode.Default);
-        CommandFuzzyMatchExpression = CliActionRegexRtt.Build(this, CliActionMatchMode.Similarity);
-        _commandExactRegex = new Regex(CommandExactMatchExpression, RegexOptions.Compiled);
-        _commandFuzzyRegex = new Regex(CommandFuzzyMatchExpression, RegexOptions.Compiled);
     }
 
     public ImmutableArray<CliCommandExampleAttribute> Examples { get; }
 
-    public string CommandExactMatchExpression { get; }
-    public string CommandFuzzyMatchExpression { get; }
 
-    internal IEnumerable<ICliCommandSegment> CommandSegments => _commandSegments;
+    internal IEnumerable<object> CommandSegments => _commandSegments;
 
     internal IEnumerable<CliOperandInfo> Operands => _operands;
     public string Description { get; }
 
     public string FullPath { get; }
 
-    public bool IsMatch(string commandLine) => _commandExactRegex.IsMatch(commandLine);
+
     public int Execute(string commandLine, CliTokenSubstitutionPreprocessor preProcessor)
     {
         commandLine = ThrowIf.ArgumentNullOrWhiteSpace(commandLine);
-        var match = _commandExactRegex.Match(commandLine);
+        var match = _schema.Match(commandLine);
         if (match.Success == false)
         {
             throw new InvalidOperationException($"The command line did not match any known patterns.");
         }
 
-        var unrecognizedParameterGroup = CliActionRegexRtt.GetUnmatchedParameterGroup(match);
+        var unrecognizedParameterGroup = _schema.GetUnrecognizedTokens(match);
         if (unrecognizedParameterGroup.Success)
         {
             var csv = unrecognizedParameterGroup
@@ -236,11 +249,14 @@ internal sealed class CliAction : IComparable<CliAction>
 
     }
 
-    public CliActionSimilarity CalcSimilarity(string commandLine)
-    {
-        var match = _commandFuzzyRegex.Match(commandLine);
-        return new CliActionSimilarity(match);
-    }
+    [DebuggerStepThrough]
+    public int Rank(string commandLine) => _schema.Rank(commandLine);
+
+    [DebuggerStepThrough]
+    public Match Match(string commandLine) => _schema.Match(commandLine);
+
+    [DebuggerStepThrough]
+    public bool IsMatch(string commandLine) => _schema.Match(commandLine).Success;
 
     public void ShowHelp()
     {
@@ -263,7 +279,7 @@ internal sealed class CliAction : IComparable<CliAction>
     }
 
 
-    internal int IndexOf(ICliCommandSegment segment) => Array.IndexOf(_commandSegments, segment);
+    internal int IndexOfSegment(object segment) => Array.IndexOf(_commandSegments, segment);
 
     public override string ToString()
     {

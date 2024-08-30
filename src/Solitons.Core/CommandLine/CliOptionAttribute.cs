@@ -56,7 +56,7 @@ public class CliOptionAttribute : Attribute
                     nameof(specification));
             }
 
-            if (!names.Add(value))
+            if (!names.Add(capture.Value))
             {
                 throw new ArgumentException($"Duplicate option name detected: '{value}'", nameof(specification));
             }
@@ -79,6 +79,7 @@ public class CliOptionAttribute : Attribute
 
 
         Description = description;
+        Aliases = names.ToArray().AsReadOnly();
         LongOptionNames = longNames.AsReadOnly();
         ShortOptionNames = shortNames.AsReadOnly();
         Description = description;
@@ -111,6 +112,8 @@ public class CliOptionAttribute : Attribute
     /// Description of the CLI options.
     /// </summary>
     public string Description { get; }
+
+    public IReadOnlyList<string> Aliases { get; }
 
     /// <summary>
     /// List of short option names.

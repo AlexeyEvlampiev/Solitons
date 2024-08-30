@@ -8,7 +8,7 @@ namespace Solitons.CommandLine;
 /// <summary>
 /// Represents a single CLI subcommand, encapsulating its aliases and providing pattern matching functionality.
 /// </summary>
-internal sealed class CliSubCommand : ICliCommandSegment
+internal sealed class CliSubCommand 
 {
     private static readonly Regex ValidCommandOptionsRegex;
     private static readonly Regex ValidCommandSegmentRegex = new(@"^(?:\w+(?:-\w+)*)?$");
@@ -82,5 +82,4 @@ internal sealed class CliSubCommand : ICliCommandSegment
     public override string ToString() => PrimaryName;
 
     public string BuildPattern() => SubCommandPattern;
-    public string GetExpressionGroup() => PrimaryName.DefaultIfNullOrWhiteSpace("empty");
 }

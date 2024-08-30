@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -13,7 +14,8 @@ internal sealed class CliActionSchema
     private readonly List<object> _items = new();
     private readonly Regex _validRegexGroupNameRegex = new(@"(?is-m)^[a-z]\w*$");
     private readonly Regex _validSubCommandAliasRegex = new(@"^\w[\w\-]*$");
-    private readonly Regex _validOptionAliasRegex = new(@"^--?\w[\w\-]*$");
+    private readonly Regex _validOptionAliasRegex = new(@"^(?:--?\w[\w\-]*|-\?)$");
+
 
     /// <summary>
     /// Matches the specified command line string against the schema.
@@ -127,6 +129,33 @@ internal sealed class CliActionSchema
         return this;
     }
 
+    [DebuggerStepThrough]
+    public CliActionSchema AddOption(string regexGroupName, CliOptionArity arity, IReadOnlyList<string> aliases)
+    {
+        if (arity == CliOptionArity.Flag)
+        {
+            AddFlagOption(regexGroupName, aliases);
+        }
+        else if (arity == CliOptionArity.Scalar)
+        {
+            AddScalarOption(regexGroupName, aliases);
+        }
+        else if (arity == CliOptionArity.Vector)
+        {
+            AddVectorOption(regexGroupName, aliases);
+        }
+        else if (arity == CliOptionArity.Map)
+        {
+            AddMapOption(regexGroupName, aliases);
+        }
+        else
+        {
+            throw new InvalidOperationException();
+        }
+
+        return this;
+    }
+
     private void AssertOptionAliases(IReadOnlyList<string> aliases)
     {
         var invalidAliasesCsv = aliases
@@ -195,7 +224,14 @@ internal sealed class CliActionSchema
 
             var postCondition = segments
                 .Skip(selfIndex + 1)
-                .Select(cs => cs.BuildRegularExpression())
+                .Select(cs =>
+                {
+                    if (cs is SubCommand cmd)
+                    {
+                        return cmd.BuildRegularExpression();
+                    }
+                    return @"[^\\s-]\\S*";
+                })
                 .Select(p => $"(?:{p})")
                 .Join("\\s+")
                 .Convert(p => p.IsPrintable() ? @$"(?=\s+(?:{p}))" : string.Empty);
@@ -261,4 +297,6 @@ internal sealed class CliActionSchema
     }
 
     public Group GetUnrecognizedTokens(Match match) => match.Groups[CliActionRegularExpressionRtt.UnrecognizedToken];
+
+
 }

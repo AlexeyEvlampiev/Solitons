@@ -177,9 +177,9 @@ public sealed class CliProcessor : ICliProcessorCallback
 
             var selectedActions = _actions
             .Where(a => a.IsMatch(commandLine))
-            .GroupBy(a => a.CalcSimilarity(commandLine))
-            .OrderByDescending(similarMatchedActions => similarMatchedActions.Key)
-            .Do(g => Trace.WriteLine(g.Count()))
+            .GroupBy(a => a.Rank(commandLine))
+            .OrderByDescending(group => group.Key)
+            .Do(group => Trace.WriteLine(group.Count()))
             .Take(1)
             .SelectMany(similarMatchedActions => similarMatchedActions)
             .ToList();
@@ -233,12 +233,12 @@ public sealed class CliProcessor : ICliProcessorCallback
 
         var similarGroups = _actions
             .Where(a => false == anyMatchesFound || a.IsMatch(commandLine))
-            .GroupBy(a => a.CalcSimilarity(commandLine))
+            .GroupBy(a => a.Rank(commandLine))
             .ToList();
 
         var text = _actions
             .Where(a => false == anyMatchesFound || a.IsMatch(commandLine))
-            .GroupBy(a => a.CalcSimilarity(commandLine))
+            .GroupBy(a => a.Rank(commandLine))
             .OrderByDescending(similarActions => similarActions.Key)
             .Take(1)
             .SelectMany(similarActions => similarActions)

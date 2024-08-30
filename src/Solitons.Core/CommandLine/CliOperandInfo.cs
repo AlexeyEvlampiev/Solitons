@@ -3,10 +3,12 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
+using System.Reactive;
 using System.Reactive.Disposables;
 using System.Threading;
 
@@ -56,6 +58,35 @@ internal abstract class CliOperandInfo
             throw new InvalidOperationException();
         }
 
+        Aliases = CustomAttributes
+            .OfType<CliOptionAttribute>()
+            .Select(a => a.Aliases)
+            .FirstOrDefault([]);
+
+        var underlyingParameterType = Nullable.GetUnderlyingType(ParameterType) ?? ParameterType;
+        OptionArity = underlyingParameterType switch
+        {
+            // Check if the type implements IDictionary<string, T>
+            { } t when t.GetInterfaces().Any(i =>
+                    i.IsGenericType &&
+                    i.GetGenericTypeDefinition() == typeof(IDictionary<,>) &&
+                    i.GetGenericArguments()[0] == typeof(string))
+                => CliOptionArity.Map,
+
+            // Check if the type implements IEnumerable but is not a string
+            { } t when typeof(IEnumerable).IsAssignableFrom(t) && t != typeof(string)
+                => CliOptionArity.Vector,
+
+            // Check if the type represents a Unit (assuming Unit is a specific type in your code)
+            { } t when t == typeof(Unit)
+                => CliOptionArity.Flag,
+
+            // Default case: Scalar
+            _ => CliOptionArity.Scalar,
+        };
+
+
+
 
         if (CliMasterOptionBundle.IsAssignableFrom(ParameterType))
         {
@@ -95,6 +126,9 @@ internal abstract class CliOperandInfo
         Converter = CliOperandTypeConverter.Create(ParameterType, Name, Metadata, customTypeConverter);
     }
 
+    public CliOptionArity OptionArity { get; }
+
+    public IReadOnlyList<string> Aliases { get; }
 
     private void Validate()
     {
@@ -121,24 +155,6 @@ internal abstract class CliOperandInfo
     public string Description { get; protected set; }
 
     public string OperandKeyPattern { get; }
-
-    public string GetNamedGroupPattern(CliActionMatchMode mode)
-    {
-        if (Converter is CliFlagOperandTypeConverter)
-        {
-            return $"(?<{Name}>(?:{OperandKeyPattern}))";
-        }
-
-        if (Converter is CliMapOperandTypeConverter)
-        {
-            return Converter.ToMatchPattern(OperandKeyPattern);
-        }
-
-        var scalarPattern = mode == CliActionMatchMode.Default
-            ? $@"(?:(?:{OperandKeyPattern})\s+(?<{Name}>[^-]\S*))"
-            : $@"(?:({OperandKeyPattern})(?:\s+(?:[^-]\S*))?)";
-        return scalarPattern;
-    }
 
     public Type ParameterType { get; }
 

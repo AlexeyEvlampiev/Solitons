@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace Solitons.CommandLine;
 
-internal sealed class CliArgumentInfo : CliParameterInfo, ICliCommandSegment
+internal sealed class CliArgumentInfo : CliParameterInfo
 {
     private readonly CliAction _action;
     private readonly CliArgumentAttribute _attribute;
@@ -21,7 +21,7 @@ internal sealed class CliArgumentInfo : CliParameterInfo, ICliCommandSegment
 
     public string BuildPattern()
     {
-        var index = _action.IndexOf(this);
+        var index = _action.IndexOfSegment(this);
 
         var result = _action
             .CommandSegments

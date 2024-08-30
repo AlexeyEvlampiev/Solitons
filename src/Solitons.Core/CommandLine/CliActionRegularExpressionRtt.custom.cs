@@ -6,6 +6,7 @@ namespace Solitons.CommandLine;
 internal partial class CliActionRegularExpressionRtt
 {
     public static readonly string UnrecognizedToken = $"unrecognized_token_{typeof(CliActionRegularExpressionRtt).GUID:N}";
+
     internal CliActionRegularExpressionRtt(CliActionSchema schema)
     {
         var segments = schema
@@ -13,9 +14,15 @@ internal partial class CliActionRegularExpressionRtt
             .ToArray();
 
         CommandSegmentRegularExpressions = segments
-            .Select((segment, index) => segment.IsArgument
-                ? segment.BuildRegularExpression()
-                : $"(?<{GenGroupName(index)}>{segment.BuildRegularExpression()})")
+            .Select((segment, index) =>
+            {
+                var expression = segment.BuildRegularExpression();
+                if (segment.IsArgument)
+                {
+                    return expression;
+                }
+                return  $"(?<{GenGroupName(index)}>{expression})";
+            })
             .ToArray();
 
         OptionRegularExpressions = schema

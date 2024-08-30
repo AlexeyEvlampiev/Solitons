@@ -186,6 +186,7 @@ public static partial class Extensions
     /// <param name="factory">A factory function that returns the value to add if the key does not exist in the dictionary.</param>
     /// <returns>The value associated with the specified key, or the newly added value.</returns>
     /// <exception cref="ArgumentNullException">Thrown when the dictionary, key, or factory is null.</exception>
+    [DebuggerStepThrough]
     public static TValue GetOrAdd<TKey, TValue>(this IDictionary<TKey, TValue> self, TKey key, Func<TValue> factory)
     {
         if (self == null) throw new ArgumentNullException(nameof(self));

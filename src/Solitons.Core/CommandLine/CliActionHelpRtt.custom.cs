@@ -52,7 +52,7 @@ internal partial class CliActionHelpRtt
 
     public IReadOnlyList<string> Options { get; }
 
-    IEnumerable<string> CommandOptions(IEnumerable<ICliCommandSegment> segments)
+    IEnumerable<string> CommandOptions(IEnumerable<object> segments)
     {
         var list = segments.ToList();
         var segment = list.FirstOrDefault();
