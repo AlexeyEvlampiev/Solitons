@@ -108,6 +108,11 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>CliActionRegexRtt.tt</DependentUpon>
     </Compile>
+    <Compile Update="CommandLine\CliActionRegularExpressionRtt.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CliActionRegularExpressionRtt.tt</DependentUpon>
+    </Compile>
     <Compile Update="CommandLine\CliHelpRtt.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -162,6 +167,10 @@
     <None Update="CommandLine\CliActionRegexRtt.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>
       <LastGenOutput>CliActionRegexRtt.cs</LastGenOutput>
+    </None>
+    <None Update="CommandLine\CliActionRegularExpressionRtt.tt">
+      <Generator>TextTemplatingFilePreprocessor</Generator>
+      <LastGenOutput>CliActionRegularExpressionRtt.cs</LastGenOutput>
     </None>
     <None Update="CommandLine\CliHelpRtt.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>
