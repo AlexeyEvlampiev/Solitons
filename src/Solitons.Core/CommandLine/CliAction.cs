@@ -124,7 +124,7 @@ internal sealed class CliAction : IComparable<CliAction>
         {
             foreach (var operand in _operands.OfType<CliOperandInfo>())
             {
-                builder.AddOption(operand.Name, operand.OptionArity, operand.Aliases);
+                builder.AddOption(operand.Name, operand.OperandArity, operand.Aliases);
             }
         });
 

@@ -163,7 +163,7 @@ internal sealed class CliActionSchema
         {
             AssertRegexGroupName(regexGroupName);
             AssertOptionAliases(aliases);
-            _schema._fields.Add(new Option(regexGroupName, aliases, CliOptionArity.Flag));
+            _schema._fields.Add(new Option(regexGroupName, aliases, CliOperandArity.Flag));
             return this;
         }
 
@@ -172,7 +172,7 @@ internal sealed class CliActionSchema
         {
             AssertRegexGroupName(regexGroupName);
             AssertOptionAliases(aliases);
-            _schema._fields.Add(new Option(regexGroupName, aliases, CliOptionArity.Scalar));
+            _schema._fields.Add(new Option(regexGroupName, aliases, CliOperandArity.Scalar));
             return this;
         }
 
@@ -180,7 +180,7 @@ internal sealed class CliActionSchema
         {
             AssertRegexGroupName(regexGroupName);
             AssertOptionAliases(aliases);
-            _schema._fields.Add(new Option(regexGroupName, aliases, CliOptionArity.Vector));
+            _schema._fields.Add(new Option(regexGroupName, aliases, CliOperandArity.Vector));
             return this;
         }
 
@@ -188,26 +188,26 @@ internal sealed class CliActionSchema
         {
             AssertRegexGroupName(regexGroupName);
             AssertOptionAliases(aliases);
-            _schema._fields.Add(new Option(regexGroupName, aliases, CliOptionArity.Map));
+            _schema._fields.Add(new Option(regexGroupName, aliases, CliOperandArity.Map));
             return this;
         }
 
         [DebuggerStepThrough]
-        public Builder AddOption(string regexGroupName, CliOptionArity arity, IReadOnlyList<string> aliases)
+        public Builder AddOption(string regexGroupName, CliOperandArity arity, IReadOnlyList<string> aliases)
         {
-            if (arity == CliOptionArity.Flag)
+            if (arity == CliOperandArity.Flag)
             {
                 AddFlagOption(regexGroupName, aliases);
             }
-            else if (arity == CliOptionArity.Scalar)
+            else if (arity == CliOperandArity.Scalar)
             {
                 AddScalarOption(regexGroupName, aliases);
             }
-            else if (arity == CliOptionArity.Vector)
+            else if (arity == CliOperandArity.Vector)
             {
                 AddVectorOption(regexGroupName, aliases);
             }
-            else if (arity == CliOptionArity.Map)
+            else if (arity == CliOperandArity.Map)
             {
                 AddMapOption(regexGroupName, aliases);
             }
@@ -305,10 +305,10 @@ internal sealed class CliActionSchema
     }
 
 
-    public sealed class Option(string regexGroupName, IEnumerable<string> aliases, CliOptionArity arity) : Token(aliases), IOption
+    public sealed class Option(string regexGroupName, IEnumerable<string> aliases, CliOperandArity arity) : Token(aliases), IOption
     {
         public string RegexGroupName { get; } = regexGroupName;
-        public CliOptionArity Arity { get; } = arity;
+        public CliOperandArity Arity { get; } = arity;
         public string BuildRegularExpression()
         {
             var token = aliases
@@ -319,11 +319,11 @@ internal sealed class CliActionSchema
             ThrowIf.NullOrWhiteSpace(token);
             switch (Arity)
             {
-                case (CliOptionArity.Flag):
+                case (CliOperandArity.Flag):
                     return $@"(?<{RegexGroupName}>{token})";
-                case (CliOptionArity.Scalar):
+                case (CliOperandArity.Scalar):
                     return $@"(?:{token})\s*(?<{RegexGroupName}>(?:[^\s-]\S*)?)";
-                case (CliOptionArity.Map):
+                case (CliOperandArity.Map):
                 {
                     var pattern = $@"(?:{token})(?:$dot-notation|$accessor-notation)"
                         .Replace(@"$dot-notation", @$"\.(?<{RegexGroupName}>(?:\S+\s+[^\s-]\S+)?)")
