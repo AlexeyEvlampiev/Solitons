@@ -21,31 +21,31 @@ internal partial class CliActionHelpRtt
         //Segments = action.CommandSegments;
         //UsageOptions = CommandOptions(action.CommandSegments).ToList();
 
-        Arguments = action
-            .Operands
-            .OfType<CliArgumentInfo>()
-            .Select(o =>
-            {
-                return o
-                    .Metadata
-                    .OfType<CliArgumentAttribute>()
-                    .Select(argument => $"<{argument.ArgumentRole.ToUpper()}>{Tab}{o.Description}")
-                    .Single();
-            })
-            .ToList();
+        //Arguments = action
+        //    .Operands
+        //    .OfType<CliArgumentInfo>()
+        //    .Select(o =>
+        //    {
+        //        return o
+        //            .Metadata
+        //            .OfType<CliArgumentAttribute>()
+        //            .Select(argument => $"<{argument.ArgumentRole.ToUpper()}>{Tab}{o.Description}")
+        //            .Single();
+        //    })
+        //    .ToList();
 
 
-        Options = action
-            .Operands
-            .Where(o => o is not CliArgumentInfo)
-            .Select(o =>
-            {
-                var option = o.CustomAttributes
-                    .OfType<CliOptionAttribute>()
-                    .FirstOrDefault(new CliOptionAttribute($"--{o.Name}", o.Description))!;
-                return $"{option.OptionNamesCsv}{Tab}{o.Description}";
-            })
-            .ToList();
+        //Options = action
+        //    .Operands
+        //    .Where(o => o is not CliArgumentInfo)
+        //    .Select(o =>
+        //    {
+        //        var option = o.CustomAttributes
+        //            .OfType<CliOptionAttribute>()
+        //            .FirstOrDefault(new CliOptionAttribute($"--{o.Name}", o.Description))!;
+        //        return $"{option.OptionNamesCsv}{Tab}{o.Description}";
+        //    })
+        //    .ToList();
 
 
     }

@@ -15,11 +15,8 @@ internal sealed class CliAction : IComparable<CliAction>
     private readonly MethodInfo _method;
     private readonly CliMasterOptionBundle[] _masterOptions;
 
-    private readonly List<CliOperandInfo> _operands = new();
-    private readonly ParameterInfo[] _parametersOld;
-    private readonly Dictionary<ParameterInfo, object> _parameterMetadata = new();
     private readonly CliActionSchema _schema;
-    private readonly CliCommandParameterCollection _parameters;
+    private readonly CliCommandOperandCollection _operands;
 
     internal CliAction(
         object? instance,
@@ -29,64 +26,49 @@ internal sealed class CliAction : IComparable<CliAction>
         _instance = instance;
         _method = ThrowIf.ArgumentNull(method);
 
-        _parameters = new CliCommandParameterCollection(method);
-        _parametersOld = method.GetParameters();
+        _operands = new CliCommandOperandCollection(method);
         
         _masterOptions = ThrowIf.ArgumentNull(masterOptions);
         var attributes = method.GetCustomAttributes().ToArray();
         Examples = [..attributes.OfType<CliCommandExampleAttribute>()];
-
-
-        foreach (var pi in _parametersOld)
-        {
-            if (string.IsNullOrWhiteSpace(pi.Name))
-            {
-                throw new InvalidOperationException($"Anonymous parameter in method '{_method.Name}'.");
-            }
-            
-            if (_parameterMetadata.TryGetValue(pi, out var argument))
-            {
-                Debug.Assert(argument is CliArgumentInfo);
-                Debug.Assert(_operands.Contains(argument));
-                continue;
-            }
-
-            if (CliOptionBundle.IsAssignableFrom(pi.ParameterType))
-            {
-                var bundleOptions = CliOptionBundle
-                    .GetOptions(pi.ParameterType)
-                    .ToArray();
-                _operands.AddRange(bundleOptions);
-                _parameterMetadata.Add(pi, bundleOptions);
-            }
-            else
-            {
-                var metadata = new CliOptionInfo(pi);
-                _operands.Add(metadata);
-                _parameterMetadata.Add(pi, metadata);
-            }
-        }
-
-        foreach (var bundle in masterOptions)
-        {
-            _operands.AddRange(CliOptionBundle
-                .GetOptions(bundle.GetType()));
-        }
-
-        
-
 
         Description = attributes
             .OfType<DescriptionAttribute>()
             .Select(d => d.Description)
             .FirstOrDefault(string.Empty);
 
-
         _schema = new CliActionSchema(builder =>
         {
-            foreach (var operand in _operands.OfType<CliOperandInfo>())
+            // Sequence is very important.
+            // First: commands and arguments in the order of their declaration.
+            // Second: command options
+            foreach (var att in attributes)
             {
-                builder.AddOption(operand.Name, operand.OperandArity, operand.Aliases);
+                if (att is CliCommandAttribute cmd)
+                {
+                    cmd.ForEach(sc => builder
+                        .AddSubCommand(sc.Aliases));
+                }
+
+                if (att is CliArgumentAttribute arg)
+                {
+                    builder.AddArgument(arg.ParameterName);
+                }
+            }
+
+            foreach (var option in _operands.GetAllCommandOptions())
+            {
+                builder.AddOption(option.OptionLongName, option.OperandArity, option.OptionAliases);
+            }
+
+            foreach (var masterOption in _masterOptions.SelectMany(mo => mo.GetAllCommandOptions()))
+            {
+                builder.AddOption(masterOption.OptionLongName, masterOption.OperandArity, masterOption.OptionAliases);
+            }
+
+            foreach (var example in attributes.OfType<CliCommandExampleAttribute>())
+            {
+                builder.AddExample(example.Example, example.Description);
             }
         });
 
@@ -95,8 +77,6 @@ internal sealed class CliAction : IComparable<CliAction>
     public ImmutableArray<CliCommandExampleAttribute> Examples { get; }
 
 
-
-    internal IEnumerable<CliOperandInfo> Operands => _operands;
     public string Description { get; }
 
     public string CommandFullPath => _schema.CommandFullPath;
@@ -122,7 +102,7 @@ internal sealed class CliAction : IComparable<CliAction>
             throw new InvalidOperationException($"The command line did not match any known patterns.");
         }
 
-        var args = _parameters.BuildMethodArguments(match, preProcessor);
+        var args = _operands.BuildMethodArguments(match, preProcessor);
 
         foreach (var bundle in _masterOptions)
         {

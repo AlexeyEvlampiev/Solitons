@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Solitons.CommandLine;
@@ -20,5 +21,10 @@ public class CliMasterOptionBundle : CliOptionBundle
     public virtual void OnError(string commandLine, Exception exception)
     {
         Debug.WriteLine($"{GetType()}.{nameof(OnError)}");
+    }
+
+    internal IEnumerable<ICliCommandOption> GetAllCommandOptions()
+    {
+        throw new NotImplementedException();
     }
 }

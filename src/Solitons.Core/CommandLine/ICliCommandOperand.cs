@@ -15,6 +15,7 @@ internal interface ICliCommandOperand
 {
     Type ValueType { get; }
 
+
     public object? BuildOperandValue(Match commandLineMatch, ICliTokenSubstitutionPreprocessor preProcessor)
     {
         if (commandLineMatch.Success == false)
@@ -70,13 +71,14 @@ internal interface ICliCommandSimpleTypeOperand : ICliCommandOperand
 
 internal interface ICliCommandOptionBundleOperand : ICliCommandOperand
 {
-    
     object? ICliCommandOperand.BuildOperandValue(Match commandLineMatch, ICliTokenSubstitutionPreprocessor preProcessor)
     {
         var bundle = (ICliCommandOptionBundle)Activator.CreateInstance(this.ValueType)!;
         bundle.PopulateFrom(commandLineMatch, preProcessor);
         return bundle;
     }
+
+    IEnumerable<ICliCommandOption> GetAllOptions();
 }
 
 internal interface ICliCommandOptionBundle
@@ -89,8 +91,6 @@ interface ICliCommandMethodParameter : ICliCommandOperand
     string ParameterName { get; }
 }
 
-
-
 interface ICliCommandOptionBundleProperty : ICliCommandOperand
 {
     Type PropertyType { get; }
@@ -102,12 +102,14 @@ interface ICliCommandMethodArgument : ICliCommandSimpleTypeOperand
     string ArgumentRole { get; }
 
     CliOperandArity ICliCommandSimpleTypeOperand.OperandArity => CliOperandArity.Scalar;
+
 }
 
 interface ICliCommandOption : ICliCommandSimpleTypeOperand
 {
-    CliOperandArity GetArity();
+    public string OptionLongName => OptionAliases.OrderByDescending(alias => alias.Length).FirstOrDefault("");
     string OptionAliasesString { get; }
+    IReadOnlyList<string> OptionAliases { get; }
 }
 
 
@@ -190,6 +192,7 @@ internal sealed class CliCommandMethodParameterOption : ICliCommandOption, ICliC
     }
 
     public string OptionAliasesString { get; }
+    public IReadOnlyList<string> OptionAliases { get; }
     public string ParameterName { get; }
 }
 
@@ -202,6 +205,16 @@ internal sealed class CliCommandOptionBundleParameter : ICliCommandOptionBundleP
     }
 
     public Type ValueType { get; }
+    public IEnumerable<ICliCommandOption> UnnestOptions()
+    {
+        throw new NotImplementedException();
+    }
+
+    public IEnumerable<ICliCommandSimpleTypeOperand> Explode()
+    {
+        throw new NotImplementedException();
+    }
+
     public Type PropertyType { get; }
 }
 
@@ -305,11 +318,11 @@ internal abstract class CliOperand
 }
 
 
-internal sealed class CliCommandParameterCollection : IEnumerable<ICliCommandOperand>
+internal sealed class CliCommandOperandCollection : IEnumerable<ICliCommandOperand>
 {
     private readonly List<ICliCommandOperand> _operands = new();
 
-    public CliCommandParameterCollection(MethodInfo method)
+    public CliCommandOperandCollection(MethodInfo method)
     {
         var parameters = method.GetParameters();
         foreach (var parameter in parameters)
@@ -336,6 +349,25 @@ internal sealed class CliCommandParameterCollection : IEnumerable<ICliCommandOpe
             args[i] = value;
         }
         return args;
+    }
+
+    public IEnumerable<ICliCommandOption> GetAllCommandOptions()
+    {
+        foreach (var operand in _operands)
+        {
+            if (operand is ICliCommandOption option)
+            {
+                yield return option;
+            }
+
+            if (operand is ICliCommandOptionBundleOperand bundle)
+            {
+                foreach (var bundleOption in bundle.GetAllOptions())
+                {
+                    yield return bundleOption;
+                }
+            }
+        }
     }
 
     [DebuggerNonUserCode]

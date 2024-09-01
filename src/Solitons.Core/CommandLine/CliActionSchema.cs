@@ -243,6 +243,10 @@ internal sealed class CliActionSchema
             return this;
         }
 
+        public Builder AddExample(string exampleExample, string exampleDescription)
+        {
+            throw new NotImplementedException();
+        }
     }
 
 
