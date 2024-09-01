@@ -11,7 +11,6 @@ using System.Diagnostics;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Threading;
-using System.Reflection.Metadata;
 
 namespace Solitons.CommandLine;
 

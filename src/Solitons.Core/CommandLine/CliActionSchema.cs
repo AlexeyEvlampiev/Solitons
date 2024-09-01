@@ -54,8 +54,30 @@ internal sealed class CliActionSchema
     /// Matches the specified command line string against the schema.
     /// </summary>
     /// <param name="commandLine">The command line string to match.</param>
+    /// <param name="preProcessor"></param>
+    /// <param name="unrecognizedTokensHandler"></param>
     /// <returns>A <see cref="Match"/> object that contains information about the match.</returns>
-    public Match Match(string commandLine) => _regex.Match(commandLine);
+    public Match Match(
+        string commandLine, 
+        ICliTokenSubstitutionPreprocessor preProcessor,
+        Action<ISet<string>> unrecognizedTokensHandler)
+    {
+        var match = _regex.Match(commandLine);
+        var unrecognizedParameterGroup = GetUnrecognizedTokens(match);
+        if (unrecognizedParameterGroup.Success)
+        {
+            var unrecognizedTokens = unrecognizedParameterGroup
+                .Captures
+                .Select(c => c.Value.Trim())
+                .Select(preProcessor.GetSubstitution)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            unrecognizedTokensHandler.Invoke(unrecognizedTokens);
+        }
+        return match;
+    }
+
+    [DebuggerNonUserCode]
+    public bool IsMatch(string commandLine) => _regex.IsMatch(commandLine);
 
     /// <summary>
     /// Calculates the rank of the specified command line based on the schema.
@@ -337,6 +359,5 @@ internal sealed class CliActionSchema
     }
 
     public Group GetUnrecognizedTokens(Match match) => match.Groups[CliActionRegularExpressionRtt.UnrecognizedToken];
-
 
 }

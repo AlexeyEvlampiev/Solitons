@@ -6,8 +6,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace Solitons.CommandLine;
 
@@ -19,9 +17,10 @@ internal sealed class CliAction : IComparable<CliAction>
 
     private readonly List<object> _commandSegments;
     private readonly List<CliOperandInfo> _operands = new();
-    private readonly ParameterInfo[] _parameters;
+    private readonly ParameterInfo[] _parametersOld;
     private readonly Dictionary<ParameterInfo, object> _parameterMetadata = new();
     private readonly CliActionSchema _schema;
+    private readonly CliCommandParameterCollection _parameters;
 
     internal CliAction(
         object? instance,
@@ -30,7 +29,9 @@ internal sealed class CliAction : IComparable<CliAction>
     {
         _instance = instance;
         _method = ThrowIf.ArgumentNull(method);
-        _parameters = method.GetParameters();
+
+        _parameters = new CliCommandParameterCollection(method);
+        _parametersOld = method.GetParameters();
         
         _masterOptions = ThrowIf.ArgumentNull(masterOptions);
         var attributes = method.GetCustomAttributes().ToArray();
@@ -63,7 +64,7 @@ internal sealed class CliAction : IComparable<CliAction>
                 {
 
 
-                    var targetParameter = _parameters
+                    var targetParameter = _parametersOld
                         .FirstOrDefault(p => arg.References(p))
                             ?? throw new InvalidOperationException(
                                 $"Target parameter '{arg.ParameterName}' not found in method '{_method.Name}'.");
@@ -75,7 +76,7 @@ internal sealed class CliAction : IComparable<CliAction>
             });
 
 
-        foreach (var pi in _parameters)
+        foreach (var pi in _parametersOld)
         {
             if (string.IsNullOrWhiteSpace(pi.Name))
             {
@@ -165,85 +166,45 @@ internal sealed class CliAction : IComparable<CliAction>
     public int Execute(string commandLine, CliTokenSubstitutionPreprocessor preProcessor)
     {
         commandLine = ThrowIf.ArgumentNullOrWhiteSpace(commandLine);
-        var match = _schema.Match(commandLine);
+        var match = _schema.Match(
+            commandLine, 
+            preProcessor, 
+            unmatchedTokens =>
+        {
+            var csv = unmatchedTokens
+                .Join(", ");
+            CliExit.With(
+                $"The following options are not recognized as valid for the command: {csv}. " +
+                $"Please check the command syntax.");
+        });
+
         if (match.Success == false)
         {
             throw new InvalidOperationException($"The command line did not match any known patterns.");
         }
 
-        var unrecognizedParameterGroup = _schema.GetUnrecognizedTokens(match);
-        if (unrecognizedParameterGroup.Success)
-        {
-            var csv = unrecognizedParameterGroup
-                .Captures
-                .Select(c => c.Value.Trim())
-                .Select(preProcessor.GetSubstitution)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .Join(", ");
-            throw new CliExitException(
-                $"The following options are not recognized as valid for the command: {csv}. " +
-                $"Please check the command syntax.");
-        }
-
-        var args = new object?[_parameters.Length];
-        for (int i = 0; i < args.Length; ++i)
-        {
-            var parameter = _parameters[i];
-            if (CliOptionBundle.IsAssignableFrom(parameter.ParameterType))
-            {
-                var bundle = Activator
-                    .CreateInstance(parameter.ParameterType)
-                    .Convert(o => ThrowIf.NullReference(o))
-                    .Convert(o => (CliOptionBundle)o);
-                args[i] = bundle;
-                bundle.Populate(match, preProcessor);
-            }
-            else if (_parameterMetadata.TryGetValue(parameter, out var metadata))
-            {
-                if (metadata is CliParameterInfo option)
-                {
-                    Debug.WriteLine(option.Name);
-                    args[i] = option.GetValue(match, preProcessor);
-                }
-                else
-                {
-                    throw new InvalidOperationException(
-                        $"Unexpected metadata type for parameter '{parameter.Name}' in method '{_method.Name}'.");
-                }
-            }
-            else
-            {
-                throw new InvalidOperationException(
-                    $"No metadata found for parameter '{parameter.Name}' in method '{_method.Name}'.");
-            }
-        }
+        var args = _parameters.BuildMethodArguments(match, preProcessor);
 
         foreach (var bundle in _masterOptions)
         {
-            bundle.Populate(match, preProcessor);
+            bundle.PopulateFrom(match, preProcessor);
         }
 
         _masterOptions.ForEach(bundle => bundle.OnExecutingAction(commandLine));
         try
         {
-            var result = _method.Invoke(_instance, args);
-            if (result is Task task)
+            var task = _method.InvokeAsync(_instance, args);
+            task.GetAwaiter().GetResult();
+            var resultProperty = task.GetType().GetProperty("Result");
+            object result = 0;
+            if (resultProperty != null)
             {
-                task.GetAwaiter().GetResult();
-                var resultProperty = task.GetType().GetProperty("Result");
-                if (resultProperty != null)
-                {
-                    result = resultProperty.GetValue(task);
-                }
+                result = resultProperty.GetValue(task) ?? 0;
             }
 
             _masterOptions.ForEach(bundle => bundle.OnActionExecuted(commandLine));
-            if (result is int code)
-            {
-                return code;
-            }
-
-            return 0;
+            
+            return result is int exitCode ? exitCode : 0;
         }
         catch (Exception e)
         {
@@ -258,11 +219,9 @@ internal sealed class CliAction : IComparable<CliAction>
     [DebuggerStepThrough]
     public int Rank(string commandLine) => _schema.Rank(commandLine);
 
-    [DebuggerStepThrough]
-    public Match Match(string commandLine) => _schema.Match(commandLine);
 
     [DebuggerStepThrough]
-    public bool IsMatch(string commandLine) => _schema.Match(commandLine).Success;
+    public bool IsMatch(string commandLine) => _schema.IsMatch(commandLine);
 
     public void ShowHelp()
     {

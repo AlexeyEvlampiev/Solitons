@@ -10,6 +10,7 @@ using System.Linq;
 using System.Net;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -22,6 +23,17 @@ namespace Solitons;
 
 public static partial class Extensions
 {
+    public static Task InvokeAsync(this MethodInfo method, object? instance, object?[] args)
+    {
+        var result = method.Invoke(instance, args);
+        if (result is Task task)
+        {
+            return task;
+        }
+
+        return Task.FromResult(result);
+    }
+
     /// <summary>
     /// Copies the contents of the source directory to the destination directory.
     /// </summary>

@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
 
-public sealed class CliTokenSubstitutionPreprocessor
+public sealed class CliTokenSubstitutionPreprocessor : ICliTokenSubstitutionPreprocessor
 {
     [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
     private readonly Dictionary<string, string> _substitutions;

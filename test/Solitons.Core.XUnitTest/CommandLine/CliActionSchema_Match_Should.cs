@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
+using Moq;
 using Xunit;
 
 namespace Solitons.CommandLine;
@@ -23,8 +25,10 @@ public sealed class CliActionSchema_Match_Should
         var schema = new CliActionSchema(builder => builder
             .AddSubCommand(["run"])
             .AddArgument("arg"));
+        var preProcessor = new Mock<ICliTokenSubstitutionPreprocessor>();
+        preProcessor.Setup(m => m.GetSubstitution(It.IsAny<string>())).Returns((string token) => token);
 
-        var match = schema.Match(commandLine);
+        var match = schema.Match(commandLine, preProcessor.Object, tokens => throw new InvalidOperationException());
         Assert.Equal(success, match.Success);
         if (success)
         {
@@ -54,7 +58,10 @@ public sealed class CliActionSchema_Match_Should
             .AddScalarOption("timeout", ["--timeout", "-to"])
             .AddMapOption("parameters", ["--parameters", "--parameter", "-p"]));
 
-        var match = schema.Match(commandLine);
+        var preProcessor = new Mock<ICliTokenSubstitutionPreprocessor>();
+        preProcessor.Setup(m => m.GetSubstitution(It.IsAny<string>())).Returns((string token) => token);
+
+        var match = schema.Match(commandLine, preProcessor.Object, tokens => throw new InvalidOperationException());
         Assert.Equal(success, match.Success);
         if (success)
         {

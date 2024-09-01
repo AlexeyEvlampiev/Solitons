@@ -28,11 +28,16 @@ public abstract class CliOptionBundle
             .AsEnumerable();
     }
 
-    public void Populate(Match match, CliTokenSubstitutionPreprocessor preprocessor)
+    public void PopulateFrom(Match match, CliTokenSubstitutionPreprocessor preprocessor)
     {
         foreach (var parameter in GetOptions(GetType()))
         {
             parameter.SetValues(this, match, preprocessor);
         }
+    }
+
+    public static object Create(Type bundleType, Match commandLineMatch)
+    {
+        throw new NotImplementedException();
     }
 }
