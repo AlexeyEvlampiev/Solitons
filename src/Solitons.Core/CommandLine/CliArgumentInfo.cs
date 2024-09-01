@@ -19,23 +19,6 @@ internal sealed class CliArgumentInfo : CliParameterInfo
     public ParameterInfo ParameterInfo { get; }
     public string ArgumentRole => _attribute.ArgumentRole;
 
-    public string BuildPattern()
-    {
-        var index = _action.IndexOfSegment(this);
-
-        var result = _action
-            .CommandSegments
-            .Skip(index + 1)
-            .OfType<CliSubCommand>()
-            .Select(s => s.BuildPattern())
-            .Select(p => $"(?:{p})")
-            .Join("|")
-            .Convert(p => p.IsNullOrWhiteSpace() ? "\\-" : $"\\-|{p}")
-            .Convert(p => $"(?!{p})")
-            .Convert(p => $"{p}(?<{this.Name}>\\S+)");
-        return result;
-    }
-
 
 
     public string GetExpressionGroup() => Name;

@@ -15,7 +15,6 @@ internal sealed class CliAction : IComparable<CliAction>
     private readonly MethodInfo _method;
     private readonly CliMasterOptionBundle[] _masterOptions;
 
-    private readonly List<object> _commandSegments;
     private readonly List<CliOperandInfo> _operands = new();
     private readonly ParameterInfo[] _parametersOld;
     private readonly Dictionary<ParameterInfo, object> _parameterMetadata = new();
@@ -36,44 +35,6 @@ internal sealed class CliAction : IComparable<CliAction>
         _masterOptions = ThrowIf.ArgumentNull(masterOptions);
         var attributes = method.GetCustomAttributes().ToArray();
         Examples = [..attributes.OfType<CliCommandExampleAttribute>()];
-
-        _commandSegments = attributes
-            .SelectMany(s =>
-            {
-                if (s is CliCommandAttribute cmd)
-                {
-                    return cmd.OfType<object>();
-                }
-
-                return [s];
-            })
-            .Where(a => a is CliCommandAttribute or CliArgumentAttribute)
-            .ToList();
-
-        _commandSegments
-            .ForEach(a =>
-            {
-                if (a is CliCommandAttribute cmd)
-                {
-                    cmd.ForEach(sc =>
-                    {
-
-                    });
-                }
-                else if(a is CliArgumentAttribute arg)
-                {
-
-
-                    var targetParameter = _parametersOld
-                        .FirstOrDefault(p => arg.References(p))
-                            ?? throw new InvalidOperationException(
-                                $"Target parameter '{arg.ParameterName}' not found in method '{_method.Name}'.");
-
-                    var operand = new CliArgumentInfo(targetParameter, this, arg);
-                    _operands.Add(operand);
-                    _parameterMetadata.Add(targetParameter, operand);
-                }
-            });
 
 
         foreach (var pi in _parametersOld)
@@ -129,38 +90,16 @@ internal sealed class CliAction : IComparable<CliAction>
             }
         });
 
-        this.FullPath = _commandSegments
-            .Select(s =>
-            {
-                if (s is CliSubCommand cmd)
-                {
-                    if (cmd.PrimaryName.IsNullOrWhiteSpace())
-                    {
-                        return string.Empty;
-                    }
-                    return cmd.SubCommandPattern;
-                }
-
-                if (s is CliArgumentAttribute a)
-                {
-                    return $"<{a.ArgumentRole.ToUpper()}>";
-                }
-
-                throw new InvalidOperationException("Unsupported command segment encountered.");
-            })
-            .Where(s => s.IsPrintable())
-            .Join(" ");
     }
 
     public ImmutableArray<CliCommandExampleAttribute> Examples { get; }
 
 
-    internal IEnumerable<object> CommandSegments => _commandSegments;
 
     internal IEnumerable<CliOperandInfo> Operands => _operands;
     public string Description { get; }
 
-    public string FullPath { get; }
+    public string CommandFullPath => _schema.CommandFullPath;
 
 
     public int Execute(string commandLine, CliTokenSubstitutionPreprocessor preProcessor)
@@ -240,11 +179,9 @@ internal sealed class CliAction : IComparable<CliAction>
     public int CompareTo(CliAction? other)
     {
         ThrowIf.ArgumentNull(other, "Cannot compare to a null object.");
-        return String.Compare(FullPath, other?.FullPath, StringComparison.OrdinalIgnoreCase);
+        return String.Compare(CommandFullPath, other?.CommandFullPath, StringComparison.OrdinalIgnoreCase);
     }
 
-
-    internal int IndexOfSegment(object segment) => _commandSegments.IndexOf(segment);
 
     public override string ToString()
     {

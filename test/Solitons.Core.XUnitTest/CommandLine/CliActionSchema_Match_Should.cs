@@ -28,12 +28,16 @@ public sealed class CliActionSchema_Match_Should
         var preProcessor = new Mock<ICliTokenSubstitutionPreprocessor>();
         preProcessor.Setup(m => m.GetSubstitution(It.IsAny<string>())).Returns((string token) => token);
 
-        var match = schema.Match(commandLine, preProcessor.Object, tokens => throw new InvalidOperationException());
+        var match = schema.Match(
+            commandLine, 
+            preProcessor.Object, 
+            unmatched =>
+        {
+            Assert.Equal(unrecognizedTokensCount, unmatched.Count);
+        });
         Assert.Equal(success, match.Success);
         if (success)
         {
-            var unrecognizedTokens = schema.GetUnrecognizedTokens(match);
-            Assert.Equal(unrecognizedTokensCount, unrecognizedTokens.Captures.Count);
             Assert.True(match.Groups["arg"].Success);
             Assert.Equal(1, match.Groups["arg"].Captures.Count);
             Assert.Equal("arg", match.Groups["arg"].Value);
@@ -61,13 +65,13 @@ public sealed class CliActionSchema_Match_Should
         var preProcessor = new Mock<ICliTokenSubstitutionPreprocessor>();
         preProcessor.Setup(m => m.GetSubstitution(It.IsAny<string>())).Returns((string token) => token);
 
-        var match = schema.Match(commandLine, preProcessor.Object, tokens => throw new InvalidOperationException());
+        var match = schema.Match(commandLine, preProcessor.Object, unmatched =>
+        {
+            Assert.Equal(unrecognizedTokensCount, unmatched.Count);
+        });
         Assert.Equal(success, match.Success);
         if (success)
         {
-            var unrecognizedTokens = schema.GetUnrecognizedTokens(match);
-            Assert.Equal(unrecognizedTokensCount, unrecognizedTokens.Captures.Count);
-
             Assert.True(match.Groups["taskId"].Success);
             Assert.Equal("123", match.Groups["taskId"].Value);
 

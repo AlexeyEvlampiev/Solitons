@@ -16,8 +16,10 @@ internal partial class CliActionHelpRtt
         _action = action;
         ExecutableName = executableName;
         Description = action.Description;
-        Segments = action.CommandSegments;
-        UsageOptions = CommandOptions(action.CommandSegments).ToList();
+
+        throw new NotImplementedException();
+        //Segments = action.CommandSegments;
+        //UsageOptions = CommandOptions(action.CommandSegments).ToList();
 
         Arguments = action
             .Operands

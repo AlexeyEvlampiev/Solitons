@@ -40,6 +40,7 @@ internal sealed class CliActionSchema
             RegexOptions.Singleline |
             RegexOptions.IgnorePatternWhitespace);
 
+        CommandFullPath = ThrowIf.NullOrWhiteSpace(null);
         string Beautify(string exp)
         {
 #if DEBUG
@@ -113,6 +114,7 @@ internal sealed class CliActionSchema
     public IEnumerable<IOption> Options => _fields
         .OfType<IOption>();
 
+    public string CommandFullPath { get; }
 
 
     public class Builder
@@ -358,6 +360,6 @@ internal sealed class CliActionSchema
         }
     }
 
-    public Group GetUnrecognizedTokens(Match match) => match.Groups[CliActionRegularExpressionRtt.UnrecognizedToken];
+    private Group GetUnrecognizedTokens(Match match) => match.Groups[CliActionRegularExpressionRtt.UnrecognizedToken];
 
 }
