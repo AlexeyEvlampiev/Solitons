@@ -12,8 +12,8 @@ internal sealed class CliAction : IComparable<CliAction>
     private readonly MethodInfo _method;
     private readonly CliMasterOptionBundle[] _masterOptions;
 
-    private readonly CliActionSchema _schema;
-    private readonly CliCommandMethodParametersBuilder _methodParametersBuilders;
+    private readonly ICliActionSchema _schema;
+    private readonly ICliCommandMethodParametersBuilder _methodParametersBuilders;
 
     internal CliAction(
         object? instance,
@@ -72,6 +72,59 @@ internal sealed class CliAction : IComparable<CliAction>
     }
 
 
+    internal static CliAction Create(object? instance,
+        MethodInfo method,
+        CliMasterOptionBundle[] masterOptions)
+    {
+        _instance = instance;
+        _method = ThrowIf.ArgumentNull(method);
+
+        _methodParametersBuilders = new CliCommandMethodParametersBuilder(method);
+
+        _masterOptions = ThrowIf.ArgumentNull(masterOptions);
+        var attributes = method.GetCustomAttributes().ToArray();
+
+
+        _schema = new CliActionSchema(builder =>
+        {
+            builder.Description = attributes
+                .OfType<DescriptionAttribute>()
+                .Select(a => a.Description)
+                .FirstOrDefault(string.Empty);
+
+            // Sequence is very important.
+            // First: commands and arguments in the order of their declaration.
+            // Second: command options
+            foreach (var att in attributes)
+            {
+                if (att is CliCommandAttribute cmd)
+                {
+                    cmd.ForEach(subCommand => builder
+                        .AddSubCommand(subCommand.Aliases));
+                }
+
+                if (att is CliArgumentAttribute arg)
+                {
+                    builder.AddArgument(arg.ParameterName);
+                }
+            }
+
+            foreach (var option in _methodParametersBuilders.GetAllCommandOptions())
+            {
+                builder.AddOption(option.OptionLongName, option.OperandArity, option.OptionAliases);
+            }
+
+            foreach (var masterOption in _masterOptions.SelectMany(mo => mo.GetAllCommandOptions()))
+            {
+                builder.AddOption(masterOption.OptionLongName, masterOption.OperandArity, masterOption.OptionAliases);
+            }
+
+            foreach (var example in attributes.OfType<CliCommandExampleAttribute>())
+            {
+                builder.AddExample(example.Example, example.Description);
+            }
+        });
+    }
 
 
     public int Execute(string commandLine, CliTokenSubstitutionPreprocessor preProcessor)
@@ -151,5 +204,5 @@ internal sealed class CliAction : IComparable<CliAction>
 
     public string GetHelpText() => _schema.GetHelpText();
 
-    public CliActionSchema GetSchema() => _schema;
+    public ICliActionSchema GetSchema() => _schema;
 }

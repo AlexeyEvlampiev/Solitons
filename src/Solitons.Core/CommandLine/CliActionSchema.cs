@@ -9,7 +9,7 @@ namespace Solitons.CommandLine;
 /// <summary>
 /// Represents a schema for defining and parsing command-line actions.
 /// </summary>
-internal sealed class CliActionSchema
+internal sealed class CliActionSchema : ICliActionSchema
 {
     private readonly List<object> _fields = new();
     private readonly Regex _regex;
