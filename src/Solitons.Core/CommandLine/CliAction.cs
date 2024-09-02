@@ -3,33 +3,47 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Solitons.CommandLine;
 
 internal sealed class CliAction : IComparable<CliAction>
 {
-    private readonly object? _instance;
-    private readonly MethodInfo _method;
+    private readonly Func<object?[], Task> _asyncHandler;
     private readonly CliMasterOptionBundle[] _masterOptions;
 
     private readonly ICliActionSchema _schema;
-    private readonly ICliCommandMethodParametersBuilder _methodParametersBuilders;
+    private readonly ICliCommandMethodParametersBuilder _parametersBuilder;
 
+    [DebuggerNonUserCode]
     internal CliAction(
+        Func<object?[], Task> asyncHandler,
+        ICliActionSchema schema,
+        ICliCommandMethodParametersBuilder parametersBuilder,
+        CliMasterOptionBundle[] masterOptions)
+    {
+        _asyncHandler = asyncHandler;
+        _schema = schema;
+        _parametersBuilder = parametersBuilder;
+        _masterOptions = masterOptions;
+    }
+
+
+    internal static CliAction Create(
         object? instance,
         MethodInfo method,
         CliMasterOptionBundle[] masterOptions)
     {
-        _instance = instance;
-        _method = ThrowIf.ArgumentNull(method);
+        [DebuggerStepThrough]
+        Task Invoke(object?[] args) => method.InvokeAsync(instance, args);
 
-        _methodParametersBuilders = new CliCommandMethodParametersBuilder(method);
-        
-        _masterOptions = ThrowIf.ArgumentNull(masterOptions);
+        var parametersBuilder = new CliCommandMethodParametersBuilder(method);
+
+        masterOptions = ThrowIf.ArgumentNull(masterOptions);
         var attributes = method.GetCustomAttributes().ToArray();
 
 
-        _schema = new CliActionSchema(builder =>
+        var schema = new CliActionSchema(builder =>
         {
             builder.Description = attributes
                 .OfType<DescriptionAttribute>()
@@ -53,12 +67,12 @@ internal sealed class CliAction : IComparable<CliAction>
                 }
             }
 
-            foreach (var option in _methodParametersBuilders.GetAllCommandOptions())
+            foreach (var option in parametersBuilder.GetAllCommandOptions())
             {
                 builder.AddOption(option.OptionLongName, option.OperandArity, option.OptionAliases);
             }
 
-            foreach (var masterOption in _masterOptions.SelectMany(mo => mo.GetAllCommandOptions()))
+            foreach (var masterOption in masterOptions.SelectMany(mo => mo.GetAllCommandOptions()))
             {
                 builder.AddOption(masterOption.OptionLongName, masterOption.OperandArity, masterOption.OptionAliases);
             }
@@ -69,61 +83,7 @@ internal sealed class CliAction : IComparable<CliAction>
             }
         });
 
-    }
-
-
-    internal static CliAction Create(object? instance,
-        MethodInfo method,
-        CliMasterOptionBundle[] masterOptions)
-    {
-        _instance = instance;
-        _method = ThrowIf.ArgumentNull(method);
-
-        _methodParametersBuilders = new CliCommandMethodParametersBuilder(method);
-
-        _masterOptions = ThrowIf.ArgumentNull(masterOptions);
-        var attributes = method.GetCustomAttributes().ToArray();
-
-
-        _schema = new CliActionSchema(builder =>
-        {
-            builder.Description = attributes
-                .OfType<DescriptionAttribute>()
-                .Select(a => a.Description)
-                .FirstOrDefault(string.Empty);
-
-            // Sequence is very important.
-            // First: commands and arguments in the order of their declaration.
-            // Second: command options
-            foreach (var att in attributes)
-            {
-                if (att is CliCommandAttribute cmd)
-                {
-                    cmd.ForEach(subCommand => builder
-                        .AddSubCommand(subCommand.Aliases));
-                }
-
-                if (att is CliArgumentAttribute arg)
-                {
-                    builder.AddArgument(arg.ParameterName);
-                }
-            }
-
-            foreach (var option in _methodParametersBuilders.GetAllCommandOptions())
-            {
-                builder.AddOption(option.OptionLongName, option.OperandArity, option.OptionAliases);
-            }
-
-            foreach (var masterOption in _masterOptions.SelectMany(mo => mo.GetAllCommandOptions()))
-            {
-                builder.AddOption(masterOption.OptionLongName, masterOption.OperandArity, masterOption.OptionAliases);
-            }
-
-            foreach (var example in attributes.OfType<CliCommandExampleAttribute>())
-            {
-                builder.AddExample(example.Example, example.Description);
-            }
-        });
+        return new CliAction(Invoke, schema, parametersBuilder, masterOptions);
     }
 
 
@@ -147,7 +107,7 @@ internal sealed class CliAction : IComparable<CliAction>
             throw new InvalidOperationException($"The command line did not match any known patterns.");
         }
 
-        var args = _methodParametersBuilders.BuildMethodArguments(match, preProcessor);
+        var args = _parametersBuilder.BuildMethodArguments(match, preProcessor);
 
         foreach (var bundle in _masterOptions)
         {
@@ -157,7 +117,7 @@ internal sealed class CliAction : IComparable<CliAction>
         _masterOptions.ForEach(bundle => bundle.OnExecutingAction(commandLine));
         try
         {
-            var task = _method.InvokeAsync(_instance, args);
+            var task = _asyncHandler.Invoke(args);
             task.GetAwaiter().GetResult();
             var resultProperty = task.GetType().GetProperty("Result");
             object result = 0;

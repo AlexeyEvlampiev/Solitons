@@ -51,7 +51,7 @@ public sealed class CliProcessor : ICliProcessorCallback
                     continue;
                 }
 
-                actions.Add(new CliAction(source.Instance, mi, masterOptionBundles));
+                actions.Add(CliAction.Create(source.Instance, mi, masterOptionBundles));
             }
         }
 

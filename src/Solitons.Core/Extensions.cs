@@ -23,6 +23,7 @@ namespace Solitons;
 
 public static partial class Extensions
 {
+    [DebuggerStepThrough]
     public static Task InvokeAsync(this MethodInfo method, object? instance, object?[] args)
     {
         var result = method.Invoke(instance, args);
