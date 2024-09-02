@@ -11,33 +11,54 @@ using System.Text.RegularExpressions;
 namespace Solitons.CommandLine;
 
 
-internal interface ICliCommandOperand 
+internal interface ICliCommandInputBuilder 
 {
-    Type ValueType { get; }
+    Type InputType { get; }
 
+    object? Build(Match commandLineMatch, ICliTokenSubstitutionPreprocessor preProcessor);
 
-    public object? BuildOperandValue(Match commandLineMatch, ICliTokenSubstitutionPreprocessor preProcessor)
+}
+
+internal interface ICliCommandSimpleInputBuilder : ICliCommandInputBuilder
+{
+    protected CliOperandValueParser Parser { get; }
+
+    bool HasDefaultValue(out object? defaultValue);
+
+    string OperandRegexGroupName { get; }
+
+    CliOperandArity OperandArity { get; }
+
+    bool IsRequired { get; }
+    string GetDescription();
+
+    [DebuggerStepThrough]
+    public sealed object Parse(Group group, ICliTokenSubstitutionPreprocessor preProcessor) => Parser.Parse(group, preProcessor);
+
+    object? ICliCommandInputBuilder.Build(Match commandLineMatch, ICliTokenSubstitutionPreprocessor preProcessor)
     {
         if (commandLineMatch.Success == false)
         {
             throw new ArgumentException();
         }
 
-        var simpleOperand = ThrowIf.NullReference(this as ICliCommandSimpleTypeOperand);
-
-
-        var group = commandLineMatch.Groups[simpleOperand.OperandRegexGroupName];
+        var group = commandLineMatch.Groups[OperandRegexGroupName];
 
         if (group.Success == false)
         {
-            if (simpleOperand.HasDefaultValue(out var defaultValue))
+            if (IsRequired)
+            {
+                CliExit.With("TODO: something like parameter ... is required but was not specified in the command line.");
+            }
+
+            if (HasDefaultValue(out var defaultValue))
             {
                 if (defaultValue is null)
                 {
                     return null;
                 }
 
-                var valueType = Nullable.GetUnderlyingType(ValueType) ?? ValueType;
+                var valueType = Nullable.GetUnderlyingType(InputType) ?? InputType;
                 if (valueType.IsInstanceOfType(defaultValue))
                 {
                     return defaultValue;
@@ -46,66 +67,66 @@ internal interface ICliCommandOperand
                 throw new InvalidOperationException();
             }
 
-            CliExit.With(this is ICliCommandOption opt
+            CliExit.With(this is ICliCommandOptionBuilder opt
                 ? $"Required '{opt.OptionAliasesString}' option value is missing."
                 : throw new InvalidOperationException(""));
         }
 
-        return simpleOperand.Parse(group, preProcessor);
+        return Parse(group, preProcessor);
     }
 }
 
-internal interface ICliCommandSimpleTypeOperand : ICliCommandOperand
+internal interface ICliCommandOptionBundleBuilder : ICliCommandInputBuilder
 {
-    protected CliOperandValueParser Parser { get; }
-
-    bool HasDefaultValue(out object? defaultValue);
-
-    string OperandRegexGroupName { get; }
-    CliOperandArity OperandArity { get; }
-    string GetDescription();
-
-    [DebuggerStepThrough]
-    public sealed object Parse(Group group, ICliTokenSubstitutionPreprocessor preProcessor) => Parser.Parse(group, preProcessor);
-}
-
-internal interface ICliCommandOptionBundleOperand : ICliCommandOperand
-{
-    object? ICliCommandOperand.BuildOperandValue(Match commandLineMatch, ICliTokenSubstitutionPreprocessor preProcessor)
+    object? ICliCommandInputBuilder.Build(Match commandLineMatch, ICliTokenSubstitutionPreprocessor preProcessor)
     {
-        var bundle = (ICliCommandOptionBundle)Activator.CreateInstance(this.ValueType)!;
+        if (false == ICliCommandOptionBundle.IsAssignableFrom(InputType))
+        {
+            throw new InvalidOperationException();
+        }
+        var bundle = (ICliCommandOptionBundle)Activator.CreateInstance(this.InputType)!;
         bundle.PopulateFrom(commandLineMatch, preProcessor);
         return bundle;
     }
 
-    IEnumerable<ICliCommandOption> GetAllOptions();
+    IEnumerable<ICliCommandOptionBuilder> GetAllOptions();
 }
 
 internal interface ICliCommandOptionBundle
 {
     void PopulateFrom(Match commandLineMatch, ICliTokenSubstitutionPreprocessor preProcessor);
+
+    public static bool IsAssignableFrom(Type commandInputType)
+    {
+        return typeof(ICliCommandOptionBundle).IsAssignableFrom(commandInputType);
+    }
 }
 
-interface ICliCommandMethodParameter : ICliCommandOperand
+interface ICliCommandParameterBuilder : ICliCommandInputBuilder
 {
     string ParameterName { get; }
 }
 
-interface ICliCommandOptionBundleProperty : ICliCommandOperand
+interface ICliCommandPropertyOptionBuilder : ICliCommandOptionBuilder
 {
+    string PropertyName { get; }
     Type PropertyType { get; }
 }
 
 
-interface ICliCommandMethodArgument : ICliCommandSimpleTypeOperand
+interface ICliCommandArgumentBuilder : 
+    ICliCommandSimpleInputBuilder, 
+    ICliCommandParameterBuilder
 {
     string ArgumentRole { get; }
 
-    CliOperandArity ICliCommandSimpleTypeOperand.OperandArity => CliOperandArity.Scalar;
+    bool ICliCommandSimpleInputBuilder.IsRequired => true;
+
+    CliOperandArity ICliCommandSimpleInputBuilder.OperandArity => CliOperandArity.Scalar;
 
 }
 
-interface ICliCommandOption : ICliCommandSimpleTypeOperand
+interface ICliCommandOptionBuilder : ICliCommandSimpleInputBuilder
 {
     public string OptionLongName => OptionAliases.OrderByDescending(alias => alias.Length).FirstOrDefault("");
     string OptionAliasesString { get; }
@@ -118,17 +139,67 @@ internal interface ICliTokenSubstitutionPreprocessor
     string GetSubstitution(string key);
 }
 
-internal sealed class CliCommandMethodParameterArgument : ICliCommandMethodArgument
+
+internal class CliCommandOptionBundleBuilder : ICliCommandOptionBundleBuilder
 {
-    public CliCommandMethodParameterArgument(
+    private readonly List<ICliCommandOptionBuilder> _innerOptionBuilders = new();
+    public CliCommandOptionBundleBuilder(Type optionBundleType)
+    {
+        InputType = optionBundleType;
+        if (false == ICliCommandOptionBundle.IsAssignableFrom(optionBundleType))
+        {
+            throw new ArgumentException();
+        }
+
+        if (false == InputType.IsClass)
+        {
+            throw new ArgumentException();
+        }
+
+        if (InputType.IsAbstract)
+        {
+            throw new ArgumentException();
+        }
+
+        optionBundleType
+            .GetProperties(BindingFlags.Instance | BindingFlags.Public)
+            .ForEach(p =>
+            {
+                var option = p.GetCustomAttribute<CliOptionAttribute>();
+                if (ICliCommandOptionBundle.IsAssignableFrom(p.PropertyType))
+                {
+                    var builder = new CliCommandOptionBundleBuilder(p.PropertyType);
+                    _innerOptionBuilders.AddRange(builder.GetAllOptions());
+                }
+                else if (option is not null)
+                {
+                    var builder = new CliCommandPropertyOptionBuilder(p);
+                    _innerOptionBuilders.Add(builder);
+                }
+            });
+    }
+    public Type InputType { get; }
+
+    public IEnumerable<ICliCommandOptionBuilder> GetAllOptions() => _innerOptionBuilders.AsEnumerable();
+}
+
+[DebuggerDisplay("{ParameterName} argument")]
+internal sealed class CliCommandParameterArgumentBuilder : ICliCommandArgumentBuilder
+{
+    private readonly ParameterInfo _parameter;
+    private readonly CliArgumentAttribute _argument;
+
+    public CliCommandParameterArgumentBuilder(
         int parameterIndex,
         ParameterInfo parameter, 
         CliArgumentAttribute argument)
     {
+        _parameter = parameter;
+        _argument = argument;
         ThrowIf.ArgumentNull(parameter);
         ThrowIf.ArgumentNull(argument);
         ParameterIndex = parameterIndex;
-        ParameterName = ThrowIf.NullReference(parameter.Name);
+        OperandRegexGroupName = parameter.Name!;
         if (false == argument.References(parameter))
         {
             throw new ArgumentException("Oops...", nameof(argument));
@@ -149,6 +220,8 @@ internal sealed class CliCommandMethodParameterArgument : ICliCommandMethodArgum
     }
 
     public string OperandRegexGroupName { get; }
+
+
     public string GetDescription()
     {
         throw new NotImplementedException();
@@ -161,18 +234,23 @@ internal sealed class CliCommandMethodParameterArgument : ICliCommandMethodArgum
     }
 
     public int ParameterIndex { get; }
-    public string ParameterName { get; }
-    public Type ValueType { get; }
-    public string ArgumentRole { get; }
+    public string ParameterName => _parameter.Name!;
+    public Type InputType => _parameter.ParameterType;
+    public string ArgumentRole => _argument.ArgumentRole;
 }
 
-internal sealed class CliCommandMethodParameterOption : ICliCommandOption, ICliCommandMethodParameter
+[DebuggerDisplay("{ParameterName} option")]
+internal sealed class CliCommandParameterOptionBuilder : ICliCommandOptionBuilder, ICliCommandParameterBuilder
 {
-    public CliCommandMethodParameterOption(ParameterInfo parameter)
+    private readonly ParameterInfo _parameter;
+
+    public CliCommandParameterOptionBuilder(ParameterInfo parameter)
     {
-        
+        _parameter = parameter;
+        OperandArity = CliUtils.GetArity(parameter.ParameterType);
     }
-    public Type ValueType { get; }
+
+    public Type InputType => _parameter.ParameterType;
     public CliOperandValueParser Parser { get; }
     public bool HasDefaultValue(out object? defaultValue)
     {
@@ -181,6 +259,8 @@ internal sealed class CliCommandMethodParameterOption : ICliCommandOption, ICliC
 
     public string OperandRegexGroupName { get; }
     public CliOperandArity OperandArity { get; }
+    public bool IsRequired { get; }
+
     public string GetDescription()
     {
         throw new NotImplementedException();
@@ -193,29 +273,54 @@ internal sealed class CliCommandMethodParameterOption : ICliCommandOption, ICliC
 
     public string OptionAliasesString { get; }
     public IReadOnlyList<string> OptionAliases { get; }
-    public string ParameterName { get; }
+    public string ParameterName => _parameter.Name;
 }
 
 
-internal sealed class CliCommandOptionBundleParameter : ICliCommandOptionBundleProperty
+
+internal sealed class CliCommandPropertyOptionBuilder : ICliCommandPropertyOptionBuilder
 {
-    public CliCommandOptionBundleParameter(PropertyInfo property)
+    private readonly PropertyInfo _property;
+
+    public CliCommandPropertyOptionBuilder(PropertyInfo property)
     {
-        
+        _property = property;
     }
 
-    public Type ValueType { get; }
-    public IEnumerable<ICliCommandOption> UnnestOptions()
-    {
-        throw new NotImplementedException();
-    }
-
-    public IEnumerable<ICliCommandSimpleTypeOperand> Explode()
+    Type ICliCommandInputBuilder.InputType => PropertyType;
+    public CliOperandValueParser Parser { get; }
+    public bool HasDefaultValue(out object? defaultValue)
     {
         throw new NotImplementedException();
     }
 
-    public Type PropertyType { get; }
+    public string OperandRegexGroupName { get; }
+    public CliOperandArity OperandArity { get; }
+    public bool IsRequired { get; }
+    public string GetDescription()
+    {
+        throw new NotImplementedException();
+    }
+
+    public object? Build(Match commandLineMatch, ICliTokenSubstitutionPreprocessor preProcessor)
+    {
+        throw new NotImplementedException();
+    }
+
+    public IEnumerable<ICliCommandOptionBuilder> UnnestOptions()
+    {
+        throw new NotImplementedException();
+    }
+
+    public IEnumerable<ICliCommandSimpleInputBuilder> Explode()
+    {
+        throw new NotImplementedException();
+    }
+
+    public string PropertyName => _property.Name;
+    public Type PropertyType => _property.PropertyType;
+    public string OptionAliasesString { get; }
+    public IReadOnlyList<string> OptionAliases { get; }
 }
 
 
@@ -223,9 +328,9 @@ internal sealed class CliCommandOptionBundleParameter : ICliCommandOptionBundleP
 
 internal class CliOperandValueParser
 {
-    private readonly ICliCommandSimpleTypeOperand _operand;
+    private readonly ICliCommandSimpleInputBuilder _operand;
 
-    public CliOperandValueParser(ICliCommandSimpleTypeOperand operand)
+    public CliOperandValueParser(ICliCommandSimpleInputBuilder operand)
     {
         _operand = operand;
     }
@@ -318,49 +423,76 @@ internal abstract class CliOperand
 }
 
 
-internal sealed class CliCommandOperandCollection : IEnumerable<ICliCommandOperand>
+[DebuggerDisplay("Parameters: {ParametersCount}, Arguments: {ArgumentsCount}, Options: {OptionsCount}")]
+internal sealed class CliCommandMethodParametersBuilder //: IEnumerable<ICliCommandInputBuilder>
 {
-    private readonly List<ICliCommandOperand> _operands = new();
+    [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
+    private readonly List<ICliCommandInputBuilder> _parameterBuilders = new();
 
-    public CliCommandOperandCollection(MethodInfo method)
+    public CliCommandMethodParametersBuilder(MethodInfo method)
     {
+        var methodAttributes = method.GetCustomAttributes(true);
+        var methodArguments = methodAttributes.OfType<CliArgumentAttribute>().ToList();
         var parameters = method.GetParameters();
         foreach (var parameter in parameters)
         {
-            if (CliOptionBundle.IsAssignableFrom(parameter.ParameterType))
+            var parameterAttributes = parameter.GetCustomAttributes(true);
+            var argument = methodArguments
+                .Where(a => a.References(parameter))
+                .Do((arg, index) =>
+                {
+                    if (index > 0)
+                    {
+                        throw new InvalidOperationException();
+                    }
+                })
+                .LastOrDefault();
+            var option = parameterAttributes.OfType<CliOptionAttribute>().SingleOrDefault();
+
+            if (ICliCommandOptionBundle.IsAssignableFrom(parameter.ParameterType))
             {
-                var bundleOperand = ThrowIf.NullReference((ICliCommandOptionBundleOperand?)null);
-                _operands.Add(bundleOperand);
+                var bundleOperand = ThrowIf.NullReference((ICliCommandOptionBundleBuilder?)null);
+                _parameterBuilders.Add(bundleOperand);
+            }
+            else if(argument is not null)
+            {
+                var index = Array.IndexOf(parameters, parameter);
+                _parameterBuilders.Add(new CliCommandParameterArgumentBuilder(index, parameter, argument));
             }
             else
             {
-                throw new NotImplementedException();
+                _parameterBuilders.Add(new CliCommandParameterOptionBuilder(parameter));
             }
         }
     }
 
+    internal int ArgumentsCount => _parameterBuilders.OfType<ICliCommandArgumentBuilder>().Count();
+    internal int OptionsCount => GetAllCommandOptions().Count();
+
+    internal int ParametersCount => _parameterBuilders.Count;
+
     public object?[] BuildMethodArguments(Match match, ICliTokenSubstitutionPreprocessor preProcessor)
     {
-        var args = new object?[_operands.Count];
-        for (int i = 0; i < _operands.Count; ++i)
+        var args = new object?[_parameterBuilders.Count];
+        for (int i = 0; i < _parameterBuilders.Count; ++i)
         {
-            var operand = _operands[i];
-            var value = operand.BuildOperandValue(match, preProcessor);
+            var operand = _parameterBuilders[i];
+            var value = operand.Build(match, preProcessor);
             args[i] = value;
         }
         return args;
     }
 
-    public IEnumerable<ICliCommandOption> GetAllCommandOptions()
+    public IEnumerable<ICliCommandOptionBuilder> GetAllCommandOptions()
     {
-        foreach (var operand in _operands)
+        foreach (var operand in _parameterBuilders)
         {
-            if (operand is ICliCommandOption option)
+            if (operand is ICliCommandOptionBuilder option)
             {
                 yield return option;
             }
 
-            if (operand is ICliCommandOptionBundleOperand bundle)
+            if (operand is ICliCommandOptionBundleBuilder bundle)
             {
                 foreach (var bundleOption in bundle.GetAllOptions())
                 {
@@ -370,9 +502,9 @@ internal sealed class CliCommandOperandCollection : IEnumerable<ICliCommandOpera
         }
     }
 
-    [DebuggerNonUserCode]
-    public IEnumerator<ICliCommandOperand> GetEnumerator() => _operands.GetEnumerator();
+    //[DebuggerNonUserCode]
+    //public IEnumerator<ICliCommandInputBuilder> GetEnumerator() => _parameterBuilders.GetEnumerator();
 
-    [DebuggerNonUserCode]
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    //[DebuggerNonUserCode]
+    //IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

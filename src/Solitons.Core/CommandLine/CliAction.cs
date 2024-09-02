@@ -16,7 +16,7 @@ internal sealed class CliAction : IComparable<CliAction>
     private readonly CliMasterOptionBundle[] _masterOptions;
 
     private readonly CliActionSchema _schema;
-    private readonly CliCommandOperandCollection _operands;
+    private readonly CliCommandMethodParametersBuilder _methodParametersBuilders;
 
     internal CliAction(
         object? instance,
@@ -26,7 +26,7 @@ internal sealed class CliAction : IComparable<CliAction>
         _instance = instance;
         _method = ThrowIf.ArgumentNull(method);
 
-        _operands = new CliCommandOperandCollection(method);
+        _methodParametersBuilders = new CliCommandMethodParametersBuilder(method);
         
         _masterOptions = ThrowIf.ArgumentNull(masterOptions);
         var attributes = method.GetCustomAttributes().ToArray();
@@ -56,7 +56,7 @@ internal sealed class CliAction : IComparable<CliAction>
                 }
             }
 
-            foreach (var option in _operands.GetAllCommandOptions())
+            foreach (var option in _methodParametersBuilders.GetAllCommandOptions())
             {
                 builder.AddOption(option.OptionLongName, option.OperandArity, option.OptionAliases);
             }
@@ -102,7 +102,7 @@ internal sealed class CliAction : IComparable<CliAction>
             throw new InvalidOperationException($"The command line did not match any known patterns.");
         }
 
-        var args = _operands.BuildMethodArguments(match, preProcessor);
+        var args = _methodParametersBuilders.BuildMethodArguments(match, preProcessor);
 
         foreach (var bundle in _masterOptions)
         {
