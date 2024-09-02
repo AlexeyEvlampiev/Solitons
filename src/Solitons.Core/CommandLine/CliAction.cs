@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 
@@ -30,15 +27,15 @@ internal sealed class CliAction : IComparable<CliAction>
         
         _masterOptions = ThrowIf.ArgumentNull(masterOptions);
         var attributes = method.GetCustomAttributes().ToArray();
-        Examples = [..attributes.OfType<CliCommandExampleAttribute>()];
 
-        Description = attributes
-            .OfType<DescriptionAttribute>()
-            .Select(d => d.Description)
-            .FirstOrDefault(string.Empty);
 
         _schema = new CliActionSchema(builder =>
         {
+            builder.Description = attributes
+                .OfType<DescriptionAttribute>()
+                .Select(a => a.Description)
+                .FirstOrDefault(string.Empty);
+
             // Sequence is very important.
             // First: commands and arguments in the order of their declaration.
             // Second: command options
@@ -46,8 +43,8 @@ internal sealed class CliAction : IComparable<CliAction>
             {
                 if (att is CliCommandAttribute cmd)
                 {
-                    cmd.ForEach(sc => builder
-                        .AddSubCommand(sc.Aliases));
+                    cmd.ForEach(subCommand => builder
+                        .AddSubCommand(subCommand.Aliases));
                 }
 
                 if (att is CliArgumentAttribute arg)
@@ -74,12 +71,7 @@ internal sealed class CliAction : IComparable<CliAction>
 
     }
 
-    public ImmutableArray<CliCommandExampleAttribute> Examples { get; }
 
-
-    public string Description { get; }
-
-    public string CommandFullPath => _schema.CommandFullPath;
 
 
     public int Execute(string commandLine, CliTokenSubstitutionPreprocessor preProcessor)
@@ -144,30 +136,20 @@ internal sealed class CliAction : IComparable<CliAction>
 
     public void ShowHelp()
     {
-        var args = Environment.GetCommandLineArgs();
-        var tool = args[0];
-        if (File.Exists(tool))
-        {
-            tool = Path.GetFileName(tool);
-        }
-
-        var help = CliActionHelpRtt.Build(tool, this);
-        Console.WriteLine(help);
+        Console.WriteLine(GetHelpText());
     }
 
 
     public int CompareTo(CliAction? other)
     {
-        ThrowIf.ArgumentNull(other, "Cannot compare to a null object.");
-        return String.Compare(CommandFullPath, other?.CommandFullPath, StringComparison.OrdinalIgnoreCase);
+        other = ThrowIf.ArgumentNull(other, "Cannot compare to a null object.");
+        return String.Compare(_schema.CommandFullPath, other._schema.CommandFullPath, StringComparison.OrdinalIgnoreCase);
     }
 
 
-    public override string ToString()
-    {
-        return Examples
-            .Select(e => e.Example)
-            .FirstOrDefault()
-            .DefaultIfNullOrWhiteSpace(_method.Name);
-    }
+    public override string ToString() => _schema.CommandFullPath;
+
+    public string GetHelpText() => _schema.GetHelpText();
+
+    public CliActionSchema GetSchema() => _schema;
 }

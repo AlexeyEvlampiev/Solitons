@@ -14,9 +14,10 @@ internal partial class CliHelpRtt
         Description = description;
         Commands = actions
             .OrderBy(cmd => cmd)
+            .Select(a => a.GetSchema())
             .Select(a => new Command(
                 a.CommandFullPath,
-                a.Description))
+                a.CommandDescription))
             .Distinct()
             .ToArray();
     }

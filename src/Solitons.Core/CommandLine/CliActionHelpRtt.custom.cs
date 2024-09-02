@@ -6,18 +6,20 @@ namespace Solitons.CommandLine;
 
 internal partial class CliActionHelpRtt
 {
+    private readonly CliActionSchema _schema;
     private readonly CliAction _action;
     private const string Tab = "   ";
 
     sealed record Example(int Index, string Description, string Command);
 
-    private CliActionHelpRtt(string executableName, CliAction action)
+    private CliActionHelpRtt(CliActionSchema schema)
     {
-        _action = action;
-        ExecutableName = executableName;
-        Description = action.Description;
+        _schema = schema;
+        //_action = action;
+        //ExecutableName = executableName;
+        //Description = action.Description;
 
-        throw new NotImplementedException();
+
         //Segments = action.CommandSegments;
         //UsageOptions = CommandOptions(action.CommandSegments).ToList();
 
@@ -46,8 +48,6 @@ internal partial class CliActionHelpRtt
         //        return $"{option.OptionNamesCsv}{Tab}{o.Description}";
         //    })
         //    .ToList();
-
-
     }
 
     public IReadOnlyList<string> UsageOptions { get; }
@@ -91,20 +91,20 @@ internal partial class CliActionHelpRtt
     public IEnumerable<string> Arguments { get; }
     public string Description { get; }
 
-    private IEnumerable<Example> Examples => _action.Examples
+    private IEnumerable<Example> Examples => _schema.Examples
         .Select((item, index) => new Example(index + 1, item.Description, item.Example));
 
 
-    public static string Build(string executableName, CliAction action)
+    public static string Build(CliActionSchema schema)
     {
-        var rtt = new CliActionHelpRtt(executableName, action);
+        var rtt = new CliActionHelpRtt(schema);
         return rtt.ToString().Trim();
     }
 
     public static string Build(string executableName, IEnumerable<CliAction> actions)
     {
         return actions
-            .Select(a => Build(executableName, a))
+            .Select(a => a.GetHelpText())
             .Join(Enumerable
                 .Range(0, 3)
                 .Select(_ => Environment.NewLine)

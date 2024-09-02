@@ -129,6 +129,12 @@ internal sealed class CliActionSchema
             _schema = schema;
         }
 
+        public string Description 
+        { 
+            get => _schema.CommandDescription;
+            set => _schema.CommandDescription = value;
+        }
+
         private void AssertOptionAliases(IReadOnlyList<string> aliases)
         {
             var invalidAliasesCsv = aliases
@@ -249,6 +255,8 @@ internal sealed class CliActionSchema
         }
     }
 
+    public string CommandDescription { get; private set; }
+    public CliCommandExampleAttribute[] Examples { get; }
 
 
     public interface ICommandSegment
@@ -366,4 +374,8 @@ internal sealed class CliActionSchema
 
     private Group GetUnrecognizedTokens(Match match) => match.Groups[CliActionRegularExpressionRtt.UnrecognizedToken];
 
+    public string GetHelpText()
+    {
+        throw new NotImplementedException();
+    }
 }
