@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
@@ -253,6 +254,30 @@ internal sealed class CliActionSchema : ICliActionSchema
         {
             throw new NotImplementedException();
         }
+
+        public Builder SetActionPath(IEnumerable<Attribute> methodAttributes)
+        {
+            // Sequence is very important.
+            // First: commands and arguments in the order of their declaration.
+            // Second: command options
+            foreach (var att in methodAttributes)
+            {
+                if (att is CliRouteAttribute route)
+                {
+                    route.ForEach(subCommand => AddSubCommand(subCommand.Aliases));
+                }
+
+                if (att is CliArgumentAttribute arg)
+                {
+                    AddArgument(arg.ParameterName);
+                }
+            }
+
+            return this;
+        }
+
+        [DebuggerStepThrough]
+        public Builder SetActionPath(MethodInfo method) => SetActionPath(method.GetCustomAttributes());
     }
 
     public string CommandDescription { get; private set; }

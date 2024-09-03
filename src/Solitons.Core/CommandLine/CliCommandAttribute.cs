@@ -13,34 +13,34 @@ namespace Solitons.CommandLine;
 /// where each part of the command string represents a distinct subcommand.
 /// </summary>
 [AttributeUsage(AttributeTargets.Method)]
-public class CliCommandAttribute : Attribute, IEnumerable<CliSubCommand>
+public class CliRouteAttribute : Attribute, IEnumerable<CliSubCommandMetadata>
 {
 
     [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
-    private readonly CliSubCommand[] _subCommands;
+    private readonly CliSubCommandMetadata[] _subCommands;
 
     /// <summary>
     /// Initializes a new instance of the CliCommandAttribute class.
     /// </summary>
-    /// <param name="commandPattern">A space-separated string representing individual subcommands.</param>
-    public CliCommandAttribute(string commandPattern)
+    /// <param name="routeExpression">A space-separated string representing individual subcommands.</param>
+    public CliRouteAttribute(string routeExpression)
     {
-        CommandPattern = commandPattern;
-        _subCommands = commandPattern
+        RouteExpression = routeExpression;
+        _subCommands = routeExpression
             .DefaultIfNullOrWhiteSpace(string.Empty)
             .Trim()
             .Convert(cmd => Regex.Split(cmd, @"\s+"))
-            .Select(segment => new CliSubCommand(segment))
+            .Select(segment => new CliSubCommandMetadata(segment))
             .ToArray();
     }
 
     /// <summary>
     /// Gets a space-separated string representing individual subcommands.
     /// </summary>
-    public string CommandPattern { get; }
+    public string RouteExpression { get; }
 
     [DebuggerNonUserCode]
-    IEnumerator<CliSubCommand> IEnumerable<CliSubCommand>.GetEnumerator()
+    IEnumerator<CliSubCommandMetadata> IEnumerable<CliSubCommandMetadata>.GetEnumerator()
     {
         foreach (var cmdlet in _subCommands)
         {
@@ -51,5 +51,5 @@ public class CliCommandAttribute : Attribute, IEnumerable<CliSubCommand>
     [DebuggerNonUserCode]
     IEnumerator IEnumerable.GetEnumerator() => _subCommands.GetEnumerator();
 
-    public override string ToString() => CommandPattern;
+    public override string ToString() => RouteExpression;
 }

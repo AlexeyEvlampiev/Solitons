@@ -65,7 +65,7 @@ internal partial class CliActionHelpRtt
         }
 
         var rhsOptions = CommandOptions(list.Skip(1)).ToList();
-        if (segment is CliSubCommand command)
+        if (segment is CliSubCommandMetadata command)
         {
             foreach (var option in command.Aliases)
             {

@@ -62,22 +62,22 @@ public class CliProcessor_Process_Should
         Assert.Equal(0, exitCode);
     }
 
-    [CliCommand("run")]
+    [CliRoute("run")]
     public void VoidAction()
     {
     }
 
-    [CliCommand("sum")]
+    [CliRoute("sum")]
     [CliArgument(nameof(a), "param a")]
     [CliArgument(nameof(b), "param b")]
     public int SumActionUsingArguments(int a, int b) => a + b;
 
-    [CliCommand("sum")]
+    [CliRoute("sum")]
     public int SumActionUsingOptions(
         [CliOption("-a")]int a,
         [CliOption("-b")] int b) => a + b;
 
-    [CliCommand("use maps")]
+    [CliRoute("use maps")]
     public int UseMaps(
         [CliOption("-cs")]Dictionary<string, int> defaultMap,
         [CliCaseInsensitiveMapOption("-ci")] Dictionary<string, int> customizedMap)

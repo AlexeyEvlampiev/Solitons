@@ -13,7 +13,7 @@ public sealed class CliProcessor : ICliProcessorCallback
     private sealed record Source(
         Type DeclaringType,
         object? Instance,
-        CliCommandAttribute[] RootCommands,
+        CliRouteAttribute[] RootCommands,
         BindingFlags BindingFlags);
 
     private readonly List<Source> _sources = new();
@@ -44,7 +44,7 @@ public sealed class CliProcessor : ICliProcessorCallback
             {
                 if (false == mi
                         .GetCustomAttributes()
-                        .OfType<CliCommandAttribute>()
+                        .OfType<CliRouteAttribute>()
                         .Any())
                 {
                     Debug.WriteLine($"Not an action: {mi.Name}");
@@ -75,8 +75,8 @@ public sealed class CliProcessor : ICliProcessorCallback
             UseCommandsFrom(target, [], binding);
 
 
-        IOptions UseCommandsFrom(Type declaringType, CliCommandAttribute[] rootCommands, BindingFlags binding = BindingFlags.Static | BindingFlags.Public);
-        IOptions UseCommandsFrom(object target, CliCommandAttribute[] rootCommands, BindingFlags binding = BindingFlags.Instance | BindingFlags.Public);
+        IOptions UseCommandsFrom(Type declaringType, CliRouteAttribute[] rootCommands, BindingFlags binding = BindingFlags.Static | BindingFlags.Public);
+        IOptions UseCommandsFrom(object target, CliRouteAttribute[] rootCommands, BindingFlags binding = BindingFlags.Instance | BindingFlags.Public);
         IOptions UseLogo(string logo);
         IOptions UseDescription(string description);
         internal IOptions UseCallback(ICliProcessorCallback callback);
@@ -95,7 +95,7 @@ public sealed class CliProcessor : ICliProcessorCallback
         [DebuggerStepThrough]
         public IOptions UseCommandsFrom(
             object target,
-            CliCommandAttribute[] rootCommands,
+            CliRouteAttribute[] rootCommands,
             BindingFlags binding)
         {
             return UseCommands(target, target.GetType(), rootCommands, binding);
@@ -104,7 +104,7 @@ public sealed class CliProcessor : ICliProcessorCallback
         [DebuggerStepThrough]
         public IOptions UseCommandsFrom(
             Type declaringType,
-            CliCommandAttribute[] rootCommands,
+            CliRouteAttribute[] rootCommands,
             BindingFlags binding)
         {
             return UseCommands(null, declaringType, rootCommands, binding);
@@ -114,7 +114,7 @@ public sealed class CliProcessor : ICliProcessorCallback
         private IOptions UseCommands(
             object? instance,
             Type declaringType, 
-            CliCommandAttribute[] rootCommands, 
+            CliRouteAttribute[] rootCommands, 
             BindingFlags binding)
         {
             if (binding.HasFlag(BindingFlags.Instance))

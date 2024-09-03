@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
@@ -32,7 +33,8 @@ internal sealed class CliAction : IComparable<CliAction>
     internal static CliAction Create(
         object? instance,
         MethodInfo method,
-        CliMasterOptionBundle[] masterOptions)
+        CliMasterOptionBundle[] masterOptions,
+        IEnumerable<Attribute> cliRootMetadata)
     {
         ThrowIf.ArgumentNull(method);
         ThrowIf.ArgumentNull(masterOptions);
@@ -47,27 +49,14 @@ internal sealed class CliAction : IComparable<CliAction>
 
         Debug.WriteLine($"Action description: '{actionDescription}'");
 
+        var actionExtendedAttributes = cliRootMetadata.Union(methodAttributes);
+
         var schema = new CliActionSchema(builder =>
         {
             builder.Description = actionDescription;
+            builder.SetActionPath(actionExtendedAttributes);
 
-            // Sequence is very important.
-            // First: commands and arguments in the order of their declaration.
-            // Second: command options
-            foreach (var att in methodAttributes)
-            {
-                if (att is CliCommandAttribute cmd)
-                {
-                    cmd.ForEach(subCommand => builder
-                        .AddSubCommand(subCommand.Aliases));
-                }
-
-                if (att is CliArgumentAttribute arg)
-                {
-                    builder.AddArgument(arg.ParameterName);
-                }
-            }
-
+            
             foreach (var option in parametersFactory.GetAllCommandOptions())
             {
                 builder.AddOption(option.OptionLongName, option.OperandArity, option.OptionAliases);

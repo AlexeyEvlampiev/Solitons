@@ -29,7 +29,7 @@ public class Program
             .Process();
     }
 
-    [CliCommand("init|initialize")]
+    [CliRoute("init|initialize")]
     [CliArgument(nameof(projectDir), "PgUp project directory")]
     public static void Initialize(
         string projectDir,
@@ -38,7 +38,7 @@ public class Program
         PgUpTemplateManager.Initialize(projectDir, template);
     } 
 
-    [CliCommand("deploy")]
+    [CliRoute("deploy")]
     [CliArgument(nameof(projectFile), "PgUp configuration file.")]
     [Description(DeployCommandDescription)]
     [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD%", description: "Deploys using the specified admin credentials.")]
@@ -62,7 +62,7 @@ public class Program
     }
 
 
-    [CliCommand("deploy")]
+    [CliRoute("deploy")]
     [CliArgument(nameof(projectFile), "PgUp configuration file.")]
     [Description(DeployCommandDescription)]
     [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD%", description: "Deploys the database using the specified admin credentials.")]
@@ -91,7 +91,7 @@ public class Program
     }
 
 
-    [CliCommand("deploy")]
+    [CliRoute("deploy")]
     [CliArgument(nameof(projectFile), "PgUp project file.")]
     [Description(DeployCommandDescription)]
     [CliCommandExample("deploy pgup.json --connection \"Host=localhost;Username=postgres;Password=secret\"", description: "Deploys the database using the specified connection string.")]
@@ -115,7 +115,7 @@ public class Program
     }
 
 
-    [CliCommand("deploy")]
+    [CliRoute("deploy")]
     [CliArgument(nameof(projectFile), "PgUp project file.")]
     [Description(DeployCommandDescription)]
     [CliCommandExample("deploy pgup.json --connection \"Host=localhost;Username=postgres;Password=secret\" --overwrite", description: "Deploys by overwriting the existing database, resulting in the loss of all current data.")]
@@ -141,7 +141,7 @@ public class Program
                 timeout ?? DefaultActionTimeout);
     }
 
-    [CliCommand("template list|ls")]
+    [CliRoute("template list|ls")]
     [Description(DeployCommandDescription)]
     [CliCommandExample("template list", description: "Displays all project templates.")]
     public static Task<int> ListTemplatesAsync()
