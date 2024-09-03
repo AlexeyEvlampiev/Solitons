@@ -125,6 +125,7 @@ public class CliOptionAttribute : Attribute
     /// </summary>
     public IReadOnlyList<string> LongOptionNames { get; }
 
+
     public virtual TypeConverter? GetCustomTypeConverter() => null;
 
     /// <summary>

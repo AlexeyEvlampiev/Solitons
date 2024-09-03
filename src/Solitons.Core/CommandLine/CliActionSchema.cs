@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -16,11 +18,127 @@ internal sealed class CliActionSchema : ICliActionSchema
     private readonly Regex _regex;
     private readonly Regex _rankRegex;
 
+    [DebuggerStepThrough]
+    internal CliActionSchema(MethodInfo method) : this(method, [], []) { }
 
-    public CliActionSchema(Action<Builder> config)
+    internal CliActionSchema(
+        MethodInfo method, 
+        IReadOnlyList<CliMasterOptionBundle> masterOptionBundles,
+        IEnumerable<CliRouteAttribute> baseRoutes)
     {
-        var builder = new Builder(this);
-        config.Invoke(builder);
+        ThrowIf.ArgumentNull(method);
+        var methodAttributes = method.GetCustomAttributes().ToList();
+        var parameters = method.GetParameters();
+
+        _fields.AddRange(baseRoutes
+            .SelectMany(route => route)
+            .Distinct()
+            .Select(subCommand => new RouteSubCommand(subCommand.Aliases)));
+
+        CommandDescription = methodAttributes
+            .OfType<DescriptionAttribute>()
+            .Select(a => a.Description)
+            .SingleOrDefault($"Invokes {method.Name} method.");
+
+        Examples = methodAttributes
+            .OfType<CliCommandExampleAttribute>()
+            .Select(a => new Example(a.Example, a.Description))
+            .ToArray();
+
+        var routeArgumentAttributes = methodAttributes
+            .OfType<CliRouteArgumentAttribute>()
+            .ToList();
+
+        foreach (var attribute in methodAttributes)
+        {
+            if (attribute is CliRouteAttribute route)
+            {
+                route.ForEach(subCommand => _fields.Add(new RouteSubCommand(subCommand.Aliases)));
+            }
+
+            if (attribute is CliRouteArgumentAttribute argument)
+            {
+                _fields.Add(new RouteArgument(argument.ParameterName, argument.ArgumentRole, _fields.OfType<RouteSubCommand>() ));
+                if (false == parameters.Any(argument.References))
+                {
+                    throw new InvalidOperationException($"Too bad");
+                }
+                if(parameters.Where(argument.References).Count() > 1)
+                {
+                    throw new InvalidOperationException($"Oh my...");
+                }
+            }
+        }
+
+        routeArgumentAttributes
+            .Where(argument => false == parameters.Any(argument.References))
+            .Select(argument => argument.ParameterName)
+            .Join(",")
+            .Convert(csv =>
+            {
+                if (csv.IsPrintable())
+                {
+                    throw new InvalidOperationException($"Oh no...");
+                }
+            });
+
+
+        
+        foreach (var parameter in parameters)
+        {
+            if (routeArgumentAttributes.Any(a => a.References(parameter)))
+            {
+                continue;
+            }
+            if (CliOptionBundle.IsAssignableFrom(parameter.ParameterType))
+            {
+                RegisterOptionsBundle(parameter.ParameterType);
+            }
+            else
+            {
+                var parameterName = ThrowIf.NullOrWhiteSpace(parameter.Name);
+                var parameterAttributes = parameter
+                    .GetCustomAttributes()
+                    .ToList();
+                var description = parameterAttributes
+                    .OfType<DescriptionAttribute>()
+                    .Select(a => a.Description)
+                    .FirstOrDefault($"{method.Name} method parameter.");
+                var option = parameterAttributes
+                    .OfType<CliOptionAttribute>()
+                    .SingleOrDefault() ?? new CliOptionAttribute($"--{parameterName.ToLowerInvariant()}", description);
+
+                var optionArity = CliUtils.GetOptionArity(parameter.ParameterType);
+                var underlyingType = CliUtils.GetUnderlyingType(parameter.ParameterType);
+
+                var typeConverter = parameterAttributes
+                    .OfType<TypeConverterAttribute>()
+                    .Select(a => Type.GetType(a.ConverterTypeName) ?? throw new InvalidOperationException("Oops"))
+                    .Select(Activator.CreateInstance)
+                    .OfType<TypeConverter>()
+                    .Concat([option.GetCustomTypeConverter() ?? TypeDescriptor.GetConverter(underlyingType)])
+                    .First();
+
+                if (typeConverter.CanConvertTo(underlyingType))
+                {
+                    _fields.Add(new Option(
+                        $"{parameter.Name}_{OptionsCount:000}",
+                        option.Aliases,
+                        optionArity,
+                        description));
+                }
+                else
+                {
+                    throw new InvalidOperationException("No way ");
+                }
+            }
+        }
+
+        foreach (var bundleType in masterOptionBundles.Select(b => b.GetType()).Distinct())
+        {
+            RegisterOptionsBundle(bundleType);
+        }
+
 
         var pattern = new CliActionRegularExpressionRtt(this)
             .ToString()
@@ -35,7 +153,7 @@ internal sealed class CliActionSchema : ICliActionSchema
             RegexOptions.Singleline |
             RegexOptions.IgnorePatternWhitespace);
 
-        
+
         _rankRegex = new Regex(rankPattern,
             RegexOptions.Compiled |
             RegexOptions.Singleline |
@@ -50,7 +168,89 @@ internal sealed class CliActionSchema : ICliActionSchema
 #endif
             return exp;
         }
+
+
+        Debug.Assert(methodAttributes
+            .OfType<CliRouteArgumentAttribute>()
+            .All(argument => parameters
+                .Count(argument.References) == 1));
     }
+
+    public IEnumerable<ICommandSegment> CommandSegments => _fields
+        .OfType<ICommandSegment>();
+
+
+    public IEnumerable<IOption> Options => _fields
+        .OfType<IOption>();
+
+    public string CommandRouteExpression { get; }
+
+
+    public string CommandDescription { get; }
+    public IReadOnlyList<Example> Examples { get; }
+
+    public int OptionsCount => _fields.OfType<Option>().Count();
+
+
+    private void RegisterOptionsBundle(Type bundleType)
+    {
+        Debug.Assert(CliOptionBundle.IsAssignableFrom(bundleType));
+
+        var properties = bundleType.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+        foreach (var property in properties)
+        {
+            if (CliOptionBundle.IsAssignableFrom(property.PropertyType))
+            {
+                throw new InvalidOperationException("Nested option bundles not allowed");
+            }
+
+            var propertyAttributes = property
+                .GetCustomAttributes()
+                .ToList();
+            var option = propertyAttributes
+                .OfType<CliOptionAttribute>()
+                .SingleOrDefault();
+            if (option is null)
+            {
+                continue;
+            }
+
+            var optionArity = CliUtils.GetOptionArity(property.PropertyType);
+            var underlyingType = CliUtils.GetUnderlyingType(property.PropertyType);
+            var description = propertyAttributes
+                .OfType<DescriptionAttribute>()
+                .Select(a => a.Description)
+                .FirstOrDefault($"{bundleType}.{property.Name}");
+            var typeConverter = propertyAttributes
+                .OfType<TypeConverterAttribute>()
+                .Select(a => Type.GetType(a.ConverterTypeName) ?? throw new InvalidOperationException("Oops"))
+                .Select(Activator.CreateInstance)
+                .OfType<TypeConverter>()
+                .Concat([
+                    option.GetCustomTypeConverter() ?? TypeDescriptor.GetConverter(underlyingType)
+                ])
+                .First();
+            if (optionArity == CliOptionArity.Flag)
+            {
+                typeConverter ??= new CliFlagConverter();
+            }
+            if (typeConverter.CanConvertTo(underlyingType))
+            {
+                _fields.Add(new Option(
+                    $"{property.Name}_{OptionsCount:000}",
+                    option.Aliases,
+                    optionArity,
+                    description));
+            }
+            else
+            {
+                throw new InvalidOperationException("No way ");
+            }
+
+        }
+    }
+
+    
 
     /// <summary>
     /// Matches the specified command line string against the schema.
@@ -108,183 +308,13 @@ internal sealed class CliActionSchema : ICliActionSchema
         return rank;
     }
 
-    public IEnumerable<ICommandSegment> CommandSegments => _fields
-        .OfType<ICommandSegment>();
-
-
-    public IEnumerable<IOption> Options => _fields
-        .OfType<IOption>();
-
-    public string CommandRouteExpression { get; }
-
-
-    public class Builder
-    {
-        private readonly Regex _validRegexGroupNameRegex = new(@"(?is-m)^[a-z]\w*$");
-        private readonly Regex _validSubCommandAliasRegex = new(@"^\w[\w\-]*$");
-        private readonly Regex _validOptionAliasRegex = new(@"^(?:--?\w[\w\-]*|-\?)$");
-        private readonly CliActionSchema _schema;
-
-        internal Builder(CliActionSchema schema)
-        {
-            _schema = schema;
-        }
-
-        public string SetCommandDescription(string description) => _schema.CommandDescription = description;
-
-        private void AssertOptionAliases(IReadOnlyList<string> aliases)
-        {
-            var invalidAliasesCsv = aliases
-                .Where(a => false == _validOptionAliasRegex.IsMatch(a))
-                .Select(a => $"'{a}'")
-                .Join(",");
-            if (invalidAliasesCsv.IsPrintable())
-            {
-                throw new InvalidOperationException($"Invalid option aliases detected: {invalidAliasesCsv}");
-            }
-        }
-
-
-        private void AssertRegexGroupName(string groupName)
-        {
-            if (false == _validRegexGroupNameRegex.IsMatch(groupName))
-            {
-                throw new InvalidOperationException($"The regex group name '{groupName}' is invalid.");
-            }
-        }
-
-
-        public Builder AddSubCommand(IEnumerable<string> aliases)
-        {
-            aliases = aliases
-                .Where(s => s.IsPrintable())
-                .Select(s => s.Trim())
-                .ToList();
-            var invalidAliasesCsv = aliases
-                .Where(a => false == _validSubCommandAliasRegex.IsMatch(a))
-                .Select(a => $"'{a}'")
-                .Join(",");
-            if (invalidAliasesCsv.IsPrintable())
-            {
-                throw new InvalidOperationException(
-                    $"Invalid sub-command aliases detected: {invalidAliasesCsv}. " +
-                    "Each alias must start with a word character and can include hyphens.");
-            }
-            if (aliases.Any())
-            {
-                _schema._fields.Add(new SubCommand(aliases));
-            }
-            return this;
-        }
-
-
-
-        public Builder AddArgument(string regexGroupName)
-        {
-            AssertRegexGroupName(regexGroupName);
-            _schema._fields.Add(new Argument(regexGroupName, _schema._fields.OfType<ICommandSegment>()));
-            return this;
-        }
-
-        public Builder AddFlagOption(string regexGroupName, IReadOnlyList<string> aliases)
-        {
-            AssertRegexGroupName(regexGroupName);
-            AssertOptionAliases(aliases);
-            _schema._fields.Add(new Option(regexGroupName, aliases, CliOptionArity.Flag));
-            return this;
-        }
-
-
-        public Builder AddScalarOption(string regexGroupName, IReadOnlyList<string> aliases)
-        {
-            AssertRegexGroupName(regexGroupName);
-            AssertOptionAliases(aliases);
-            _schema._fields.Add(new Option(regexGroupName, aliases, CliOptionArity.Scalar));
-            return this;
-        }
-
-        public Builder AddVectorOption(string regexGroupName, IReadOnlyList<string> aliases)
-        {
-            AssertRegexGroupName(regexGroupName);
-            AssertOptionAliases(aliases);
-            _schema._fields.Add(new Option(regexGroupName, aliases, CliOptionArity.Vector));
-            return this;
-        }
-
-        public Builder AddMapOption(string regexGroupName, IReadOnlyList<string> aliases)
-        {
-            AssertRegexGroupName(regexGroupName);
-            AssertOptionAliases(aliases);
-            _schema._fields.Add(new Option(regexGroupName, aliases, CliOptionArity.Map));
-            return this;
-        }
-
-        [DebuggerStepThrough]
-        public Builder AddOption(string regexGroupName, CliOptionArity arity, IReadOnlyList<string> aliases)
-        {
-            if (arity == CliOptionArity.Flag)
-            {
-                AddFlagOption(regexGroupName, aliases);
-            }
-            else if (arity == CliOptionArity.Scalar)
-            {
-                AddScalarOption(regexGroupName, aliases);
-            }
-            else if (arity == CliOptionArity.Vector)
-            {
-                AddVectorOption(regexGroupName, aliases);
-            }
-            else if (arity == CliOptionArity.Map)
-            {
-                AddMapOption(regexGroupName, aliases);
-            }
-            else
-            {
-                throw new InvalidOperationException();
-            }
-
-            return this;
-        }
-
-        public Builder AddExample(string exampleExample, string exampleDescription)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Builder SetupCommandRoute(IEnumerable<Attribute> methodAttributes)
-        {
-            // Sequence is very important.
-            // First: commands and arguments in the order of their declaration.
-            // Second: command options
-            foreach (var att in methodAttributes)
-            {
-                if (att is CliRouteAttribute route)
-                {
-                    route.ForEach(subCommand => AddSubCommand(subCommand.Aliases));
-                }
-
-                if (att is CliRouteArgumentAttribute arg)
-                {
-                    AddArgument(arg.ParameterName);
-                }
-            }
-
-            return this;
-        }
-
-        [DebuggerStepThrough]
-        public Builder SetupCommandRoute(MethodInfo method) => SetupCommandRoute(method.GetCustomAttributes());
-    }
-
-    public string CommandDescription { get; private set; }
-    public CliCommandExampleAttribute[] Examples { get; }
 
 
     public interface ICommandSegment
     {
         string BuildRegularExpression();
 
-        public sealed bool IsArgument => this is Argument;
+        public sealed bool IsArgument => this is RouteArgument;
     }
 
     public interface IOption
@@ -295,9 +325,11 @@ internal sealed class CliActionSchema : ICliActionSchema
     public abstract class Token(IEnumerable<string> aliases)
     {
         public IReadOnlyList<string> Aliases { get; } = aliases.ToArray();
+
+        public override string ToString() => Aliases.Join("|");
     }
 
-    public sealed record Argument(string RegexGroupName, IEnumerable<ICommandSegment> SubCommands) : ICommandSegment
+    public sealed record RouteArgument(string RegexGroupName, string Role, IEnumerable<ICommandSegment> SubCommands) : ICommandSegment
     {
         public string BuildRegularExpression()
         {
@@ -318,7 +350,7 @@ internal sealed class CliActionSchema : ICliActionSchema
                     =>
                 {
                     var lookAhead = segments
-                        .OfType<SubCommand>()
+                        .OfType<RouteSubCommand>()
                         .Select(sc => sc.BuildRegularExpression())
                         .Join("|")
                         .Convert(x => $"(?!(?:{x}))");
@@ -330,7 +362,7 @@ internal sealed class CliActionSchema : ICliActionSchema
                 .Skip(selfIndex + 1)
                 .Select(cs =>
                 {
-                    if (cs is SubCommand cmd)
+                    if (cs is RouteSubCommand cmd)
                     {
                         return cmd.BuildRegularExpression();
                     }
@@ -343,11 +375,13 @@ internal sealed class CliActionSchema : ICliActionSchema
             var pattern = $@"{preCondition}(?<{RegexGroupName}>[^\s-]\S*){postCondition}";
             return pattern;
         }
+
+        public override string ToString() => $"<{Role.ToUpperInvariant()}>";
     }
 
 
 
-    public sealed class SubCommand(IEnumerable<string> aliases) : Token(aliases), ICommandSegment
+    public sealed class RouteSubCommand(IEnumerable<string> aliases) : Token(aliases), ICommandSegment
     {
         public string BuildRegularExpression()
         {
@@ -362,10 +396,16 @@ internal sealed class CliActionSchema : ICliActionSchema
     }
 
 
-    public sealed class Option(string regexGroupName, IEnumerable<string> aliases, CliOptionArity arity) : Token(aliases), IOption
+    public sealed class Option(
+        string regexGroupName, 
+        IEnumerable<string> aliases, 
+        CliOptionArity arity,
+        string description) : Token(aliases), IOption
     {
         public string RegexGroupName { get; } = regexGroupName;
         public CliOptionArity Arity { get; } = arity;
+        public string Description { get; } = description;
+
         public string BuildRegularExpression()
         {
             var token = aliases
@@ -399,4 +439,7 @@ internal sealed class CliActionSchema : ICliActionSchema
     {
         throw new NotImplementedException();
     }
+
+
+    public sealed record Example(string Command, string Description);
 }

@@ -92,7 +92,7 @@ internal partial class CliActionHelpRtt
     public string Description { get; }
 
     private IEnumerable<Example> Examples => _schema.Examples
-        .Select((item, index) => new Example(index + 1, item.Description, item.Example));
+        .Select((item, index) => new Example(index + 1, item.Description, item.Command));
 
 
     public static string Build(CliActionSchema schema)

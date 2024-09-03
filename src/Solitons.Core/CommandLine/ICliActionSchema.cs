@@ -31,6 +31,6 @@ internal interface ICliActionSchema
     IEnumerable<CliActionSchema.IOption> Options { get; }
     string CommandRouteExpression { get; }
     string CommandDescription { get; }
-    CliCommandExampleAttribute[] Examples { get; }
+
     string GetHelpText();
 }

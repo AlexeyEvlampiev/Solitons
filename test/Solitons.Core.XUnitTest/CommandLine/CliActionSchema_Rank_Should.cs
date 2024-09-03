@@ -17,15 +17,14 @@ public sealed class CliActionSchema_Rank_Should
     public void HandleScenario001(string commandLine, int expectedRank)
     {
         Debug.WriteLine(commandLine);
-        var schema = new CliActionSchema(builder => builder
-            .AddSubCommand(["run"])
-            .AddArgument("arg"));
+        var schema = new CliActionSchema(GetType().GetMethod(nameof(ProgramRun))!);
 
         var actualRank = schema.Rank(commandLine);
         Assert.Equal(expectedRank, actualRank);
     }
 
-
+    [CliRoute("run"), CliRouteArgument(nameof(arg), "Description goes here")]
+    public int ProgramRun(string arg) => 0;
 
     [Theory]
     [InlineData("program run arg1 arg2", 3 + 1 /* optimal match */ )]
@@ -38,16 +37,14 @@ public sealed class CliActionSchema_Rank_Should
     public void HandleScenario002(string commandLine, int expectedRank)
     {
         Debug.WriteLine(commandLine);
-        var schema = new CliActionSchema(builder => builder
-            .AddSubCommand(["run"])
-            .AddArgument("arg1")
-            .AddArgument("arg2"));
+        var schema = new CliActionSchema(GetType().GetMethod(nameof(ProgramRun2))!);
 
         var actualRank = schema.Rank(commandLine);
         Assert.Equal(expectedRank, actualRank);
     }
 
-
+    [CliRoute("run"), CliRouteArgument(nameof(arg), "Description goes here")]
+    public int ProgramRun2(string arg) => 0;
 
     [Theory]
     [InlineData("program task 1 run", 3 + 1 /* optimal match */ )]
@@ -62,14 +59,14 @@ public sealed class CliActionSchema_Rank_Should
     public void HandleScenario003(string commandLine, int expectedRank)
     {
         Debug.WriteLine(commandLine);
-        var schema = new CliActionSchema(builder => builder
-            .AddSubCommand(["task"])
-            .AddArgument("number")
-            .AddSubCommand(["run"]));
+        var schema = new CliActionSchema(GetType().GetMethod(nameof(TaskRun))!);
 
         var actualRank = schema.Rank(commandLine);
         Assert.Equal(expectedRank, actualRank);
     }
+
+    [CliRoute("run"), CliRouteArgument(nameof(arg), "Description goes here")]
+    public int TaskRun(string arg) => 0;
 
     [Theory]
     [InlineData("program task 1 run --task-priority 100 --async", 5 + 1 /* optimal match */ )]
@@ -77,17 +74,14 @@ public sealed class CliActionSchema_Rank_Should
     public void HandleScenario004(string commandLine, int expectedRank)
     {
         Debug.WriteLine(commandLine);
-        var schema = new CliActionSchema(builder => builder
-            .AddSubCommand(["task"])
-            .AddArgument("taskNumber")
-            .AddSubCommand(["run"])
-            .AddScalarOption("priority", ["--task-priority", "-priority", "-p"])
-            .AddFlagOption("async", ["--async"]));
+        var schema = new CliActionSchema(GetType().GetMethod(nameof(TaskRun2))!);
 
         var actualRank = schema.Rank(commandLine);
         Assert.Equal(expectedRank, actualRank);
     }
 
+    [CliRoute("run"), CliRouteArgument(nameof(arg), "Description goes here")]
+    public int TaskRun2(string arg) => 0;
 
     [Theory]
     [InlineData("program run --parameter[key] value", 2 + 1 /* optimal match */ )]
@@ -97,13 +91,14 @@ public sealed class CliActionSchema_Rank_Should
     public void HandleScenario005(string commandLine, int expectedRank)
     {
         Debug.WriteLine(commandLine);
-        var schema = new CliActionSchema(builder => builder
-            .AddSubCommand(["run"])
-            .AddMapOption("parameters", ["--parameter", "-param", "-p"]));
+        var schema = new CliActionSchema(GetType().GetMethod(nameof(Scenario005))!);
 
         var actualRank = schema.Rank(commandLine);
         Assert.Equal(expectedRank, actualRank);
     }
+
+    [CliRoute("run"), CliRouteArgument(nameof(arg), "Description goes here")]
+    public int Scenario005(string arg) => 0;
 
     [Theory]
     [InlineData("program --parameter[key] value", 1 + 1 /* optimal match */ )]
@@ -113,11 +108,12 @@ public sealed class CliActionSchema_Rank_Should
     public void HandleScenario006(string commandLine, int expectedRank)
     {
         Debug.WriteLine(commandLine);
-        var schema = new CliActionSchema(builder => builder
-            .AddSubCommand([""])
-            .AddMapOption("parameters", ["--parameter", "-param", "-p"]));
+        var schema = new CliActionSchema(GetType().GetMethod(nameof(Scenario006))!);
 
         var actualRank = schema.Rank(commandLine);
         Assert.Equal(expectedRank, actualRank);
     }
+
+    [CliRoute("run"), CliRouteArgument(nameof(arg), "Description goes here")]
+    public int Scenario006(string arg) => 0;
 }

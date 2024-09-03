@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -10,9 +8,9 @@ namespace Solitons.CommandLine;
 
 internal sealed class CliAction : IComparable<CliAction>
 {
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private readonly Func<object?[], Task<int>> _actionHandler;
     private readonly CliMasterOptionBundle[] _masterOptions;
-
     private readonly ICliActionSchema _schema;
     private readonly ICliCommandMethodParametersFactory _parametersFactory;
 
@@ -34,46 +32,13 @@ internal sealed class CliAction : IComparable<CliAction>
         object? instance,
         MethodInfo method,
         CliMasterOptionBundle[] masterOptionBundles,
-        IEnumerable<Attribute> baseRouteMetadata)
+        IEnumerable<CliRouteAttribute> baseRouteMetadata)
     {
         ThrowIf.ArgumentNull(method);
         ThrowIf.ArgumentNull(masterOptionBundles);
 
+        var schema = new CliActionSchema(method, masterOptionBundles, baseRouteMetadata);
         var parametersFactory = new CliActionHandlerParametersFactory(method);
-
-        var relativeRouteMetadata = method.GetCustomAttributes().ToArray();
-        var actionDescription = relativeRouteMetadata
-            .OfType<DescriptionAttribute>()
-            .Select(a => a.Description)
-            .FirstOrDefault($"Invokes '{method.DeclaringType?.FullName ?? ""}.{method.Name}'");
-
-        Debug.WriteLine($"Action description: '{actionDescription}'");
-
-        var fullRouteMetadata = baseRouteMetadata
-            .Concat(relativeRouteMetadata)
-            .Where(a => a is CliRouteAttribute or CliRouteArgumentAttribute)
-            .ToArray();
-
-        var schema = new CliActionSchema(builder =>
-        {
-            builder.SetCommandDescription(actionDescription);
-            builder.SetupCommandRoute(fullRouteMetadata);
-
-            parametersFactory
-                .OptionFactories
-                .ForEach(factory => builder
-                    .AddOption(factory.ParameterRegexGroupName, factory.OptionArity, factory.OptionAliases));
-
-            masterOptionBundles
-                .SelectMany(bundle => bundle.BuildOptionFactories())
-                .ForEach(factory => builder
-                    .AddOption(factory.ParameterRegexGroupName, factory.OptionArity, factory.OptionAliases));
-
-            relativeRouteMetadata
-                .OfType<CliCommandExampleAttribute>()
-                .ForEach(example => builder.AddExample(example.Example, example.Description));
-        });
-
         return new CliAction(InvokeAsync, schema, parametersFactory, masterOptionBundles);
 
         [DebuggerStepThrough]

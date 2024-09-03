@@ -21,9 +21,7 @@ public sealed class CliActionSchema_Match_Should
     public void HandleScenario001(string commandLine, bool success, int unrecognizedTokensCount)
     {
         Debug.WriteLine(commandLine);
-        var schema = new CliActionSchema(builder => builder
-            .AddSubCommand(["run"])
-            .AddArgument("arg"));
+        var schema = new CliActionSchema(GetType().GetMethod(nameof(ProgramRun))!);
         var preProcessor = new Mock<ICliTokenSubstitutionPreprocessor>();
         preProcessor.Setup(m => m.GetSubstitution(It.IsAny<string>())).Returns((string token) => token);
 
@@ -43,6 +41,8 @@ public sealed class CliActionSchema_Match_Should
         }
     }
 
+    [CliRoute("run"), CliRouteArgument(nameof(arg), "Description goes here")]
+    public int ProgramRun(string arg) => 0;
 
 
     [Theory]
@@ -55,11 +55,7 @@ public sealed class CliActionSchema_Match_Should
     public void HandleScenario002(string commandLine, bool success, int unrecognizedTokensCount)
     {
         Debug.WriteLine(commandLine);
-        var schema = new CliActionSchema(builder => builder.AddSubCommand(["task", "tsk"])
-            .AddArgument("taskId")
-            .AddSubCommand(["run", "go"])
-            .AddScalarOption("timeout", ["--timeout", "-to"])
-            .AddMapOption("parameters", ["--parameters", "--parameter", "-p"]));
+        var schema = new CliActionSchema(GetType().GetMethod(nameof(Scenario002))!);
 
         var preProcessor = new Mock<ICliTokenSubstitutionPreprocessor>();
         preProcessor.Setup(m => m.GetSubstitution(It.IsAny<string>())).Returns((string token) => token);
@@ -84,4 +80,8 @@ public sealed class CliActionSchema_Match_Should
             Assert.Equal("[post] 4567", match.Groups["parameters"].Captures[1].Value);
         }
     }
+
+
+    [CliRoute("run"), CliRouteArgument(nameof(arg), "Description goes here")]
+    public int Scenario002(string arg) => 0;
 }
