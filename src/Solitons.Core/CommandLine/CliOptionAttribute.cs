@@ -84,7 +84,7 @@ public class CliOptionAttribute : Attribute
         ShortOptionNames = shortNames.AsReadOnly();
         Description = description;
 
-        OptionSpecification = LongOptionNames
+        OptionExpression = LongOptionNames
             .OrderByDescending(n => n.Length)
             .Select(n => $"--{n}")
             .Union(ShortOptionNames
@@ -106,7 +106,7 @@ public class CliOptionAttribute : Attribute
     /// <summary>
     /// Specification of options as used in the CLI.
     /// </summary>
-    public string OptionSpecification { get; }
+    public string OptionExpression { get; }
 
     /// <summary>
     /// Description of the CLI options.
@@ -131,5 +131,5 @@ public class CliOptionAttribute : Attribute
     /// Returns a string representation of the option specification.
     /// </summary>
     /// <returns>A string that represents the option specification.</returns>
-    public override string ToString() => OptionSpecification;
+    public override string ToString() => OptionExpression;
 }

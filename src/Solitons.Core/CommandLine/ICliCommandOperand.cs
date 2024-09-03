@@ -296,6 +296,8 @@ internal sealed class CliCommandPropertyOptionFactory : ICliCommandPropertyOptio
     {
         _property = property;
         _option = option;
+        ParameterRegexGroupName = property.Name;
+        OptionArity = CliUtils.GetOptionArity(property.PropertyType);
     }
 
     Type ICliCommandInputBuilder.InputType => PropertyType;
@@ -330,8 +332,8 @@ internal sealed class CliCommandPropertyOptionFactory : ICliCommandPropertyOptio
 
     public string PropertyName => _property.Name;
     public Type PropertyType => _property.PropertyType;
-    public string OptionExpression { get; }
-    public IReadOnlyList<string> OptionAliases { get; }
+    public string OptionExpression => _option.OptionExpression;
+    public IReadOnlyList<string> OptionAliases => _option.Aliases;
 }
 
 

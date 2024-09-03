@@ -173,11 +173,11 @@ internal sealed class CliAction : IComparable<CliAction>
     public int CompareTo(CliAction? other)
     {
         other = ThrowIf.ArgumentNull(other, "Cannot compare to a null object.");
-        return String.Compare(_schema.CommandFullPath, other._schema.CommandFullPath, StringComparison.OrdinalIgnoreCase);
+        return String.Compare(_schema.CommandRouteExpression, other._schema.CommandRouteExpression, StringComparison.OrdinalIgnoreCase);
     }
 
 
-    public override string ToString() => _schema.CommandFullPath;
+    public override string ToString() => _schema.CommandRouteExpression;
 
     public string GetHelpText() => _schema.GetHelpText();
 

@@ -41,7 +41,7 @@ internal sealed class CliActionSchema : ICliActionSchema
             RegexOptions.Singleline |
             RegexOptions.IgnorePatternWhitespace);
 
-        CommandFullPath = ThrowIf.NullOrWhiteSpace(null);
+        CommandRouteExpression = ThrowIf.NullOrWhiteSpace(null);
         string Beautify(string exp)
         {
 #if DEBUG
@@ -115,7 +115,7 @@ internal sealed class CliActionSchema : ICliActionSchema
     public IEnumerable<IOption> Options => _fields
         .OfType<IOption>();
 
-    public string CommandFullPath { get; }
+    public string CommandRouteExpression { get; }
 
 
     public class Builder

@@ -29,7 +29,7 @@ internal interface ICliActionSchema
 
     IEnumerable<CliActionSchema.ICommandSegment> CommandSegments { get; }
     IEnumerable<CliActionSchema.IOption> Options { get; }
-    string CommandFullPath { get; }
+    string CommandRouteExpression { get; }
     string CommandDescription { get; }
     CliCommandExampleAttribute[] Examples { get; }
     string GetHelpText();

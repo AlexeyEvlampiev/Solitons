@@ -108,7 +108,7 @@ internal abstract class CliOperandInfo
 
         OperandKeyPattern = _metadata
             .OfType<CliOptionAttribute>()
-            .Select(o => o.OptionSpecification)
+            .Select(o => o.OptionExpression)
             .Select(s => Regex.Replace(s, @"\?", @"\?"))
             .FirstOrDefault("^");
 
