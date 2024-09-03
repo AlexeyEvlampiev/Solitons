@@ -1,6 +1,6 @@
 ﻿namespace Solitons.CommandLine;
 
-internal enum CliOperandArity
+internal enum CliOptionArity
 {
     Flag,
     Scalar,

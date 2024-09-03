@@ -24,9 +24,9 @@ internal interface ICliCommandSimpleInputBuilder : ICliCommandInputBuilder
 
     bool HasDefaultValue(out object? defaultValue);
 
-    string OperandRegexGroupName { get; }
+    string ParameterRegexGroupName { get; }
 
-    CliOperandArity OperandArity { get; }
+    CliOptionArity OptionArity { get; }
 
     bool IsRequired { get; }
     string GetDescription();
@@ -41,7 +41,7 @@ internal interface ICliCommandSimpleInputBuilder : ICliCommandInputBuilder
             throw new ArgumentException();
         }
 
-        var group = commandLineMatch.Groups[OperandRegexGroupName];
+        var group = commandLineMatch.Groups[ParameterRegexGroupName];
 
         if (group.Success == false)
         {
@@ -67,7 +67,7 @@ internal interface ICliCommandSimpleInputBuilder : ICliCommandInputBuilder
             }
 
             CliExit.With(this is ICliCommandOptionFactory opt
-                ? $"Required '{opt.OptionAliasesString}' option value is missing."
+                ? $"Required '{opt.OptionExpression}' option value is missing."
                 : throw new InvalidOperationException(""));
         }
 
@@ -121,14 +121,19 @@ interface ICliCommandArgumentBuilder :
 
     bool ICliCommandSimpleInputBuilder.IsRequired => true;
 
-    CliOperandArity ICliCommandSimpleInputBuilder.OperandArity => CliOperandArity.Scalar;
+    CliOptionArity ICliCommandSimpleInputBuilder.OptionArity => CliOptionArity.Scalar;
 
 }
 
 interface ICliCommandOptionFactory : ICliCommandSimpleInputBuilder
 {
-    public string OptionLongName => OptionAliases.OrderByDescending(alias => alias.Length).FirstOrDefault("");
-    string OptionAliasesString { get; }
+    public string OptionLongestAlias => OptionAliases
+        .OrderByDescending(alias => alias.Length)
+        .ThenBy(alias => alias)
+        .FirstOrDefault("");
+
+    string OptionExpression { get; }
+
     IReadOnlyList<string> OptionAliases { get; }
 }
 
@@ -172,7 +177,7 @@ internal class CliCommandOptionBundleParameterFactory : ICliCommandOptionBundleP
                 }
                 else if (option is not null)
                 {
-                    var builder = new CliCommandPropertyOptionFactory(p);
+                    var builder = new CliCommandPropertyOptionFactory(p, option);
                     _innerOptionBuilders.Add(builder);
                 }
             });
@@ -198,14 +203,14 @@ internal sealed class CliCommandParameterArgumentBuilder : ICliCommandArgumentBu
         ThrowIf.ArgumentNull(parameter);
         ThrowIf.ArgumentNull(routeArgument);
         ParameterIndex = parameterIndex;
-        OperandRegexGroupName = parameter.Name!;
+        ParameterRegexGroupName = parameter.Name!;
         if (false == routeArgument.References(parameter))
         {
             throw new ArgumentException("Oops...", nameof(routeArgument));
         }
 
-        var arity = CliUtils.GetArity(parameter.ParameterType);
-        if (arity != CliOperandArity.Scalar)
+        var arity = CliUtils.GetOptionArity(parameter.ParameterType);
+        if (arity != CliOptionArity.Scalar)
         {
             throw new InvalidOperationException("Arguments can be only scalars.");
         }
@@ -218,7 +223,7 @@ internal sealed class CliCommandParameterArgumentBuilder : ICliCommandArgumentBu
         throw new NotImplementedException();
     }
 
-    public string OperandRegexGroupName { get; }
+    public string ParameterRegexGroupName { get; }
 
 
     public string GetDescription()
@@ -242,12 +247,17 @@ internal sealed class CliCommandParameterArgumentBuilder : ICliCommandArgumentBu
 internal sealed class CliCommandParameterOptionFactory : ICliCommandOptionFactory, ICliCommandParameterBuilder
 {
     private readonly ParameterInfo _parameter;
+    private readonly CliOptionAttribute _option;
 
-    public CliCommandParameterOptionFactory(ParameterInfo parameter)
+    public CliCommandParameterOptionFactory(ParameterInfo parameter, CliOptionAttribute option)
     {
         _parameter = parameter;
-        OperandArity = CliUtils.GetArity(parameter.ParameterType);
+        _option = option;
+        OptionArity = CliUtils.GetOptionArity(parameter.ParameterType);
+        ParameterRegexGroupName = ThrowIf.ArgumentNullOrWhiteSpace(parameter.Name);
     }
+
+    public IReadOnlyList<string> OptionAliases => _option.Aliases;
 
     public Type InputType => _parameter.ParameterType;
     public CliOperandValueParser Parser { get; }
@@ -256,8 +266,8 @@ internal sealed class CliCommandParameterOptionFactory : ICliCommandOptionFactor
         throw new NotImplementedException();
     }
 
-    public string OperandRegexGroupName { get; }
-    public CliOperandArity OperandArity { get; }
+    public string ParameterRegexGroupName { get; }
+    public CliOptionArity OptionArity { get; }
     public bool IsRequired { get; }
 
     public string GetDescription()
@@ -265,13 +275,13 @@ internal sealed class CliCommandParameterOptionFactory : ICliCommandOptionFactor
         throw new NotImplementedException();
     }
 
-    public CliOperandArity GetArity()
+    public CliOptionArity GetArity()
     {
         throw new NotImplementedException();
     }
 
-    public string OptionAliasesString { get; }
-    public IReadOnlyList<string> OptionAliases { get; }
+    public string OptionExpression { get; }
+    
     public string ParameterName => _parameter.Name;
 }
 
@@ -280,10 +290,12 @@ internal sealed class CliCommandParameterOptionFactory : ICliCommandOptionFactor
 internal sealed class CliCommandPropertyOptionFactory : ICliCommandPropertyOptionFactory
 {
     private readonly PropertyInfo _property;
+    private readonly CliOptionAttribute _option;
 
-    public CliCommandPropertyOptionFactory(PropertyInfo property)
+    public CliCommandPropertyOptionFactory(PropertyInfo property, CliOptionAttribute option)
     {
         _property = property;
+        _option = option;
     }
 
     Type ICliCommandInputBuilder.InputType => PropertyType;
@@ -293,8 +305,8 @@ internal sealed class CliCommandPropertyOptionFactory : ICliCommandPropertyOptio
         throw new NotImplementedException();
     }
 
-    public string OperandRegexGroupName { get; }
-    public CliOperandArity OperandArity { get; }
+    public string ParameterRegexGroupName { get; }
+    public CliOptionArity OptionArity { get; }
     public bool IsRequired { get; }
     public string GetDescription()
     {
@@ -318,7 +330,7 @@ internal sealed class CliCommandPropertyOptionFactory : ICliCommandPropertyOptio
 
     public string PropertyName => _property.Name;
     public Type PropertyType => _property.PropertyType;
-    public string OptionAliasesString { get; }
+    public string OptionExpression { get; }
     public IReadOnlyList<string> OptionAliases { get; }
 }
 
@@ -337,11 +349,11 @@ internal class CliOperandValueParser
     public object Parse(Group group, ICliTokenSubstitutionPreprocessor preProcessor)
     {
         var captures = group.Captures;
-        switch (_operand.OperandArity)
+        switch (_operand.OptionArity)
         {
-            case (CliOperandArity.Flag):
+            case (CliOptionArity.Flag):
                 return Unit.Default;
-            case (CliOperandArity.Scalar):
+            case (CliOptionArity.Scalar):
             {
                 if (captures.Count > 1)
                 {

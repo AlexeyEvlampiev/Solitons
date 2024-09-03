@@ -190,7 +190,7 @@ internal sealed class CliActionSchema : ICliActionSchema
         {
             AssertRegexGroupName(regexGroupName);
             AssertOptionAliases(aliases);
-            _schema._fields.Add(new Option(regexGroupName, aliases, CliOperandArity.Flag));
+            _schema._fields.Add(new Option(regexGroupName, aliases, CliOptionArity.Flag));
             return this;
         }
 
@@ -199,7 +199,7 @@ internal sealed class CliActionSchema : ICliActionSchema
         {
             AssertRegexGroupName(regexGroupName);
             AssertOptionAliases(aliases);
-            _schema._fields.Add(new Option(regexGroupName, aliases, CliOperandArity.Scalar));
+            _schema._fields.Add(new Option(regexGroupName, aliases, CliOptionArity.Scalar));
             return this;
         }
 
@@ -207,7 +207,7 @@ internal sealed class CliActionSchema : ICliActionSchema
         {
             AssertRegexGroupName(regexGroupName);
             AssertOptionAliases(aliases);
-            _schema._fields.Add(new Option(regexGroupName, aliases, CliOperandArity.Vector));
+            _schema._fields.Add(new Option(regexGroupName, aliases, CliOptionArity.Vector));
             return this;
         }
 
@@ -215,26 +215,26 @@ internal sealed class CliActionSchema : ICliActionSchema
         {
             AssertRegexGroupName(regexGroupName);
             AssertOptionAliases(aliases);
-            _schema._fields.Add(new Option(regexGroupName, aliases, CliOperandArity.Map));
+            _schema._fields.Add(new Option(regexGroupName, aliases, CliOptionArity.Map));
             return this;
         }
 
         [DebuggerStepThrough]
-        public Builder AddOption(string regexGroupName, CliOperandArity arity, IReadOnlyList<string> aliases)
+        public Builder AddOption(string regexGroupName, CliOptionArity arity, IReadOnlyList<string> aliases)
         {
-            if (arity == CliOperandArity.Flag)
+            if (arity == CliOptionArity.Flag)
             {
                 AddFlagOption(regexGroupName, aliases);
             }
-            else if (arity == CliOperandArity.Scalar)
+            else if (arity == CliOptionArity.Scalar)
             {
                 AddScalarOption(regexGroupName, aliases);
             }
-            else if (arity == CliOperandArity.Vector)
+            else if (arity == CliOptionArity.Vector)
             {
                 AddVectorOption(regexGroupName, aliases);
             }
-            else if (arity == CliOperandArity.Map)
+            else if (arity == CliOptionArity.Map)
             {
                 AddMapOption(regexGroupName, aliases);
             }
@@ -251,7 +251,7 @@ internal sealed class CliActionSchema : ICliActionSchema
             throw new NotImplementedException();
         }
 
-        public Builder ApplyCommandRouteMetadata(IEnumerable<Attribute> methodAttributes)
+        public Builder SetupCommandRoute(IEnumerable<Attribute> methodAttributes)
         {
             // Sequence is very important.
             // First: commands and arguments in the order of their declaration.
@@ -273,7 +273,7 @@ internal sealed class CliActionSchema : ICliActionSchema
         }
 
         [DebuggerStepThrough]
-        public Builder ApplyCommandRouteMetadata(MethodInfo method) => ApplyCommandRouteMetadata(method.GetCustomAttributes());
+        public Builder SetupCommandRoute(MethodInfo method) => SetupCommandRoute(method.GetCustomAttributes());
     }
 
     public string CommandDescription { get; private set; }
@@ -362,10 +362,10 @@ internal sealed class CliActionSchema : ICliActionSchema
     }
 
 
-    public sealed class Option(string regexGroupName, IEnumerable<string> aliases, CliOperandArity arity) : Token(aliases), IOption
+    public sealed class Option(string regexGroupName, IEnumerable<string> aliases, CliOptionArity arity) : Token(aliases), IOption
     {
         public string RegexGroupName { get; } = regexGroupName;
-        public CliOperandArity Arity { get; } = arity;
+        public CliOptionArity Arity { get; } = arity;
         public string BuildRegularExpression()
         {
             var token = aliases
@@ -376,11 +376,11 @@ internal sealed class CliActionSchema : ICliActionSchema
             ThrowIf.NullOrWhiteSpace(token);
             switch (Arity)
             {
-                case (CliOperandArity.Flag):
+                case (CliOptionArity.Flag):
                     return $@"(?<{RegexGroupName}>{token})";
-                case (CliOperandArity.Scalar):
+                case (CliOptionArity.Scalar):
                     return $@"(?:{token})\s*(?<{RegexGroupName}>(?:[^\s-]\S*)?)";
-                case (CliOperandArity.Map):
+                case (CliOptionArity.Map):
                 {
                     var pattern = $@"(?:{token})(?:$dot-notation|$accessor-notation)"
                         .Replace(@"$dot-notation", @$"\.(?<{RegexGroupName}>(?:\S+\s+[^\s-]\S+)?)")

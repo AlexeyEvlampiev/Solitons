@@ -75,25 +75,25 @@ internal abstract class CliOperandInfo
             .FirstOrDefault([]);
 
         var underlyingParameterType = Nullable.GetUnderlyingType(ParameterType) ?? ParameterType;
-        OperandArity = underlyingParameterType switch
+        OptionArity = underlyingParameterType switch
         {
             // Check if the type implements IDictionary<string, T>
             { } t when t.GetInterfaces().Any(i =>
                     i.IsGenericType &&
                     i.GetGenericTypeDefinition() == typeof(IDictionary<,>) &&
                     i.GetGenericArguments()[0] == typeof(string))
-                => CliOperandArity.Map,
+                => CliOptionArity.Map,
 
             // Check if the type implements IEnumerable but is not a string
             { } t when typeof(IEnumerable).IsAssignableFrom(t) && t != typeof(string)
-                => CliOperandArity.Vector,
+                => CliOptionArity.Vector,
 
             // Check if the type represents a Unit (assuming Unit is a specific type in your code)
             { } t when t == typeof(Unit)
-                => CliOperandArity.Flag,
+                => CliOptionArity.Flag,
 
             // Default case: Scalar
-            _ => CliOperandArity.Scalar,
+            _ => CliOptionArity.Scalar,
         };
 
 
@@ -138,7 +138,7 @@ internal abstract class CliOperandInfo
     }
 
 
-    public CliOperandArity OperandArity { get; }
+    public CliOptionArity OptionArity { get; }
 
     public IReadOnlyList<string> Aliases { get; }
 

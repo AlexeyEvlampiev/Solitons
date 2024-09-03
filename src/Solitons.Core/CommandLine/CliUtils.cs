@@ -11,28 +11,28 @@ namespace Solitons.CommandLine;
 /// </summary>
 internal static class CliUtils
 {
-    public static CliOperandArity GetArity(Type valueType)
+    public static CliOptionArity GetOptionArity(Type optionType)
     {
-        valueType = Nullable.GetUnderlyingType(valueType) ?? valueType;
-        return valueType switch
+        optionType = Nullable.GetUnderlyingType(optionType) ?? optionType;
+        return optionType switch
         {
             // Check if the type implements IDictionary<string, T>
             { } t when t.GetInterfaces().Any(i =>
                     i.IsGenericType &&
                     i.GetGenericTypeDefinition() == typeof(IDictionary<,>) &&
                     i.GetGenericArguments()[0] == typeof(string))
-                => CliOperandArity.Map,
+                => CliOptionArity.Map,
 
             // Check if the type implements IEnumerable but is not a string
             { } t when typeof(IEnumerable).IsAssignableFrom(t) && t != typeof(string)
-                => CliOperandArity.Vector,
+                => CliOptionArity.Vector,
 
             // Check if the type represents a Unit (assuming Unit is a specific type in your code)
             { } t when t == typeof(Unit)
-                => CliOperandArity.Flag,
+                => CliOptionArity.Flag,
 
             // Default case: Scalar
-            _ => CliOperandArity.Scalar,
+            _ => CliOptionArity.Scalar,
         };
     }
 

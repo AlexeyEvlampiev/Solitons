@@ -23,8 +23,4 @@ public class CliMasterOptionBundle : CliOptionBundle
         Debug.WriteLine($"{GetType()}.{nameof(OnError)}");
     }
 
-    internal IEnumerable<ICliCommandOptionFactory> GetOptionValueFactories()
-    {
-        throw new NotImplementedException();
-    }
 }

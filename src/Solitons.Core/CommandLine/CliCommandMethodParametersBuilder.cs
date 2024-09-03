@@ -28,7 +28,8 @@ internal sealed class CliActionHandlerParametersFactory : ICliCommandMethodParam
                 if (missingParamsCsv.IsPrintable())
                 {
                     throw new InvalidOperationException(
-                        $"The parameter(s) '{missingParamsCsv}' specified by CLI route arguments are not found within the method '{method.Name}' parameters.");
+                        $"The parameter(s) '{missingParamsCsv}' specified by CLI route arguments are not found " +
+                        $"within the method '{method.Name}' parameters.");
                 }
             });
 
@@ -66,9 +67,13 @@ internal sealed class CliActionHandlerParametersFactory : ICliCommandMethodParam
                 var index = Array.IndexOf(parameters, parameter);
                 _parameterFactories.Add(new CliCommandParameterArgumentBuilder(index, parameter, argument));
             }
+            else if(option is not null)
+            {
+                _parameterFactories.Add(new CliCommandParameterOptionFactory(parameter, option));
+            }
             else
             {
-                _parameterFactories.Add(new CliCommandParameterOptionFactory(parameter));
+                throw new NotImplementedException();
             }
         }
     }
@@ -112,24 +117,4 @@ internal sealed class CliActionHandlerParametersFactory : ICliCommandMethodParam
             }
         }
     }
-
-    public void ForEachOptionBuilder(Action<ICliCommandOptionFactory> action)
-    {
-        foreach (var builder in _parameterFactories)
-        {
-            if (builder is ICliCommandOptionFactory parameterOptionBuilder)
-            {
-                action(parameterOptionBuilder);
-            }
-
-            if (builder is ICliCommandOptionBundleParameterFactory bundleBuilder)
-            {
-                foreach (var propertyOptionBuilder in bundleBuilder.GetAllOptions())
-                {
-                    action(propertyOptionBuilder);
-                }
-            }
-        }
-    }
-
 }
