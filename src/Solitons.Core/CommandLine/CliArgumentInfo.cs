@@ -5,9 +5,9 @@ namespace Solitons.CommandLine;
 internal sealed class CliArgumentInfo : CliParameterInfo
 {
     private readonly CliAction _action;
-    private readonly CliArgumentAttribute _attribute;
+    private readonly CliRouteArgumentAttribute _attribute;
 
-    public CliArgumentInfo(ParameterInfo parameter, CliAction action, CliArgumentAttribute attribute) 
+    public CliArgumentInfo(ParameterInfo parameter, CliAction action, CliRouteArgumentAttribute attribute) 
         : base(parameter)
     {
         ParameterInfo = parameter;

@@ -55,7 +55,7 @@ internal abstract class CliOperandInfo
             _metadata.AddRange(parameter
                 .Member
                 .GetCustomAttributes()
-                .OfType<CliArgumentAttribute>()
+                .OfType<CliRouteArgumentAttribute>()
                 .Where(argument => argument.References(parameter)));
         }
         else if (source is PropertyInfo propertyInfo)
@@ -237,13 +237,13 @@ internal abstract class CliOperandInfo
             base.SetItem(index, item);
         }
 
-        public IEnumerable<CliArgumentAttribute> Arguments => this.OfType<CliArgumentAttribute>();
+        public IEnumerable<CliRouteArgumentAttribute> Arguments => this.OfType<CliRouteArgumentAttribute>();
 
         public IEnumerable<CliOptionAttribute> Options => this.OfType<CliOptionAttribute>();
 
 
         public IEnumerable<string> Descriptions => this
-            .OfType<CliArgumentAttribute>()
+            .OfType<CliRouteArgumentAttribute>()
             .Select(_ => _.Description)
             .Union(this.OfType<CliOptionAttribute>()
                 .Select(attribute => attribute.Description))
@@ -253,7 +253,7 @@ internal abstract class CliOperandInfo
 
         private void Validate(object item)
         {
-            if (item is CliArgumentAttribute argument)
+            if (item is CliRouteArgumentAttribute argument)
             {
                 if (Arguments.Any(a => a.Conflicts(argument)))
                 {

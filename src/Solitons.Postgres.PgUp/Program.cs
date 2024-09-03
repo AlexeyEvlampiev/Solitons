@@ -30,7 +30,7 @@ public class Program
     }
 
     [CliRoute("init|initialize")]
-    [CliArgument(nameof(projectDir), "PgUp project directory")]
+    [CliRouteArgument(nameof(projectDir), "PgUp project directory")]
     public static void Initialize(
         string projectDir,
         [CliOption("--template")]string template = "basic")
@@ -39,7 +39,7 @@ public class Program
     } 
 
     [CliRoute("deploy")]
-    [CliArgument(nameof(projectFile), "PgUp configuration file.")]
+    [CliRouteArgument(nameof(projectFile), "PgUp configuration file.")]
     [Description(DeployCommandDescription)]
     [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD%", description: "Deploys using the specified admin credentials.")]
     [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD% --timeout 00:30:00", description: "Deploys with a custom timeout of 30 minutes.")]
@@ -63,7 +63,7 @@ public class Program
 
 
     [CliRoute("deploy")]
-    [CliArgument(nameof(projectFile), "PgUp configuration file.")]
+    [CliRouteArgument(nameof(projectFile), "PgUp configuration file.")]
     [Description(DeployCommandDescription)]
     [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD%", description: "Deploys the database using the specified admin credentials.")]
     [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD% --timeout 00:30:00", description: "Deploys with a custom timeout of 30 minutes.")]
@@ -92,7 +92,7 @@ public class Program
 
 
     [CliRoute("deploy")]
-    [CliArgument(nameof(projectFile), "PgUp project file.")]
+    [CliRouteArgument(nameof(projectFile), "PgUp project file.")]
     [Description(DeployCommandDescription)]
     [CliCommandExample("deploy pgup.json --connection \"Host=localhost;Username=postgres;Password=secret\"", description: "Deploys the database using the specified connection string.")]
     [CliCommandExample("deploy pgup.json --connection \"Host=localhost;Username=postgres;Password=secret\" --timeout 00:20:00", description: "Deploys with a custom timeout of 20 minutes using the provided connection string.")]
@@ -116,7 +116,7 @@ public class Program
 
 
     [CliRoute("deploy")]
-    [CliArgument(nameof(projectFile), "PgUp project file.")]
+    [CliRouteArgument(nameof(projectFile), "PgUp project file.")]
     [Description(DeployCommandDescription)]
     [CliCommandExample("deploy pgup.json --connection \"Host=localhost;Username=postgres;Password=secret\" --overwrite", description: "Deploys by overwriting the existing database, resulting in the loss of all current data.")]
     [CliCommandExample("deploy pgup.json --connection \"Host=localhost;Username=postgres;Password=secret\" --overwrite --force", description: "Deploys by forcefully overwriting the existing database without confirmation, leading to complete data loss.")]

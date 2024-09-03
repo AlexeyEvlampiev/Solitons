@@ -66,7 +66,7 @@ internal interface ICliCommandSimpleInputBuilder : ICliCommandInputBuilder
                 throw new InvalidOperationException();
             }
 
-            CliExit.With(this is ICliCommandOptionBuilder opt
+            CliExit.With(this is ICliCommandOptionFactory opt
                 ? $"Required '{opt.OptionAliasesString}' option value is missing."
                 : throw new InvalidOperationException(""));
         }
@@ -75,7 +75,7 @@ internal interface ICliCommandSimpleInputBuilder : ICliCommandInputBuilder
     }
 }
 
-internal interface ICliCommandOptionBundleBuilder : ICliCommandInputBuilder
+internal interface ICliCommandOptionBundleParameterFactory : ICliCommandInputBuilder
 {
     object? ICliCommandInputBuilder.Build(Match commandLineMatch, ICliTokenSubstitutionPreprocessor preProcessor)
     {
@@ -88,7 +88,7 @@ internal interface ICliCommandOptionBundleBuilder : ICliCommandInputBuilder
         return bundle;
     }
 
-    IEnumerable<ICliCommandOptionBuilder> GetAllOptions();
+    IEnumerable<ICliCommandOptionFactory> GetAllOptions();
 }
 
 internal interface ICliCommandOptionBundle
@@ -106,7 +106,7 @@ interface ICliCommandParameterBuilder : ICliCommandInputBuilder
     string ParameterName { get; }
 }
 
-interface ICliCommandPropertyOptionBuilder : ICliCommandOptionBuilder
+interface ICliCommandPropertyOptionFactory : ICliCommandOptionFactory
 {
     string PropertyName { get; }
     Type PropertyType { get; }
@@ -125,7 +125,7 @@ interface ICliCommandArgumentBuilder :
 
 }
 
-interface ICliCommandOptionBuilder : ICliCommandSimpleInputBuilder
+interface ICliCommandOptionFactory : ICliCommandSimpleInputBuilder
 {
     public string OptionLongName => OptionAliases.OrderByDescending(alias => alias.Length).FirstOrDefault("");
     string OptionAliasesString { get; }
@@ -139,10 +139,10 @@ internal interface ICliTokenSubstitutionPreprocessor
 }
 
 
-internal class CliCommandOptionBundleBuilder : ICliCommandOptionBundleBuilder
+internal class CliCommandOptionBundleParameterFactory : ICliCommandOptionBundleParameterFactory
 {
-    private readonly List<ICliCommandOptionBuilder> _innerOptionBuilders = new();
-    public CliCommandOptionBundleBuilder(Type optionBundleType)
+    private readonly List<ICliCommandOptionFactory> _innerOptionBuilders = new();
+    public CliCommandOptionBundleParameterFactory(Type optionBundleType)
     {
         InputType = optionBundleType;
         if (false == ICliCommandOptionBundle.IsAssignableFrom(optionBundleType))
@@ -167,41 +167,41 @@ internal class CliCommandOptionBundleBuilder : ICliCommandOptionBundleBuilder
                 var option = p.GetCustomAttribute<CliOptionAttribute>();
                 if (ICliCommandOptionBundle.IsAssignableFrom(p.PropertyType))
                 {
-                    var builder = new CliCommandOptionBundleBuilder(p.PropertyType);
+                    var builder = new CliCommandOptionBundleParameterFactory(p.PropertyType);
                     _innerOptionBuilders.AddRange(builder.GetAllOptions());
                 }
                 else if (option is not null)
                 {
-                    var builder = new CliCommandPropertyOptionBuilder(p);
+                    var builder = new CliCommandPropertyOptionFactory(p);
                     _innerOptionBuilders.Add(builder);
                 }
             });
     }
     public Type InputType { get; }
 
-    public IEnumerable<ICliCommandOptionBuilder> GetAllOptions() => _innerOptionBuilders.AsEnumerable();
+    public IEnumerable<ICliCommandOptionFactory> GetAllOptions() => _innerOptionBuilders.AsEnumerable();
 }
 
 [DebuggerDisplay("{ParameterName} argument")]
 internal sealed class CliCommandParameterArgumentBuilder : ICliCommandArgumentBuilder
 {
     private readonly ParameterInfo _parameter;
-    private readonly CliArgumentAttribute _argument;
+    private readonly CliRouteArgumentAttribute _routeArgument;
 
     public CliCommandParameterArgumentBuilder(
         int parameterIndex,
         ParameterInfo parameter, 
-        CliArgumentAttribute argument)
+        CliRouteArgumentAttribute routeArgument)
     {
         _parameter = parameter;
-        _argument = argument;
+        _routeArgument = routeArgument;
         ThrowIf.ArgumentNull(parameter);
-        ThrowIf.ArgumentNull(argument);
+        ThrowIf.ArgumentNull(routeArgument);
         ParameterIndex = parameterIndex;
         OperandRegexGroupName = parameter.Name!;
-        if (false == argument.References(parameter))
+        if (false == routeArgument.References(parameter))
         {
-            throw new ArgumentException("Oops...", nameof(argument));
+            throw new ArgumentException("Oops...", nameof(routeArgument));
         }
 
         var arity = CliUtils.GetArity(parameter.ParameterType);
@@ -235,15 +235,15 @@ internal sealed class CliCommandParameterArgumentBuilder : ICliCommandArgumentBu
     public int ParameterIndex { get; }
     public string ParameterName => _parameter.Name!;
     public Type InputType => _parameter.ParameterType;
-    public string ArgumentRole => _argument.ArgumentRole;
+    public string ArgumentRole => _routeArgument.ArgumentRole;
 }
 
 [DebuggerDisplay("{ParameterName} option")]
-internal sealed class CliCommandParameterOptionBuilder : ICliCommandOptionBuilder, ICliCommandParameterBuilder
+internal sealed class CliCommandParameterOptionFactory : ICliCommandOptionFactory, ICliCommandParameterBuilder
 {
     private readonly ParameterInfo _parameter;
 
-    public CliCommandParameterOptionBuilder(ParameterInfo parameter)
+    public CliCommandParameterOptionFactory(ParameterInfo parameter)
     {
         _parameter = parameter;
         OperandArity = CliUtils.GetArity(parameter.ParameterType);
@@ -277,11 +277,11 @@ internal sealed class CliCommandParameterOptionBuilder : ICliCommandOptionBuilde
 
 
 
-internal sealed class CliCommandPropertyOptionBuilder : ICliCommandPropertyOptionBuilder
+internal sealed class CliCommandPropertyOptionFactory : ICliCommandPropertyOptionFactory
 {
     private readonly PropertyInfo _property;
 
-    public CliCommandPropertyOptionBuilder(PropertyInfo property)
+    public CliCommandPropertyOptionFactory(PropertyInfo property)
     {
         _property = property;
     }
@@ -306,7 +306,7 @@ internal sealed class CliCommandPropertyOptionBuilder : ICliCommandPropertyOptio
         throw new NotImplementedException();
     }
 
-    public IEnumerable<ICliCommandOptionBuilder> UnnestOptions()
+    public IEnumerable<ICliCommandOptionFactory> UnnestOptions()
     {
         throw new NotImplementedException();
     }
@@ -364,7 +364,7 @@ internal abstract class CliOperand
         : this((ICustomAttributeProvider)parameter)
     {
         var argument = methodAttributes
-            .OfType<CliArgumentAttribute>()
+            .OfType<CliRouteArgumentAttribute>()
             .Where(a => a.References(parameter))
             .Do((arg, index) =>
             {

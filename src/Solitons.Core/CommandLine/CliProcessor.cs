@@ -19,6 +19,7 @@ public sealed class CliProcessor : ICliProcessorCallback
     private readonly List<Source> _sources = new();
     private readonly CliAction[] _actions;
     private ICliProcessorCallback _callback;
+    private CliRouteAttribute[] _baseRouteMetadata = [];
     private string _logo = string.Empty;
     private string _description = string.Empty;
 
@@ -51,7 +52,7 @@ public sealed class CliProcessor : ICliProcessorCallback
                     continue;
                 }
 
-                actions.Add(CliAction.Create(source.Instance, mi, masterOptionBundles));
+                actions.Add(CliAction.Create(source.Instance, mi, masterOptionBundles, _baseRouteMetadata));
             }
         }
 

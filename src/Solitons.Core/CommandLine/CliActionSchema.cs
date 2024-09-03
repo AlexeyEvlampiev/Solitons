@@ -130,11 +130,7 @@ internal sealed class CliActionSchema : ICliActionSchema
             _schema = schema;
         }
 
-        public string Description 
-        { 
-            get => _schema.CommandDescription;
-            set => _schema.CommandDescription = value;
-        }
+        public string SetCommandDescription(string description) => _schema.CommandDescription = description;
 
         private void AssertOptionAliases(IReadOnlyList<string> aliases)
         {
@@ -255,7 +251,7 @@ internal sealed class CliActionSchema : ICliActionSchema
             throw new NotImplementedException();
         }
 
-        public Builder SetActionPath(IEnumerable<Attribute> methodAttributes)
+        public Builder ApplyCommandRouteMetadata(IEnumerable<Attribute> methodAttributes)
         {
             // Sequence is very important.
             // First: commands and arguments in the order of their declaration.
@@ -267,7 +263,7 @@ internal sealed class CliActionSchema : ICliActionSchema
                     route.ForEach(subCommand => AddSubCommand(subCommand.Aliases));
                 }
 
-                if (att is CliArgumentAttribute arg)
+                if (att is CliRouteArgumentAttribute arg)
                 {
                     AddArgument(arg.ParameterName);
                 }
@@ -277,7 +273,7 @@ internal sealed class CliActionSchema : ICliActionSchema
         }
 
         [DebuggerStepThrough]
-        public Builder SetActionPath(MethodInfo method) => SetActionPath(method.GetCustomAttributes());
+        public Builder ApplyCommandRouteMetadata(MethodInfo method) => ApplyCommandRouteMetadata(method.GetCustomAttributes());
     }
 
     public string CommandDescription { get; private set; }

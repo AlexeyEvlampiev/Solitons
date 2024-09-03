@@ -14,18 +14,18 @@ internal sealed class CliAction : IComparable<CliAction>
     private readonly CliMasterOptionBundle[] _masterOptions;
 
     private readonly ICliActionSchema _schema;
-    private readonly ICliCommandMethodParametersBuilder _parametersBuilder;
+    private readonly ICliCommandMethodParametersFactory _parametersFactory;
 
     [DebuggerNonUserCode]
     internal CliAction(
         Func<object?[], Task<int>> actionHandler,
         ICliActionSchema schema,
-        ICliCommandMethodParametersBuilder parametersBuilder,
+        ICliCommandMethodParametersFactory parametersFactory,
         CliMasterOptionBundle[] masterOptions)
     {
         _actionHandler = actionHandler;
         _schema = schema;
-        _parametersBuilder = parametersBuilder;
+        _parametersFactory = parametersFactory;
         _masterOptions = masterOptions;
     }
 
@@ -34,43 +34,40 @@ internal sealed class CliAction : IComparable<CliAction>
         object? instance,
         MethodInfo method,
         CliMasterOptionBundle[] masterOptions,
-        IEnumerable<Attribute> cliRootMetadata)
+        IEnumerable<Attribute> baseRouteMetadata)
     {
         ThrowIf.ArgumentNull(method);
         ThrowIf.ArgumentNull(masterOptions);
 
         var parametersFactory = new CliActionHandlerParametersFactory(method);
 
-        var methodAttributes = method.GetCustomAttributes().ToArray();
-        var actionDescription = methodAttributes
+        var relativeRouteMetadata = method.GetCustomAttributes().ToArray();
+        var actionDescription = relativeRouteMetadata
             .OfType<DescriptionAttribute>()
             .Select(a => a.Description)
             .FirstOrDefault($"Invokes '{method.DeclaringType?.FullName ?? ""}.{method.Name}'");
 
         Debug.WriteLine($"Action description: '{actionDescription}'");
 
-        var actionExtendedAttributes = cliRootMetadata.Union(methodAttributes);
+        var fullRouteMetadata = baseRouteMetadata.Concat(relativeRouteMetadata);
 
         var schema = new CliActionSchema(builder =>
         {
-            builder.Description = actionDescription;
-            builder.SetActionPath(actionExtendedAttributes);
+            builder.SetCommandDescription(actionDescription);
+            builder.ApplyCommandRouteMetadata(fullRouteMetadata);
 
-            
-            foreach (var option in parametersFactory.GetAllCommandOptions())
-            {
-                builder.AddOption(option.OptionLongName, option.OperandArity, option.OptionAliases);
-            }
+            parametersFactory
+                .ForEachOptionBuilder(factory => builder
+                    .AddOption(factory.OptionLongName, factory.OperandArity, factory.OptionAliases));
 
-            foreach (var masterOption in masterOptions.SelectMany(mo => mo.GetAllCommandOptions()))
-            {
-                builder.AddOption(masterOption.OptionLongName, masterOption.OperandArity, masterOption.OptionAliases);
-            }
+            masterOptions
+                .SelectMany(bundle => bundle.GetOptionValueFactories())
+                .ForEach(factory => builder
+                    .AddOption(factory.OptionLongName, factory.OperandArity, factory.OptionAliases));
 
-            foreach (var example in methodAttributes.OfType<CliCommandExampleAttribute>())
-            {
-                builder.AddExample(example.Example, example.Description);
-            }
+            relativeRouteMetadata
+                .OfType<CliCommandExampleAttribute>()
+                .ForEach(example => builder.AddExample(example.Example, example.Description));
         });
 
         return new CliAction(InvokeAsync, schema, parametersFactory, masterOptions);
@@ -123,7 +120,7 @@ internal sealed class CliAction : IComparable<CliAction>
             throw new InvalidOperationException($"The command line did not match any known patterns.");
         }
 
-        var args = _parametersBuilder.BuildMethodArguments(match, preProcessor);
+        var args = _parametersFactory.BuildMethodArguments(match, preProcessor);
 
         foreach (var bundle in _masterOptions)
         {

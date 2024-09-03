@@ -3,8 +3,8 @@ using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
 
-internal interface ICliCommandMethodParametersBuilder
+internal interface ICliCommandMethodParametersFactory
 {
     object?[] BuildMethodArguments(Match match, ICliTokenSubstitutionPreprocessor preProcessor);
-    IEnumerable<ICliCommandOptionBuilder> GetAllCommandOptions();
+    IEnumerable<ICliCommandOptionFactory> OptionFactories { get; }
 }
