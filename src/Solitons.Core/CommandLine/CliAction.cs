@@ -9,7 +9,7 @@ namespace Solitons.CommandLine;
 
 internal sealed class CliAction : IComparable<CliAction>
 {
-    private readonly Func<object?[], Task> _asyncHandler;
+    private readonly Func<object?[], Task<int>> _actionHandler;
     private readonly CliMasterOptionBundle[] _masterOptions;
 
     private readonly ICliActionSchema _schema;
@@ -17,12 +17,12 @@ internal sealed class CliAction : IComparable<CliAction>
 
     [DebuggerNonUserCode]
     internal CliAction(
-        Func<object?[], Task> asyncHandler,
+        Func<object?[], Task<int>> actionHandler,
         ICliActionSchema schema,
         ICliCommandMethodParametersBuilder parametersBuilder,
         CliMasterOptionBundle[] masterOptions)
     {
-        _asyncHandler = asyncHandler;
+        _actionHandler = actionHandler;
         _schema = schema;
         _parametersBuilder = parametersBuilder;
         _masterOptions = masterOptions;
@@ -34,26 +34,27 @@ internal sealed class CliAction : IComparable<CliAction>
         MethodInfo method,
         CliMasterOptionBundle[] masterOptions)
     {
-        [DebuggerStepThrough]
-        Task Invoke(object?[] args) => method.InvokeAsync(instance, args);
+        ThrowIf.ArgumentNull(method);
+        ThrowIf.ArgumentNull(masterOptions);
 
-        var parametersBuilder = new CliCommandMethodParametersBuilder(method);
+        var parametersFactory = new CliActionHandlerParametersFactory(method);
 
-        masterOptions = ThrowIf.ArgumentNull(masterOptions);
-        var attributes = method.GetCustomAttributes().ToArray();
+        var methodAttributes = method.GetCustomAttributes().ToArray();
+        var actionDescription = methodAttributes
+            .OfType<DescriptionAttribute>()
+            .Select(a => a.Description)
+            .FirstOrDefault($"Invokes '{method.DeclaringType?.FullName ?? ""}.{method.Name}'");
 
+        Debug.WriteLine($"Action description: '{actionDescription}'");
 
         var schema = new CliActionSchema(builder =>
         {
-            builder.Description = attributes
-                .OfType<DescriptionAttribute>()
-                .Select(a => a.Description)
-                .FirstOrDefault(string.Empty);
+            builder.Description = actionDescription;
 
             // Sequence is very important.
             // First: commands and arguments in the order of their declaration.
             // Second: command options
-            foreach (var att in attributes)
+            foreach (var att in methodAttributes)
             {
                 if (att is CliCommandAttribute cmd)
                 {
@@ -67,7 +68,7 @@ internal sealed class CliAction : IComparable<CliAction>
                 }
             }
 
-            foreach (var option in parametersBuilder.GetAllCommandOptions())
+            foreach (var option in parametersFactory.GetAllCommandOptions())
             {
                 builder.AddOption(option.OptionLongName, option.OperandArity, option.OptionAliases);
             }
@@ -77,13 +78,39 @@ internal sealed class CliAction : IComparable<CliAction>
                 builder.AddOption(masterOption.OptionLongName, masterOption.OperandArity, masterOption.OptionAliases);
             }
 
-            foreach (var example in attributes.OfType<CliCommandExampleAttribute>())
+            foreach (var example in methodAttributes.OfType<CliCommandExampleAttribute>())
             {
                 builder.AddExample(example.Example, example.Description);
             }
         });
 
-        return new CliAction(Invoke, schema, parametersBuilder, masterOptions);
+        return new CliAction(InvokeAsync, schema, parametersFactory, masterOptions);
+
+        [DebuggerStepThrough]
+        async Task<int> InvokeAsync(object?[] args)
+        {
+            Debug.WriteLine($"Invoking '{method.Name}'");
+            var result = method.Invoke(instance, args);
+            Debug.WriteLine($"Invoking '{method.Name}' returned '{result}'");
+            if (result is Task task)
+            {
+                Debug.WriteLine($"Awaiting '{method.Name}' returned task");
+                await task;
+                var resultProperty = task.GetType().GetProperty("Result");
+                if (resultProperty != null)
+                {
+                    result = resultProperty.GetValue(task) ?? 0;
+                    Debug.WriteLine($"'{method.Name}' returned task result is '{result}'");
+                }
+            }
+
+            if (result is int exitCode)
+            {
+                return exitCode;
+            }
+
+            return 0;
+        }
     }
 
 
@@ -117,7 +144,7 @@ internal sealed class CliAction : IComparable<CliAction>
         _masterOptions.ForEach(bundle => bundle.OnExecutingAction(commandLine));
         try
         {
-            var task = _asyncHandler.Invoke(args);
+            var task = _actionHandler.Invoke(args);
             task.GetAwaiter().GetResult();
             var resultProperty = task.GetType().GetProperty("Result");
             object result = 0;

@@ -8,12 +8,12 @@ using System.Text.RegularExpressions;
 namespace Solitons.CommandLine;
 
 [DebuggerDisplay("Parameters: {ParametersCount}, Arguments: {ArgumentsCount}, Options: {OptionsCount}")]
-internal sealed class CliCommandMethodParametersBuilder : ICliCommandMethodParametersBuilder
+internal sealed class CliActionHandlerParametersFactory : ICliCommandMethodParametersBuilder
 {
     [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
     private readonly List<ICliCommandInputBuilder> _parameterBuilders = new();
 
-    public CliCommandMethodParametersBuilder(MethodInfo method)
+    public CliActionHandlerParametersFactory(MethodInfo method)
     {
         var methodAttributes = method.GetCustomAttributes(true);
         var methodArguments = methodAttributes.OfType<CliArgumentAttribute>().ToList();
