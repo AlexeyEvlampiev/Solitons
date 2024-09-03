@@ -41,11 +41,20 @@ internal sealed class CliActionHandlerParametersFactory : ICliCommandMethodParam
                 {
                     if (index > 0)
                     {
-                        throw new InvalidOperationException();
+                        throw new InvalidOperationException(
+                            $"The parameter '{parameter.Name}' in method '{method.Name}' is referenced by more than one route argument. " +
+                            $"Each parameter should be referenced by at most one route argument.");
                     }
                 })
                 .LastOrDefault();
             var option = parameterAttributes.OfType<CliOptionAttribute>().SingleOrDefault();
+            if (argument is not null && 
+                option is not null)
+            {
+                throw new InvalidOperationException(
+                    $"The parameter '{parameter.Name}' in method '{method.Name}' is referenced as a route argument and is also marked as a CLI option. " +
+                    $"These two attributes are mutually exclusive. Please correct this.");
+            }
 
             if (ICliCommandOptionBundle.IsAssignableFrom(parameter.ParameterType))
             {
