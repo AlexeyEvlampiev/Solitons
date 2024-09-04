@@ -13,6 +13,7 @@ internal sealed record JazzyOption
     private readonly string _expression;
     private readonly TypeConverter _converter;
     private readonly Func<Group, object?> _binder;
+    private readonly Func<string, Match> _matchKeyValuePair;
 
     public JazzyOption(
         CliOptionAttribute metadata,
@@ -25,6 +26,14 @@ internal sealed record JazzyOption
         {
             throw new InvalidOperationException("Oops...");
         }
+
+        var lazyMapRegex = new Lazy<Regex>(() =>new Regex(
+            @"(?:\[$key\]\s+$value)|(?:$key\s+$value)"
+            .Replace("$key", @"(?<key>\S+)?")
+            .Replace("$value", @"(?<value>\S+)?"), 
+            RegexOptions.Compiled | 
+            RegexOptions.Singleline));
+        _matchKeyValuePair = input => lazyMapRegex.Value.Match(input);
 
         Metadata = metadata;
         _defaultValue = defaultValue;
@@ -98,10 +107,8 @@ internal sealed record JazzyOption
         var dictionary = (IDictionary)Activator.CreateInstance(dictionaryType, Metadata.GetMapKeyComparer())!;
         foreach (Capture capture in group.Captures)
         {
-            var input = Regex.Replace(capture.Value, @"\[|\]", String.Empty);
-            var match = Regex.Match(input, @"(?:\[$key\]\s+$value)|(?:$key\s+$value)"
-                .Replace("$key", @"(?<key>\S+)?")
-                .Replace("$value", @"(?<value>\S+)?"));
+            var match = _matchKeyValuePair.Invoke(capture.Value);
+            
             var keyGroup = match.Groups["key"];
             var valueGroup = match.Groups["value"];
             if (keyGroup.Success && valueGroup.Success)
