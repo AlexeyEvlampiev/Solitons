@@ -12,7 +12,7 @@ namespace Solitons.CommandLine;
 
 internal sealed class CliAction : IComparable<CliAction>
 {
-    delegate object? ValueBinder(Match commandLineMatch);
+    delegate object? Binder(Match commandLineMatch, CliTokenDecoder decoder);
 
 
     abstract class CliParameterInfo
@@ -109,8 +109,7 @@ internal sealed class CliAction : IComparable<CliAction>
                 var defaultValue = property.GetValue(bundle, []);
                 _options.Add(new JazzyOption(option, defaultValue, description, property.PropertyType)
                 {
-                    IsRequired = required,
-                    Preprocessor = Preprocessor
+                    IsRequired = required
                 });
             }
 
@@ -197,7 +196,7 @@ internal sealed class CliAction : IComparable<CliAction>
     };
 
 
-    private readonly ValueBinder[] _parameterValueBinders;
+    private readonly Binder[] _parameterValueBinders;
     private readonly OperandInfo[] _operands;
 
 
@@ -221,7 +220,7 @@ internal sealed class CliAction : IComparable<CliAction>
         var methodAttributes = method.GetCustomAttributes().ToList();
         var parameters = method.GetParameters();
 
-        var parameterValueBinders = new List<ValueBinder>();
+        var parameterValueBinders = new List<Binder>();
         var operands = new List<OperandInfo>();
         foreach (var parameter in parameters)
         {

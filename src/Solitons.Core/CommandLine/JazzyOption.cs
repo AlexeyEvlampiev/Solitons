@@ -9,10 +9,11 @@ namespace Solitons.CommandLine;
 
 internal sealed record JazzyOption
 {
+    delegate object? Binder(Group group, CliTokenDecoder decoder);
     private readonly object? _defaultValue;
     private readonly string _expression;
     private readonly TypeConverter _converter;
-    private readonly Func<Group, object?> _binder;
+    private readonly Binder _binder;
     private readonly Func<string, Match> _matchKeyValuePair;
 
     public JazzyOption(
@@ -53,12 +54,12 @@ internal sealed record JazzyOption
         };
     }
 
-    private object? ToFlag(Group arg)
+    private object? ToFlag(Group arg, CliTokenDecoder decoder)
     {
         throw new NotImplementedException();
     }
 
-    private object? ToScalar(Group arg)
+    private object? ToScalar(Group arg, CliTokenDecoder decoder)
     {
         throw new NotImplementedException();
     }
@@ -69,22 +70,18 @@ internal sealed record JazzyOption
 
     public required bool IsRequired { get; init; }
 
-    public required CliTokenSubstitutionPreprocessor Preprocessor { get; init; }
-
-
-
     private string RegexMatchGroupName { get; }
     public IReadOnlyList<string> Aliases { get; }
     public string Description { get; }
     public Type ValueType { get; }
 
-    public object? Bind(Match commandLineMatch)
+    public object? Bind(Match commandLineMatch, CliTokenDecoder decoder)
     {
         Debug.Assert(commandLineMatch.Success);
         var group = commandLineMatch.Groups[RegexMatchGroupName];
         if (group.Success)
         {
-            return _binder.Invoke(group);
+            return _binder.Invoke(group, decoder);
         }
 
         if (IsRequired)
@@ -96,12 +93,12 @@ internal sealed record JazzyOption
 
     }
 
-    private object? ToCollection(Group group)
+    private object? ToCollection(Group group, CliTokenDecoder decoder)
     {
         throw new NotImplementedException();
     }
 
-    private object? ToDictionary(Group group)
+    private object? ToDictionary(Group group, CliTokenDecoder decoder)
     {
         var dictionaryType = typeof(Dictionary<,>).MakeGenericType(typeof(string), ValueType);
         var dictionary = (IDictionary)Activator.CreateInstance(dictionaryType, Metadata.GetMapKeyComparer())!;
@@ -113,12 +110,14 @@ internal sealed record JazzyOption
             var valueGroup = match.Groups["value"];
             if (keyGroup.Success && valueGroup.Success)
             {
-                var value = _converter.ConvertFromInvariantString(valueGroup.Value);
+                var key = decoder(keyGroup.Value);
+                var value = _converter.ConvertFromInvariantString(
+                    decoder(valueGroup.Value));
                 if (value is null)
                 {
                     CliExit.With("Invalid value...");
                 }
-                dictionary[keyGroup.Value] = value;
+                dictionary[key] = value;
             }
             else if(keyGroup.Success == valueGroup.Success)
             {
