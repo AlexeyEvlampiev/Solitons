@@ -133,4 +133,6 @@ public class CliOptionAttribute : Attribute
     /// </summary>
     /// <returns>A string that represents the option specification.</returns>
     public override string ToString() => OptionExpression;
+
+    public virtual StringComparer GetMapKeyComparer() => StringComparer.OrdinalIgnoreCase;
 }
