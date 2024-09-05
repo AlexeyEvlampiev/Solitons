@@ -4,46 +4,73 @@ using System.Text.RegularExpressions;
 using System;
 using System.Collections;
 using System.ComponentModel;
+using System.Linq;
+using System.Reflection;
+using System.Threading;
+using Solitons.Collections;
 
 namespace Solitons.CommandLine;
 
 internal sealed record JazzyOption
 {
     delegate object? Binder(Group group, CliTokenDecoder decoder);
+    delegate Match MatchMapOptionPair(string keyValueInput);
+
+    delegate void CollectionItemAppender(object collection, object item);
+
     private readonly object? _defaultValue;
     private readonly string _expression;
     private readonly TypeConverter _converter;
     private readonly Binder _binder;
-    private readonly Func<string, Match> _matchKeyValuePair;
+    private readonly MatchMapOptionPair _matchMapOptionPair;
+    private readonly DynamicCollectionFactory _dynamicCollectionFactory;
+
 
     public JazzyOption(
-        CliOptionAttribute metadata,
+        ICliOptionMetadata metadata,
         object? defaultValue,
         string description,
-        Type valueType)
+        Type optionType)
     {
+        OptionMetadata = ThrowIf.ArgumentNull(metadata);
+        OptionType = optionType;
+        OptionUnderlyingType = CliUtils.GetUnderlyingType(optionType);
+        Arity = CliUtils.GetOptionArity(optionType);
+
+
+
         if (defaultValue is not null && 
-            valueType.IsAssignableFrom(valueType) == false)
+            optionType.IsInstanceOfType(defaultValue) == false)
         {
-            throw new InvalidOperationException("Oops...");
+            throw new InvalidOperationException($"The provided default value is not of type {optionType}.");
         }
 
-        var lazyMapRegex = new Lazy<Regex>(() =>new Regex(
-            @"(?:\[$key\]\s+$value)|(?:$key\s+$value)"
-            .Replace("$key", @"(?<key>\S+)?")
-            .Replace("$value", @"(?<value>\S+)?"), 
-            RegexOptions.Compiled | 
-            RegexOptions.Singleline));
-        _matchKeyValuePair = input => lazyMapRegex.Value.Match(input);
+        _converter = metadata.GetCustomTypeConverter() 
+                     ?? (Arity == CliOptionArity.Flag ? new CliFlagConverter() : null)
+                     ?? (OptionUnderlyingType == typeof(TimeSpan) ? new MultiFormatTimeSpanConverter() : null)
+                     ?? (OptionUnderlyingType == typeof(CancellationToken) ? new CliCancellationTokenTypeConverter() : null)
+                     ?? TypeDescriptor.GetConverter(OptionUnderlyingType);
 
-        Metadata = metadata;
+
+        if (_converter.CanConvertTo(OptionUnderlyingType) == false)
+        {
+            throw new InvalidOperationException(
+                $"The option value tokens cannot be converted to the specified option type '{OptionUnderlyingType}' using the default converter. " +
+                $"To resolve this, either provide a valid value that matches the option type, " +
+                $"fix the option type if it's incorrect, or specify a custom type converter " +
+                $"by overriding '{typeof(CliOptionAttribute).FullName}.{nameof(CliOptionAttribute.GetCustomTypeConverter)}()'.");
+        }
+
+        var lazyMapRegex = new Lazy<Regex>(BuildMapOptionPairRegex);
+        _matchMapOptionPair = input => lazyMapRegex.Value.Match(input);
+
         _defaultValue = defaultValue;
         Aliases = metadata.Aliases;
         Description = description;
-        ValueType = valueType;
+        OptionType = optionType;
         RegexMatchGroupName = $"option_{Guid.NewGuid():N}";
         _expression = Aliases.Join("|");
-        Arity = CliUtils.GetOptionArity(valueType);
+        
         _binder = Arity switch
         {
             (CliOptionArity.Map) => ToDictionary,
@@ -52,19 +79,16 @@ internal sealed record JazzyOption
             (CliOptionArity.Flag) => ToFlag,
             _ => throw new InvalidOperationException()
         };
+
+        _dynamicCollectionFactory = Arity == CliOptionArity.Vector
+            ? new DynamicCollectionFactory(OptionType)
+            : new DynamicCollectionFactory(typeof(object[]));
     }
 
-    private object? ToFlag(Group arg, CliTokenDecoder decoder)
-    {
-        throw new NotImplementedException();
-    }
+    public ICliOptionMetadata OptionMetadata { get; }
 
-    private object? ToScalar(Group arg, CliTokenDecoder decoder)
-    {
-        throw new NotImplementedException();
-    }
+    public Type OptionUnderlyingType { get; }
 
-    public CliOptionAttribute Metadata { get; }
 
     public CliOptionArity Arity { get; }
 
@@ -73,7 +97,7 @@ internal sealed record JazzyOption
     private string RegexMatchGroupName { get; }
     public IReadOnlyList<string> Aliases { get; }
     public string Description { get; }
-    public Type ValueType { get; }
+    public Type OptionType { get; }
 
     public object? Bind(Match commandLineMatch, CliTokenDecoder decoder)
     {
@@ -93,18 +117,124 @@ internal sealed record JazzyOption
 
     }
 
+    private object? ToFlag(Group group, CliTokenDecoder decoder)
+    {
+        Debug.Assert(group.Success);
+        return _converter.ConvertFromInvariantString(group.Value);
+    }
+
+    private object? ToScalar(Group group, CliTokenDecoder decoder)
+    {
+        Debug.Assert(group.Success);
+        if (group.Captures.Count > 1 &&
+            group.Captures
+                .Select(c => c.Value)
+                .Distinct(StringComparer.Ordinal)
+                .Count() > 1)
+        {
+            CliExit.With(
+                $"The option '{_expression}' has multiple conflicting values. Please provide a single value.");
+        }
+        var input = group.Captures[0].Value;
+        try
+        {
+            return _converter.ConvertFromInvariantString(input);
+        }
+        catch (Exception e)
+        {
+            CliExit.With(
+                $"Invalid input for option '{_expression}': '{input}' could not be converted to the expected type '{OptionUnderlyingType}'.");
+            throw;
+        }
+    }
+
+
     private object? ToCollection(Group group, CliTokenDecoder decoder)
     {
-        throw new NotImplementedException();
+        Debug.Assert(group.Success);
+        var inputs = group.Captures.Select(c => c.Value);
+        if (OptionMetadata.AllowsCsv)
+        {
+            inputs = inputs.SelectMany(v => Regex.Split(v, @",").Where(p => p.IsPrintable()));
+        }
+
+        var array = inputs
+            .Select(text => decoder(text))
+            .Select(text =>
+            {
+                var item = _converter.ConvertFromInvariantString(text);
+                if (item is null)
+                {
+                    CliExit.With(
+                        $"The input '{text}' could not be converted to the expected type '{OptionUnderlyingType}'. " +
+                        $"Please provide a valid value.");
+                }
+
+                return item;
+            }).ToArray();
+
+        if (OptionType.IsArray)
+        {
+            return array;
+        }
+
+        if (typeof(IList).IsAssignableFrom(OptionType))
+        {
+            return array.ToList();
+        }
+
+        if (typeof(ISet<>).IsAssignableFrom(OptionType.GetGenericTypeDefinition()))
+        {
+            var instance = Activator.CreateInstance(typeof(HashSet<>).MakeGenericType(OptionUnderlyingType))!;
+            var setter = instance.GetType().GetMethod("Add");
+            foreach (var item in array)
+            {
+                setter.Invoke(instance, [item]);
+            }
+            return instance;
+        }
+
+        var collection = (ICollection)Activator.CreateInstance(OptionType);
+        if (collection is IList list)
+        {
+            foreach (var item in array)
+            {
+                list.Add(item);
+            }
+            return list;
+        }
+        if (collection is ISet<object> set)
+        {
+            foreach (var item in array)
+            {
+                set.Add(item);
+            }
+            return set;
+        }
+
+        // If no suitable collection type was found
+        throw new InvalidOperationException($"The option type '{OptionType}' is not supported. Please ensure the input corresponds to a valid collection type.");
+    }
+
+
+    private Regex BuildMapOptionPairRegex()
+    {
+        // Has to match things like '.key value' or '[key] value'
+        return new Regex(
+            @"(?:\[$key\]\s+$value)|(?:$key\s+$value)"
+                .Replace("$key", @"(?<key>\S+)?")
+                .Replace("$value", @"(?<value>\S+)?"),
+            RegexOptions.Compiled |
+            RegexOptions.Singleline);
     }
 
     private object? ToDictionary(Group group, CliTokenDecoder decoder)
     {
-        var dictionaryType = typeof(Dictionary<,>).MakeGenericType(typeof(string), ValueType);
-        var dictionary = (IDictionary)Activator.CreateInstance(dictionaryType, Metadata.GetMapKeyComparer())!;
+        var dictionaryType = typeof(Dictionary<,>).MakeGenericType(typeof(string), OptionType);
+        var dictionary = (IDictionary)Activator.CreateInstance(dictionaryType, OptionMetadata.GetMapKeyComparer())!;
         foreach (Capture capture in group.Captures)
         {
-            var match = _matchKeyValuePair.Invoke(capture.Value);
+            var match = _matchMapOptionPair.Invoke(capture.Value);
             
             var keyGroup = match.Groups["key"];
             var valueGroup = match.Groups["value"];
@@ -121,14 +251,17 @@ internal sealed record JazzyOption
             }
             else if(keyGroup.Success == valueGroup.Success)
             {
+                Debug.Assert(false == keyGroup.Success);
                 CliExit.With("Key value pair is required");
             }
-            else if(keyGroup.Success == false)
+            else if(keyGroup.Success)
             {
+                Debug.Assert(false == valueGroup.Success);
                 CliExit.With("Key is required");
             }
-            else if (valueGroup.Success == false)
+            else if (valueGroup.Success)
             {
+                Debug.Assert(false == keyGroup.Success);
                 CliExit.With("Value is required");
             }
         }

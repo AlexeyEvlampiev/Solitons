@@ -10,7 +10,7 @@ namespace Solitons.CommandLine;
 /// Attribute to define command line options for a method or property.
 /// </summary>
 [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)]
-public class CliOptionAttribute : Attribute
+public class CliOptionAttribute : Attribute, ICliOptionMetadata
 {
     private static readonly Regex SpecificationRegex;
     private static readonly Regex OptionRegex;
@@ -124,6 +124,8 @@ public class CliOptionAttribute : Attribute
     /// List of long option names.
     /// </summary>
     public IReadOnlyList<string> LongOptionNames { get; }
+
+    public virtual bool AllowsCsv => true;
 
 
     public virtual TypeConverter? GetCustomTypeConverter() => null;
