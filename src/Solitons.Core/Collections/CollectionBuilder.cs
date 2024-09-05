@@ -88,7 +88,7 @@ public sealed class DynamicCollectionFactory
         }
     }
 
-    /// <summary>
+    // <summary>
     /// Retrieves the appropriate "add" method for the collection (Add, Enqueue, or Push).
     /// </summary>
     /// <param name="collectionType">The type of the collection.</param>
@@ -96,28 +96,37 @@ public sealed class DynamicCollectionFactory
     /// <exception cref="ArgumentException">Thrown when no valid add method is found.</exception>
     private Action<object> GetAppenderMethod(Type collectionType)
     {
-        // Possible add method names
-        var methodNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                nameof(IList.Add),
-                nameof(Queue.Enqueue),
-                nameof(Stack.Push)
-            };
+        // Known types that have direct add methods
+        if (typeof(IList).IsAssignableFrom(collectionType))
+        {
+            return item => ((IList)_collection).Add(item);
+        }
 
-        // Find a method that matches the expected signature: public, instance, takes a single argument of _itemType
+        if (typeof(Queue<>).IsAssignableFrom(collectionType))
+        {
+            return item => collectionType.GetMethod(nameof(Queue<object>.Enqueue))!.Invoke(_collection, new[] { item });
+        }
+
+        if (typeof(Stack<>).IsAssignableFrom(collectionType))
+        {
+            return item => collectionType.GetMethod(nameof(Stack<object>.Push))!.Invoke(_collection, new[] { item });
+        }
+
+        // Fallback to reflection-based search for "Add", "Enqueue", or "Push"
+        var methodNames = new[] { "Add", "Enqueue", "Push" };
+
         MethodInfo? method = collectionType
             .GetMethods(BindingFlags.Instance | BindingFlags.Public)
-            .Where(m => methodNames.Contains(m.Name))
             .FirstOrDefault(m =>
             {
                 var parameters = m.GetParameters();
-                return parameters.Length == 1 && parameters[0].ParameterType == _itemType;
+                return methodNames.Contains(m.Name) && parameters.Length == 1 && parameters[0].ParameterType == _itemType;
             });
 
         if (method == null)
             throw new ArgumentException($"No valid add method found in {collectionType.FullName}.", nameof(collectionType));
 
         // Return the method invocation as an action
-        return item => method.Invoke(_collection, [item]);
+        return item => method.Invoke(_collection, new object[] { item });
     }
 }

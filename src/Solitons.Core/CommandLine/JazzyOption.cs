@@ -5,7 +5,6 @@ using System;
 using System.Collections;
 using System.ComponentModel;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using Solitons.Collections;
 
@@ -23,7 +22,7 @@ internal sealed record JazzyOption
     private readonly TypeConverter _converter;
     private readonly Binder _binder;
     private readonly MatchMapOptionPair _matchMapOptionPair;
-    private readonly DynamicCollectionFactory _dynamicCollectionFactory;
+    private readonly Func<DynamicCollectionFactory> _dynamicCollectionSuperFactory;
 
 
     public JazzyOption(
@@ -80,9 +79,9 @@ internal sealed record JazzyOption
             _ => throw new InvalidOperationException()
         };
 
-        _dynamicCollectionFactory = Arity == CliOptionArity.Vector
-            ? new DynamicCollectionFactory(OptionType)
-            : new DynamicCollectionFactory(typeof(object[]));
+        _dynamicCollectionSuperFactory = Arity == CliOptionArity.Vector
+            ? () => new DynamicCollectionFactory(OptionType)
+            : () => new DynamicCollectionFactory(typeof(object[]));
     }
 
     public ICliOptionMetadata OptionMetadata { get; }
@@ -158,9 +157,10 @@ internal sealed record JazzyOption
             inputs = inputs.SelectMany(v => Regex.Split(v, @",").Where(p => p.IsPrintable()));
         }
 
-        var array = inputs
+        var factory = _dynamicCollectionSuperFactory();
+        inputs
             .Select(text => decoder(text))
-            .Select(text =>
+            .ForEach(text =>
             {
                 var item = _converter.ConvertFromInvariantString(text);
                 if (item is null)
@@ -168,52 +168,13 @@ internal sealed record JazzyOption
                     CliExit.With(
                         $"The input '{text}' could not be converted to the expected type '{OptionUnderlyingType}'. " +
                         $"Please provide a valid value.");
+                    return;
                 }
 
-                return item;
-            }).ToArray();
+                factory.Add(item);
+            });
 
-        if (OptionType.IsArray)
-        {
-            return array;
-        }
-
-        if (typeof(IList).IsAssignableFrom(OptionType))
-        {
-            return array.ToList();
-        }
-
-        if (typeof(ISet<>).IsAssignableFrom(OptionType.GetGenericTypeDefinition()))
-        {
-            var instance = Activator.CreateInstance(typeof(HashSet<>).MakeGenericType(OptionUnderlyingType))!;
-            var setter = instance.GetType().GetMethod("Add");
-            foreach (var item in array)
-            {
-                setter.Invoke(instance, [item]);
-            }
-            return instance;
-        }
-
-        var collection = (ICollection)Activator.CreateInstance(OptionType);
-        if (collection is IList list)
-        {
-            foreach (var item in array)
-            {
-                list.Add(item);
-            }
-            return list;
-        }
-        if (collection is ISet<object> set)
-        {
-            foreach (var item in array)
-            {
-                set.Add(item);
-            }
-            return set;
-        }
-
-        // If no suitable collection type was found
-        throw new InvalidOperationException($"The option type '{OptionType}' is not supported. Please ensure the input corresponds to a valid collection type.");
+        return factory.Build();
     }
 
 
