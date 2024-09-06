@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Xunit;
@@ -20,7 +22,7 @@ public sealed class CollectionBuilder_CreateInstance_Should
             .Select(int.Parse)
             .ToArray();
 
-        var result = CollectionBuilder.CreateInstance(type, expectedItems.Cast<object>());
+        var result = CollectionBuilder.CreateCollection(type, expectedItems.Cast<object>());
         var actual = Assert.IsType<int[]>(result);
         Assert.Equal(expectedItems, actual);
     }
@@ -38,7 +40,7 @@ public sealed class CollectionBuilder_CreateInstance_Should
             .Select(int.Parse)
             .ToArray();
 
-        var result = CollectionBuilder.CreateInstance(type, expectedItems.Cast<object>());
+        var result = CollectionBuilder.CreateCollection(type, expectedItems.Cast<object>());
         Assert.True(type.IsInstanceOfType(result));
         var actual = Assert.IsType<List<int>>(result);
         Assert.Equal(expectedItems, actual);
@@ -54,7 +56,7 @@ public sealed class CollectionBuilder_CreateInstance_Should
             .Select(int.Parse)
             .ToArray();
 
-        var result = CollectionBuilder.CreateInstance(type, expectedItems.Cast<object>());
+        var result = CollectionBuilder.CreateCollection(type, expectedItems.Cast<object>());
         Assert.True(type.IsInstanceOfType(result));
         var actual = Assert.IsType<ReadOnlyCollection<int>>(result);
         Assert.Equal(expectedItems, actual);
@@ -69,7 +71,7 @@ public sealed class CollectionBuilder_CreateInstance_Should
             .Split(expectedItemsCsv, @"\s*,\s*")
             .Where(i => i.IsPrintable())
             .ToArray();
-        var comparers = new StringComparer[]
+        var comparers = new[]
         {
             StringComparer.OrdinalIgnoreCase,
             StringComparer.Ordinal, 
@@ -79,14 +81,42 @@ public sealed class CollectionBuilder_CreateInstance_Should
 
         foreach (var comparer in comparers)
         {
-            var result = CollectionBuilder.CreateInstance(type, expectedItems, comparer);
+            var result = CollectionBuilder.CreateCollection(type, expectedItems, comparer);
             Assert.True(type.IsInstanceOfType(result));
 
             var actual = Assert.IsType<HashSet<string>>(result);
             Assert.Equal(comparer, actual.Comparer);
             Assert.Equal(expectedItems.ToHashSet(comparer), actual);
         }
-        
     }
+
+
+    [Theory]
+    [InlineData(typeof(IDictionary<string, int>))]
+    [InlineData(typeof(IDictionary<string, Guid>))]
+    [InlineData(typeof(Dictionary<string, int>))]
+    [InlineData(typeof(Dictionary<string, Guid>))]
+    public void CreateDictionaries(Type dictionaryType)
+    {
+        var comparers = new[]
+        {
+            StringComparer.OrdinalIgnoreCase,
+            StringComparer.Ordinal,
+            StringComparer.InvariantCulture,
+            StringComparer.InvariantCultureIgnoreCase
+        };
+
+        dynamic result = CollectionBuilder.CreateDictionary(dictionaryType);
+        Debug.WriteLine(dictionaryType.Name);
+        Debug.WriteLine(result.GetType().Name as string);
+        Assert.True(dictionaryType.IsInstanceOfType((object)result));
+        foreach (var comparer in comparers)
+        {
+            result = CollectionBuilder.CreateDictionary(dictionaryType, comparer);
+            Assert.True(dictionaryType.IsInstanceOfType(result));
+            Assert.Equal(comparer, result.Comparer);
+        }
+    }
+
 
 }

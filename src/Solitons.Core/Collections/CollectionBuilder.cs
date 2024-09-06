@@ -11,7 +11,7 @@ namespace Solitons.Collections;
 
 public static class CollectionBuilder
 {
-    public static IEnumerable CreateInstance(
+    public static IEnumerable CreateCollection(
         Type collectionType,
         IEnumerable<object> collectionItems,
         IEqualityComparer? comparer = null)
@@ -89,6 +89,72 @@ public static class CollectionBuilder
         }
     }
 
+    public static IDictionary CreateDictionary(Type dictionaryType, IEqualityComparer? comparer = null)
+    {
+        if (dictionaryType.GetGenericTypeDefinition() != typeof(IDictionary<,>) &&
+            false == typeof(IDictionary).IsAssignableFrom(dictionaryType))
+        {
+            throw new InvalidOperationException("The provided type does not implement IDictionary.");
+        }
+
+        Type[]? genericArgs = dictionaryType.IsGenericType
+            ? dictionaryType.GetGenericArguments()
+            : null;
+
+        // For IDictionary<TKey, TValue>
+        if (genericArgs != null && genericArgs.Length == 2)
+        {
+            Type keyType = genericArgs[0];
+            Type valueType = genericArgs[1];
+
+            // Create a concrete Dictionary<TKey, TValue> if an interface was passed
+            if (dictionaryType.IsInterface)
+            {
+                dictionaryType = typeof(Dictionary<,>).MakeGenericType(keyType, valueType);
+            }
+
+            // Handle the comparer if provided
+            if (comparer != null)
+            {
+                var ctorWithComparer = dictionaryType.GetConstructor([
+                    typeof(IEqualityComparer<>).MakeGenericType(keyType)
+                ]);
+                if (ctorWithComparer != null)
+                {
+                    return (IDictionary)ctorWithComparer.Invoke([comparer]);
+                }
+
+                throw new InvalidOperationException("Oops...");
+            }
+
+            // Default constructor
+            var defaultCtor = dictionaryType.GetConstructor(Type.EmptyTypes);
+            if (defaultCtor != null)
+            {
+                return (IDictionary)Activator.CreateInstance(dictionaryType)!;
+            }
+
+            throw new InvalidOperationException(
+                $"No constructor accepting IEqualityComparer<{keyType.Name}> found for the dictionary type.");
+        }
+
+        // For non-generic IDictionary
+        if (typeof(IDictionary).IsAssignableFrom(dictionaryType) && !dictionaryType.IsGenericType)
+        {
+            // If comparer is provided for non-generic dictionaries, it can't be used, so just create an empty dictionary
+            var defaultCtor = dictionaryType.GetConstructor(Type.EmptyTypes);
+            if (defaultCtor != null)
+            {
+                return (IDictionary)Activator.CreateInstance(dictionaryType)!;
+            }
+
+            throw new InvalidOperationException("No valid constructor found for the dictionary type.");
+        }
+
+        throw new InvalidOperationException("Unsupported dictionary type.");
+    }
+
+
     private static Array ToTypedArray(Type collectionType, object[] items)
     {
         // Determine the element type, considering array and generic collections
@@ -159,7 +225,6 @@ public static class CollectionBuilder
             addMethod.Invoke(collection, args);
         }
     }
-
 
 
     private static Type GetConcreteCollectionType(Type collectionType, IReadOnlyList<object> items)
