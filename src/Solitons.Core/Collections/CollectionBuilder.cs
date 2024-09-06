@@ -70,6 +70,12 @@ public static class CollectionBuilder
                 {
                     return (IEnumerable)ctor.Invoke([typedItems]);
                 }
+
+                if (typeof(ReadOnlyCollection<>).MakeGenericType([itemType]) == collectionType)
+                {
+                    var list = Activator.CreateInstance(typeof(List<>).MakeGenericType(itemType), typedItems);
+                    return Activator.CreateInstance(collectionType, [list]) as IEnumerable ?? throw new InvalidOperationException();
+                }
                 var collection = Activator.CreateInstance(collectionType) as IEnumerable ?? throw new InvalidOperationException();
                 PopulateCollection(collection, typedItems);
                 return collection;
@@ -203,25 +209,6 @@ public static class CollectionBuilder
                     {
                         return itemType.MakeArrayType();
                     }
-                }
-                else if (collectionType.IsAbstract)
-                {
-                    if (typeof(ReadOnlyCollection<>).IsAssignableFrom(collectionType))
-                    {
-                        // For ReadOnlyCollection<T>, map to List<T> and later wrap in ReadOnlyCollection<T> at runtime
-                        return typeof(ReadOnlyCollection<>).MakeGenericType(itemType);
-                    }
-
-
-                    if (typeof(ObservableCollection<>).IsAssignableFrom(collectionType))
-                    {
-                        return typeof(ObservableCollection<>).MakeGenericType(itemType);  
-                    }
-                    throw new InvalidOperationException($"Cannot instantiate abstract collection type: {collectionType.FullName}");
-                }
-                else
-                {
-                    //TODO: analyse cases when the instance cannot be created at all and if so, throw exception
                 }
             }
 
