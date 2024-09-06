@@ -24,13 +24,7 @@ public static class CollectionBuilder
         collectionType = collectionType
             .Convert(t => GetConcreteCollectionType(t, items));
 
-        var typedItems = items.Convert(source =>
-        {
-            var elementType = collectionType.GetElementType()!;
-            var destination = Array.CreateInstance(elementType, items.Length);
-            Array.Copy(source, destination, destination.Length);
-            return destination;
-        })!;
+        var typedItems = ToTypedArray(collectionType, items);
 
         if (collectionType.IsArray)
         {
@@ -87,6 +81,38 @@ public static class CollectionBuilder
             Debug.WriteLine($"Collection creation failed: {e.Message}");
             throw;
         }
+    }
+
+    private static Array ToTypedArray(Type collectionType, object[] items)
+    {
+        // Determine the element type, considering array and generic collections
+        var elementType = collectionType.IsArray
+            ? collectionType.GetElementType()
+            : collectionType.IsGenericType && collectionType.GenericTypeArguments.Length == 1
+                ? collectionType.GenericTypeArguments[0]
+                : throw new InvalidOperationException("Unable to determine the collection's element type.");
+
+        // Check if elementType is valid
+        if (elementType == null)
+        {
+            throw new InvalidOperationException("Element type could not be determined.");
+        }
+
+        // Create a destination array of the required element type
+        var destination = Array.CreateInstance(elementType, items.Length);
+
+        // Ensure the source items are compatible with the element type
+        for (int i = 0; i < items.Length; i++)
+        {
+            if (!elementType.IsInstanceOfType(items[i]))
+            {
+                throw new InvalidOperationException($"Item at index {i} is not of the expected type {elementType}.");
+            }
+
+            destination.SetValue(items[i], i);
+        }
+
+        return destination;
     }
 
     private static void PopulateCollection(IEnumerable collection, IEnumerable items)

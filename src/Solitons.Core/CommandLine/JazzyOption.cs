@@ -22,7 +22,6 @@ internal sealed record JazzyOption
     private readonly TypeConverter _converter;
     private readonly Binder _binder;
     private readonly MatchMapOptionPair _matchMapOptionPair;
-    private readonly Func<CollectionBuilder> _dynamicCollectionSuperFactory;
 
 
     public JazzyOption(
@@ -79,9 +78,6 @@ internal sealed record JazzyOption
             _ => throw new InvalidOperationException()
         };
 
-        _dynamicCollectionSuperFactory = Arity == CliOptionArity.Vector
-            ? () => new CollectionBuilder(OptionType)
-            : () => new CollectionBuilder(typeof(object[]));
     }
 
     public ICliOptionMetadata OptionMetadata { get; }
@@ -157,24 +153,26 @@ internal sealed record JazzyOption
             inputs = inputs.SelectMany(v => Regex.Split(v, @",").Where(p => p.IsPrintable()));
         }
 
-        var factory = _dynamicCollectionSuperFactory();
-        inputs
-            .Select(text => decoder(text))
-            .ForEach(text =>
-            {
-                var item = _converter.ConvertFromInvariantString(text);
-                if (item is null)
-                {
-                    CliExit.With(
-                        $"The input '{text}' could not be converted to the expected type '{OptionUnderlyingType}'. " +
-                        $"Please provide a valid value.");
-                    return;
-                }
+        throw new NotImplementedException();
 
-                factory.Add(item);
-            });
+        //var factory = _dynamicCollectionSuperFactory();
+        //inputs
+        //    .Select(text => decoder(text))
+        //    .ForEach(text =>
+        //    {
+        //        var item = _converter.ConvertFromInvariantString(text);
+        //        if (item is null)
+        //        {
+        //            CliExit.With(
+        //                $"The input '{text}' could not be converted to the expected type '{OptionUnderlyingType}'. " +
+        //                $"Please provide a valid value.");
+        //            return;
+        //        }
 
-        return factory.Build();
+        //        factory.Add(item);
+        //    });
+
+        //return factory.Build();
     }
 
 
