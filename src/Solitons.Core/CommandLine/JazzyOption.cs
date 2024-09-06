@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System;
-using System.Collections;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading;
@@ -12,17 +11,27 @@ namespace Solitons.CommandLine;
 
 internal sealed record JazzyOption
 {
-    delegate object? Binder(Group group, CliTokenDecoder decoder);
-    delegate Match MatchMapOptionPair(string keyValueInput);
-
-    delegate void CollectionItemAppender(object collection, object item);
+    private static readonly Regex MapKeyValueRegex;
+    delegate object? GroupBinder(Group group, CliTokenDecoder decoder);
 
     private readonly object? _defaultValue;
     private readonly string _expression;
     private readonly TypeConverter _converter;
-    private readonly Binder _binder;
-    private readonly MatchMapOptionPair _matchMapOptionPair;
+    private readonly GroupBinder _groupBinder;
 
+
+    static JazzyOption()
+    {
+        var pattern = @"(?:\[$key\]\s+$value)|(?:$key\s+$value)"
+            .Replace("$key", @"(?<key>\S+)?")
+            .Replace("$value", @"(?<value>\S+)?");
+        MapKeyValueRegex = new Regex(pattern, 
+            RegexOptions.Singleline
+#if DEBUG
+            | RegexOptions.Compiled
+#endif
+        );
+    }
 
     public JazzyOption(
         ICliOptionMetadata metadata,
@@ -59,8 +68,6 @@ internal sealed record JazzyOption
                 $"by overriding '{typeof(CliOptionAttribute).FullName}.{nameof(CliOptionAttribute.GetCustomTypeConverter)}()'.");
         }
 
-        var lazyMapRegex = new Lazy<Regex>(BuildMapOptionPairRegex);
-        _matchMapOptionPair = input => lazyMapRegex.Value.Match(input);
 
         _defaultValue = defaultValue;
         Aliases = metadata.Aliases;
@@ -69,7 +76,7 @@ internal sealed record JazzyOption
         RegexMatchGroupName = $"option_{Guid.NewGuid():N}";
         _expression = Aliases.Join("|");
         
-        _binder = Arity switch
+        _groupBinder = Arity switch
         {
             (CliOptionArity.Map) => ToDictionary,
             (CliOptionArity.Vector) => ToCollection,
@@ -100,7 +107,7 @@ internal sealed record JazzyOption
         var group = commandLineMatch.Groups[RegexMatchGroupName];
         if (group.Success)
         {
-            return _binder.Invoke(group, decoder);
+            return _groupBinder.Invoke(group, decoder);
         }
 
         if (IsRequired)
@@ -153,47 +160,34 @@ internal sealed record JazzyOption
             inputs = inputs.SelectMany(v => Regex.Split(v, @",").Where(p => p.IsPrintable()));
         }
 
-        throw new NotImplementedException();
+        var items = inputs
+            .Select(text => decoder(text))
+            .Select(text =>
+            {
+                var item = _converter.ConvertFromInvariantString(text);
+                if (item is null)
+                {
+                    CliExit.With(
+                        $"The input '{text}' could not be converted to the expected type '{OptionUnderlyingType}'. " +
+                        $"Please provide a valid value.");
+                }
 
-        //var factory = _dynamicCollectionSuperFactory();
-        //inputs
-        //    .Select(text => decoder(text))
-        //    .ForEach(text =>
-        //    {
-        //        var item = _converter.ConvertFromInvariantString(text);
-        //        if (item is null)
-        //        {
-        //            CliExit.With(
-        //                $"The input '{text}' could not be converted to the expected type '{OptionUnderlyingType}'. " +
-        //                $"Please provide a valid value.");
-        //            return;
-        //        }
+                return item;
+            })
+            .Cast<object>()
+            .ToList();
 
-        //        factory.Add(item);
-        //    });
-
-        //return factory.Build();
+        return CollectionBuilder.BuildCollection(OptionType, items);
     }
 
-
-    private Regex BuildMapOptionPairRegex()
-    {
-        // Has to match things like '.key value' or '[key] value'
-        return new Regex(
-            @"(?:\[$key\]\s+$value)|(?:$key\s+$value)"
-                .Replace("$key", @"(?<key>\S+)?")
-                .Replace("$value", @"(?<value>\S+)?"),
-            RegexOptions.Compiled |
-            RegexOptions.Singleline);
-    }
 
     private object? ToDictionary(Group group, CliTokenDecoder decoder)
     {
         var dictionaryType = typeof(Dictionary<,>).MakeGenericType(typeof(string), OptionType);
-        var dictionary = (IDictionary)Activator.CreateInstance(dictionaryType, OptionMetadata.GetMapKeyComparer())!;
+        var dictionary = CollectionBuilder.CreateDictionary(dictionaryType, OptionMetadata.GetMapKeyComparer());
         foreach (Capture capture in group.Captures)
         {
-            var match = _matchMapOptionPair.Invoke(capture.Value);
+            var match = MapKeyValueRegex.Match(capture.Value);
             
             var keyGroup = match.Groups["key"];
             var valueGroup = match.Groups["value"];
