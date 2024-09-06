@@ -22,7 +22,7 @@ public sealed class CollectionBuilder_CreateInstance_Should
             .Select(int.Parse)
             .ToArray();
 
-        var result = CollectionBuilder.CreateCollection(type, expectedItems.Cast<object>());
+        var result = CollectionBuilder.BuildCollection(type, expectedItems.Cast<object>());
         var actual = Assert.IsType<int[]>(result);
         Assert.Equal(expectedItems, actual);
     }
@@ -40,7 +40,7 @@ public sealed class CollectionBuilder_CreateInstance_Should
             .Select(int.Parse)
             .ToArray();
 
-        var result = CollectionBuilder.CreateCollection(type, expectedItems.Cast<object>());
+        var result = CollectionBuilder.BuildCollection(type, expectedItems.Cast<object>());
         Assert.True(type.IsInstanceOfType(result));
         var actual = Assert.IsType<List<int>>(result);
         Assert.Equal(expectedItems, actual);
@@ -56,7 +56,7 @@ public sealed class CollectionBuilder_CreateInstance_Should
             .Select(int.Parse)
             .ToArray();
 
-        var result = CollectionBuilder.CreateCollection(type, expectedItems.Cast<object>());
+        var result = CollectionBuilder.BuildCollection(type, expectedItems.Cast<object>());
         Assert.True(type.IsInstanceOfType(result));
         var actual = Assert.IsType<ReadOnlyCollection<int>>(result);
         Assert.Equal(expectedItems, actual);
@@ -81,7 +81,7 @@ public sealed class CollectionBuilder_CreateInstance_Should
 
         foreach (var comparer in comparers)
         {
-            var result = CollectionBuilder.CreateCollection(type, expectedItems, comparer);
+            var result = CollectionBuilder.BuildCollection(type, expectedItems, comparer);
             Assert.True(type.IsInstanceOfType(result));
 
             var actual = Assert.IsType<HashSet<string>>(result);

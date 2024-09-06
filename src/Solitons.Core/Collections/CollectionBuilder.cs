@@ -9,9 +9,25 @@ using System.Reflection;
 namespace Solitons.Collections;
 
 
+/// <summary>
+/// Provides utility methods for building collections and dictionaries from 
+/// specified types, items, and optionally comparers.
+/// </summary>
 public static class CollectionBuilder
 {
-    public static IEnumerable CreateCollection(
+    /// <summary>
+    /// Builds a strongly-typed collection based on the specified collection type, 
+    /// a sequence of items, and an optional equality comparer.
+    /// </summary>
+    /// <param name="collectionType">The type of collection to create. This type must 
+    /// be a concrete collection or support IEnumerable, IList, ISet, or IReadOnlyCollection interfaces.</param>
+    /// <param name="collectionItems">The sequence of items to populate the collection with.</param>
+    /// <param name="comparer">An optional equality comparer used to compare elements in the collection.</param>
+    /// <returns>A strongly-typed collection containing the specified items.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="collectionType"/> or <paramref name="collectionItems"/> is null.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if the specified collection type is invalid 
+    /// or if the items cannot be cast to the expected type for the collection.</exception>
+    public static IEnumerable BuildCollection(
         Type collectionType,
         IEnumerable<object> collectionItems,
         IEqualityComparer? comparer = null)
@@ -89,6 +105,16 @@ public static class CollectionBuilder
         }
     }
 
+    /// <summary>
+    /// Creates a dictionary of the specified type, optionally using an equality comparer.
+    /// </summary>
+    /// <param name="dictionaryType">The type of the dictionary to create. 
+    /// This type must implement <see cref="IDictionary"/> or <see cref="IDictionary{TKey,TValue}"/>.</param>
+    /// <param name="comparer">An optional equality comparer to compare dictionary keys.</param>
+    /// <returns>A dictionary of the specified type.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="dictionaryType"/> is null.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if the specified type does not implement 
+    /// <see cref="IDictionary"/> or <see cref="IDictionary{TKey,TValue}"/>, or if a valid constructor cannot be found.</exception>
     public static IDictionary CreateDictionary(Type dictionaryType, IEqualityComparer? comparer = null)
     {
         if (dictionaryType.GetGenericTypeDefinition() != typeof(IDictionary<,>) &&
@@ -154,7 +180,14 @@ public static class CollectionBuilder
         throw new InvalidOperationException("Unsupported dictionary type.");
     }
 
-
+    /// <summary>
+    /// Converts a sequence of untyped objects to a strongly-typed array.
+    /// </summary>
+    /// <param name="collectionType">The type of the collection to create the array for.</param>
+    /// <param name="items">The sequence of untyped objects to convert.</param>
+    /// <returns>A strongly-typed array of the specified element type.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the element type cannot be determined 
+    /// or if an item in the sequence cannot be cast to the expected type.</exception>
     private static Array ToTypedArray(Type collectionType, object[] items)
     {
         // Determine the element type, considering array and generic collections
@@ -187,6 +220,14 @@ public static class CollectionBuilder
         return destination;
     }
 
+    /// <summary>
+    /// Populates a collection with the provided items by invoking the appropriate 
+    /// insertion method (e.g., Add, Enqueue, Push).
+    /// </summary>
+    /// <param name="collection">The collection to populate.</param>
+    /// <param name="items">The items to add to the collection.</param>
+    /// <exception cref="InvalidOperationException">Thrown if no suitable method is found to populate the collection 
+    /// or if an item cannot be cast to the expected type for the collection.</exception>
     private static void PopulateCollection(IEnumerable collection, IEnumerable items)
     {
         // Retrieve the collection's type
@@ -226,7 +267,13 @@ public static class CollectionBuilder
         }
     }
 
-
+    /// <summary>
+    /// Determines the concrete collection type to instantiate based on the specified collection type and the items.
+    /// </summary>
+    /// <param name="collectionType">The type of the collection to determine.</param>
+    /// <param name="items">The items to populate the collection with.</param>
+    /// <returns>A concrete collection type that is compatible with the specified type.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the item types are incompatible with the collection type.</exception>
     private static Type GetConcreteCollectionType(Type collectionType, IReadOnlyList<object> items)
     {
         {
