@@ -1,12 +1,12 @@
 ﻿using System.Diagnostics;
 using System.Text;
-using Azure.Messaging.EventGrid;
 using Azure;
-using Solitons.Diagnostics;
 using Azure.Core;
 using Azure.Messaging;
+using Azure.Messaging.EventGrid;
+using Solitons.Diagnostics;
 
-namespace Solitons.AzProvider.Diagnostics;
+namespace Solitons.Azure.Diagnostics;
 
 /// <summary>
 /// A logger implementation that sends log messages to Azure Event Grid asynchronously.

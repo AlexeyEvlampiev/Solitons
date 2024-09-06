@@ -1,11 +1,11 @@
 ﻿using System.Diagnostics;
 using Azure.Storage.Blobs;
-using Parquet.Schema;
 using Parquet;
 using Parquet.Data;
+using Parquet.Schema;
 using Solitons.Diagnostics;
 
-namespace Solitons.AzProvider.Diagnostics;
+namespace Solitons.Azure.Diagnostics;
 
 public sealed class ParquetAsyncLogger : BufferedAsyncLogger
 {
