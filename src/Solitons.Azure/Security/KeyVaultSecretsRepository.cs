@@ -11,7 +11,7 @@ using Solitons.Management.Azure;
 using Solitons.Security;
 using Solitons.Security.Common;
 
-namespace Solitons.Azure.KeyVault;
+namespace Solitons.Azure.Security;
 
 /// <summary>
 /// Represents a repository for managing secrets stored in Azure Key Vault.
@@ -132,8 +132,8 @@ public sealed class KeyVaultSecretsRepository : SecretsRepository, ISecretsRepos
 
                 return names.ToArray();
             })
-            .WithRetryPolicy(args => args
-                .SignalNextAttempt(args.AttemptNumber < 5)
+            .WithRetryTrigger(args => args
+                .Where(args.AttemptNumber < 5)
                 .Delay(attempt => TimeSpan
                     .FromMilliseconds(50)
                     .ScaleByFactor(1.1, attempt)))
@@ -188,8 +188,8 @@ public sealed class KeyVaultSecretsRepository : SecretsRepository, ISecretsRepos
                 .FromAsync(() => _nativeClient
                     .GetSecretAsync(secretName, cancellationToken: cancellation))
                 .Select(r => r.Value)
-                .WithRetryPolicy(args => args
-                    .SignalNextAttempt(args.AttemptNumber < 5)
+                .WithRetryTrigger(args => args
+                    .Where(args.AttemptNumber < 5)
                     .Delay(attempt => TimeSpan
                         .FromMilliseconds(50)
                         .ScaleByFactor(1.1, attempt)))
