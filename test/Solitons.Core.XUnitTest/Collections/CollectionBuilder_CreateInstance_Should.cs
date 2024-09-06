@@ -92,6 +92,41 @@ public sealed class CollectionBuilder_CreateInstance_Should
 
 
     [Theory]
+    [InlineData(typeof(Queue<string>), "1,2,3")]
+    public void CreateQueues(Type type, string expectedItemsCsv)
+    {
+        var expectedItems = Regex
+            .Split(expectedItemsCsv, @"\s*,\s*")
+            .Where(i => i.IsPrintable())
+            .ToArray();
+
+        var result = CollectionBuilder.BuildCollection(type, expectedItems);
+        Assert.True(type.IsInstanceOfType(result));
+
+        var actual = Assert.IsType<Queue<string>>(result);
+
+        Assert.Equal(new Queue<string>(expectedItems), actual);
+    }
+
+    [Theory]
+    [InlineData(typeof(Stack<string>), "1,2,3")]
+    public void CreateStacks(Type type, string expectedItemsCsv)
+    {
+        var expectedItems = Regex
+            .Split(expectedItemsCsv, @"\s*,\s*")
+            .Where(i => i.IsPrintable())
+            .ToArray();
+
+        var result = CollectionBuilder.BuildCollection(type, expectedItems);
+        Assert.True(type.IsInstanceOfType(result));
+
+        var actual = Assert.IsType<Stack<string>>(result);
+
+        Assert.Equal(new Stack<string>(expectedItems), actual);
+    }
+
+
+    [Theory]
     [InlineData(typeof(IDictionary<string, int>))]
     [InlineData(typeof(IDictionary<string, Guid>))]
     [InlineData(typeof(Dictionary<string, int>))]
