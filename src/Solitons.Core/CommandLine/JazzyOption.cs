@@ -22,7 +22,7 @@ internal sealed record JazzyOption
     private readonly TypeConverter _converter;
     private readonly Binder _binder;
     private readonly MatchMapOptionPair _matchMapOptionPair;
-    private readonly Func<DynamicCollectionFactory> _dynamicCollectionSuperFactory;
+    private readonly Func<CollectionBuilder> _dynamicCollectionSuperFactory;
 
 
     public JazzyOption(
@@ -80,8 +80,8 @@ internal sealed record JazzyOption
         };
 
         _dynamicCollectionSuperFactory = Arity == CliOptionArity.Vector
-            ? () => new DynamicCollectionFactory(OptionType)
-            : () => new DynamicCollectionFactory(typeof(object[]));
+            ? () => new CollectionBuilder(OptionType)
+            : () => new CollectionBuilder(typeof(object[]));
     }
 
     public ICliOptionMetadata OptionMetadata { get; }

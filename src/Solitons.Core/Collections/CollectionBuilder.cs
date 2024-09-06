@@ -1,132 +1,205 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 
 namespace Solitons.Collections;
 
-/// <summary>
-/// Provides functionality to dynamically construct and populate collections of a specific type.
-/// </summary>
-public sealed class DynamicCollectionFactory
+
+public static class CollectionBuilder
 {
-    private readonly object _collection;
-    private readonly Type _itemType;
-    private readonly Action<object> _appender;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DynamicCollectionFactory"/> class.
-    /// </summary>
-    /// <param name="collectionType">The type of the collection to construct and populate.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="collectionType"/> is null.</exception>
-    /// <exception cref="ArgumentException">Thrown when the <paramref name="collectionType"/> is not a collection or does not have a valid add method.</exception>
-    public DynamicCollectionFactory(Type collectionType)
+    public static IEnumerable CreateInstance(
+        Type collectionType,
+        IEnumerable<object> collectionItems,
+        IEqualityComparer? comparer = null)
     {
-        ThrowIf.ArgumentNull(collectionType);
+        collectionType = ThrowIf.ArgumentNull(collectionType);
+        var items = ThrowIf
+            .ArgumentNull(collectionItems)
+            .ToArray();
 
-        // Ensure the type is a generic collection type (ICollection<T>, IList<T>, etc.)
-        Type? interfaceType = collectionType
-            .GetInterfaces()
-            .FirstOrDefault(t => t.IsGenericType &&
-                                 (typeof(ICollection<>).IsAssignableFrom(t.GetGenericTypeDefinition()) ||
-                                  typeof(IEnumerable<>).IsAssignableFrom(t.GetGenericTypeDefinition())));
+        collectionType = collectionType
+            .Convert(t => GetConcreteCollectionType(t, items));
 
-        if (interfaceType == null)
-            throw new ArgumentException($"{collectionType.FullName} is not a supported collection type.", nameof(collectionType));
+        var typedItems = items.Convert(source =>
+        {
+            var elementType = collectionType.GetElementType()!;
+            var destination = Array.CreateInstance(elementType, items.Length);
+            Array.Copy(source, destination, destination.Length);
+            return destination;
+        })!;
 
-        // Set the item type for the collection
-        _itemType = interfaceType.GetGenericArguments()[0];
+        if (collectionType.IsArray)
+        {
+            return typedItems;
+        }
 
-        // Instantiate the collection
-        _collection = CreateCollectionInstance(collectionType);
-
-        // Find the appropriate "add" method (Add, Enqueue, Push)
-        _appender = GetAppenderMethod(collectionType);
-    }
-
-    /// <summary>
-    /// Adds an item to the collection.
-    /// </summary>
-    /// <param name="item">The item to add to the collection.</param>
-    /// <returns>The current <see cref="DynamicCollectionFactory"/> instance for chaining.</returns>
-    /// <exception cref="ArgumentException">Thrown when the item is not of the expected type.</exception>
-    public DynamicCollectionFactory Add(object item)
-    {
-        if (item == null)
-            throw new ArgumentNullException(nameof(item));
-
-        if (!_itemType.IsInstanceOfType(item))
-            throw new ArgumentException($"Item must be of type {_itemType.FullName}", nameof(item));
-
-        _appender(item);
-        return this;
-    }
-
-    /// <summary>
-    /// Builds the collection and returns the populated instance.
-    /// </summary>
-    /// <returns>The populated collection object.</returns>
-    public object Build() => _collection;
-
-    /// <summary>
-    /// Creates an instance of the given collection type using reflection.
-    /// </summary>
-    /// <param name="collectionType">The type of collection to instantiate.</param>
-    /// <returns>An instance of the specified collection.</returns>
-    /// <exception cref="ArgumentException">Thrown when the collection cannot be instantiated.</exception>
-    private static object CreateCollectionInstance(Type collectionType)
-    {
         try
         {
-            return Activator.CreateInstance(collectionType) ??
-                   throw new ArgumentException($"Cannot instantiate collection type {collectionType.FullName}.", nameof(collectionType));
+            var itemType = collectionType.GetGenericArguments().Single();
+
+            if (comparer is not null)
+            {
+                var ctor = collectionType
+                    .GetConstructor([
+                        typeof(IEnumerable<>).MakeGenericType(itemType),
+                        typeof(IEqualityComparer<>).MakeGenericType([itemType])
+                    ]);
+                if (ctor is not null)
+                {
+                    return (IEnumerable)ctor.Invoke([typedItems, comparer]);
+                }
+
+                ctor = collectionType
+                    .GetConstructor([
+                        typeof(IEqualityComparer<>).MakeGenericType([itemType])
+                    ]);
+                if (ctor is not null)
+                {
+                    var collection = ctor.Invoke([comparer]) as IEnumerable ?? throw new InvalidOperationException();
+                    PopulateCollection(collection, typedItems);
+                    return collection;
+                }
+
+                throw new InvalidOperationException("oops...");
+            }
+            else
+            {
+                var ctor = collectionType
+                    .GetConstructor([
+                        typeof(IEnumerable<>).MakeGenericType(itemType)
+                    ]);
+                if (ctor is not null)
+                {
+                    return (IEnumerable)ctor.Invoke([typedItems]);
+                }
+                var collection = Activator.CreateInstance(collectionType) as IEnumerable ?? throw new InvalidOperationException();
+                PopulateCollection(collection, typedItems);
+                return collection;
+            }
+            
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            throw new ArgumentException($"Cannot instantiate collection type {collectionType.FullName}: {ex.Message}", nameof(collectionType), ex);
+            Debug.WriteLine($"Collection creation failed: {e.Message}");
+            throw;
         }
     }
 
-    // <summary>
-    /// Retrieves the appropriate "add" method for the collection (Add, Enqueue, or Push).
-    /// </summary>
-    /// <param name="collectionType">The type of the collection.</param>
-    /// <returns>An action to append an item to the collection.</returns>
-    /// <exception cref="ArgumentException">Thrown when no valid add method is found.</exception>
-    private Action<object> GetAppenderMethod(Type collectionType)
+    private static void PopulateCollection(IEnumerable collection, IEnumerable items)
     {
-        // Known types that have direct add methods
-        if (typeof(IList).IsAssignableFrom(collectionType))
-        {
-            return item => ((IList)_collection).Add(item);
-        }
+        // Retrieve the collection's type
+        var collectionType = collection.GetType();
 
-        if (typeof(Queue<>).IsAssignableFrom(collectionType))
-        {
-            return item => collectionType.GetMethod(nameof(Queue<object>.Enqueue))!.Invoke(_collection, new[] { item });
-        }
-
-        if (typeof(Stack<>).IsAssignableFrom(collectionType))
-        {
-            return item => collectionType.GetMethod(nameof(Stack<object>.Push))!.Invoke(_collection, new[] { item });
-        }
-
-        // Fallback to reflection-based search for "Add", "Enqueue", or "Push"
-        var methodNames = new[] { "Add", "Enqueue", "Push" };
-
-        MethodInfo? method = collectionType
-            .GetMethods(BindingFlags.Instance | BindingFlags.Public)
-            .FirstOrDefault(m =>
+        // Try to find the Add, Enqueue, or Push method that accepts a single parameter
+        var insertionMethods = new[] { "Add", "Enqueue", "Push" };
+        MethodInfo addMethod = insertionMethods
+            .Select(methodName => collectionType.GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public))
+            .Where(mi =>
             {
-                var parameters = m.GetParameters();
-                return methodNames.Contains(m.Name) && parameters.Length == 1 && parameters[0].ParameterType == _itemType;
-            });
+                if (mi is null)
+                {
+                    return false;
+                }
 
-        if (method == null)
-            throw new ArgumentException($"No valid add method found in {collectionType.FullName}.", nameof(collectionType));
+                var parameters = mi.GetParameters();
+                if (parameters.Length != 1)
+                {
+                    return false;
+                }
 
-        // Return the method invocation as an action
-        return item => method.Invoke(_collection, new object[] { item });
+                return true;
+            })
+            .FirstOrDefault() ?? throw new InvalidOperationException("No suitable method found to populate the collection.");
+
+        var parameterType = addMethod.GetParameters()[0].ParameterType;
+        var args = new object[1];
+        foreach (var item in items)
+        {
+            if (!parameterType.IsInstanceOfType(item))
+            {
+                throw new InvalidOperationException($"Item of type {item.GetType()} is not compatible with expected type {parameterType}.");
+            }
+            args[0] = item;
+            addMethod.Invoke(collection, args);
+        }
+    }
+
+
+
+    private static Type GetConcreteCollectionType(Type collectionType, IReadOnlyList<object> items)
+    {
+        {
+            if (collectionType.IsGenericType || collectionType.IsArray)
+            {
+                var itemType = collectionType.IsGenericType
+                    ? collectionType.GetGenericArguments()[0]
+                    : collectionType.GetElementType()
+                    ?? throw new InvalidOperationException("Could not determine the collection's item type.");
+                var csv = items
+                    .Skip(itemType.IsInstanceOfType)
+                    .Select(item => item.GetType())
+                    .Distinct()
+                    .Select(t => t.FullName)
+                    .Take(5)!
+                    .Join(", ");
+                if (csv.IsPrintable())
+                {
+                    throw new InvalidOperationException($"Incompatible collection item types found: {csv}");
+                }
+
+                if (collectionType.IsArray)
+                {
+                    return collectionType;
+                }
+
+                if (collectionType.IsInterface)
+                {
+                    //TODO: extend logic below to handle other cases when an interface can be instantiated correctly and safely
+                    if (typeof(ISet<>).MakeGenericType([itemType]) == collectionType ||
+                        typeof(IReadOnlySet<>).MakeGenericType([itemType]) == collectionType)
+                    {
+                        return typeof(HashSet<>).MakeGenericType([itemType]);
+                    }
+
+                    if (typeof(IList<>).MakeGenericType([itemType]) == collectionType ||
+                        typeof(IReadOnlyList<>).MakeGenericType([itemType]) == collectionType ||
+                        typeof(IReadOnlyCollection<>).MakeGenericType([itemType]) == collectionType ||
+                        typeof(ICollection<>).MakeGenericType([itemType]) == collectionType)
+                    {
+                        return typeof(List<>).MakeGenericType([itemType]);
+                    }
+
+                    if (typeof(IEnumerable<>).MakeGenericType([itemType]) == collectionType)
+                    {
+                        return itemType.MakeArrayType();
+                    }
+                }
+                else if (collectionType.IsAbstract)
+                {
+                    if (typeof(ReadOnlyCollection<>).IsAssignableFrom(collectionType))
+                    {
+                        // For ReadOnlyCollection<T>, map to List<T> and later wrap in ReadOnlyCollection<T> at runtime
+                        return typeof(ReadOnlyCollection<>).MakeGenericType(itemType);
+                    }
+
+
+                    if (typeof(ObservableCollection<>).IsAssignableFrom(collectionType))
+                    {
+                        return typeof(ObservableCollection<>).MakeGenericType(itemType);  
+                    }
+                    throw new InvalidOperationException($"Cannot instantiate abstract collection type: {collectionType.FullName}");
+                }
+                else
+                {
+                    //TODO: analyse cases when the instance cannot be created at all and if so, throw exception
+                }
+            }
+
+            return collectionType;
+        }
     }
 }
