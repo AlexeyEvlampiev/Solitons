@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Diagnostics;
 using System.Reactive;
 using Npgsql;
 using Solitons.CommandLine;
@@ -8,6 +9,7 @@ namespace Solitons.Postgres.PgUp;
 
 public class Program
 {
+    private readonly IPgUpProgram _upProgram;
     private static readonly TimeSpan DefaultActionTimeout = TimeSpan.FromMinutes(10);
 
     public const string DeployCommandDescription = "Deploys a PostgreSQL database according to the pgup.json deployment plan, ensuring all configurations and resources are correctly applied.";
@@ -18,12 +20,21 @@ public class Program
 
     private readonly IPgUpTemplateRepository _templates = new PgUpFileSystemTemplateRepository();
 
+    [DebuggerNonUserCode]
+    internal Program(IPgUpProgram upProgram)
+    {
+        _upProgram = upProgram;
+    }
+
+    [DebuggerNonUserCode]
+    public Program() : this(new PgUpProgram()) { }
+
 
     public static int Main()
     {
         return CliProcessor
             .Setup(config => config
-                .UseCommandsFrom<Program>()
+                .UseCommandsFrom(new Program())
                 .UseLogo(PgUpResource.AsciiLogo)
                 .UseDescription("CLI for managing PostgreSQL deployments and tasks using a structured, user-defined sequence of database transactions."))
             .Process();
@@ -31,11 +42,11 @@ public class Program
 
     [CliRoute("init|initialize")]
     [CliRouteArgument(nameof(projectDir), "PgUp project directory")]
-    public static void Initialize(
+    public void Initialize(
         string projectDir,
         [CliOption("--template")]string template = "basic")
     {
-        PgUpTemplateManager.Initialize(projectDir, template);
+        _upProgram.Initialize(projectDir, template);
     } 
 
     [CliRoute("deploy")]
@@ -45,13 +56,13 @@ public class Program
     [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD% --timeout 00:30:00", description: "Deploys with a custom timeout of 30 minutes.")]
     [CliCommandExample("deploy pgup.json --host localhost --port 5432 --management-database postgres --username %ADMIN_USR% --password %ADMIN_PWD% --timeout 00:30:00", description: "Specifies port, management database, and timeout.")]
     [CliCommandExample("deploy pgup.json --host localhost --port 5432 --management-database postgres --username %ADMIN_USR% --password %ADMIN_PWD% --timeout 00:30:00 --parameter[dbName] my_database", description: "Overrides default parameters such as the database name.")]
-    public static Task<int> DeployAsync(
+    public Task<int> DeployAsync(
         string projectFile,
         ConnectionBuilderBundle connection,
         [PgUpParametersOption] Dictionary<string, string>? parameters = null,
         [CliOption("--timeout")] TimeSpan? timeout = null)
     {
-        return PgUpDatabaseManager
+        return _upProgram
             .DeployAsync(
                 projectFile,
                 connection.ToString(),
@@ -72,7 +83,7 @@ public class Program
     [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD% --overwrite", description: "Deploys by overwriting the existing database, resulting in the loss of all current data.")]
     [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD% --overwrite --force", description: "Deploys by forcefully overwriting the existing database without confirmation, resulting in complete data loss.")]
     [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD% --overwrite --force --parameter[dbOwner] new_owner", description: "Deploys by forcefully overwriting the database, without confirmation, and with a new database owner.")]
-    public static Task<int> DeployAsync(
+    public  Task<int> DeployAsync(
         string projectFile,
         ConnectionBuilderBundle connection,
         [CliOption("--overwrite")] Unit overwrite,
@@ -80,7 +91,7 @@ public class Program
         [PgUpParametersOption] Dictionary<string, string>? parameters = null,
         [CliOption("--timeout")] TimeSpan? timeout = null)
     {
-        return PgUpDatabaseManager
+        return _upProgram
             .DeployAsync(
                 projectFile,
                 connection.ToString(),
@@ -122,7 +133,7 @@ public class Program
     [CliCommandExample("deploy pgup.json --connection \"Host=localhost;Username=postgres;Password=secret\" --overwrite --force", description: "Deploys by forcefully overwriting the existing database without confirmation, leading to complete data loss.")]
     [CliCommandExample("deploy pgup.json --connection \"Host=localhost;Username=postgres;Password=secret\" --overwrite --force --timeout 00:25:00", description: "Deploys with forced overwrite and a custom timeout of 25 minutes.")]
     [CliCommandExample("deploy pgup.json --connection \"Host=localhost;Username=postgres;Password=secret\" --overwrite --force --parameter[dbName] custom_db --timeout 00:25:00", description: "Deploys by forcefully overwriting the existing database, with a custom database name and a 25-minute timeout.")]
-    public static  Task<int> DeployAsync(
+    public Task<int> DeployAsync(
         string projectFile,
         [CliOption("--connection")] string connectionString,
         [CliOption("--overwrite")] Unit overwrite,
@@ -135,8 +146,8 @@ public class Program
             .DeployAsync(
                 projectFile,
                 connectionString,
-                true,
-                forceOverride.HasValue,
+                false,
+                false,
                 parameters ?? [],
                 timeout ?? DefaultActionTimeout);
     }

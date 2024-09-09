@@ -15,7 +15,7 @@
     <PackageReference Include="Azure.Storage.Files.DataLake" Version="12.19.1" />
     <PackageReference Include="Azure.Storage.Files.Shares" Version="12.19.1" />
     <PackageReference Include="Azure.Storage.Queues" Version="12.19.1" />
-    <PackageReference Include="Parquet.Net" Version="4.24.0" />
+    <PackageReference Include="Parquet.Net" Version="4.25.0" />
   </ItemGroup>
 
   <ItemGroup>

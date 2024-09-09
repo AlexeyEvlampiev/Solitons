@@ -227,13 +227,11 @@ internal sealed class CliActionSchema : ICliActionSchema
                 .Select(Activator.CreateInstance)
                 .OfType<TypeConverter>()
                 .Concat([
+                    optionArity == CliOptionArity.Flag ? new CliFlagConverter() :
                     option.GetCustomTypeConverter() ?? TypeDescriptor.GetConverter(underlyingType)
                 ])
                 .First();
-            if (optionArity == CliOptionArity.Flag)
-            {
-                typeConverter ??= new CliFlagConverter();
-            }
+
             if (typeConverter.CanConvertTo(underlyingType))
             {
                 _fields.Add(new Option(
