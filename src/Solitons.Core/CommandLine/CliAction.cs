@@ -211,12 +211,12 @@ internal sealed class CliAction : IComparable<CliAction>
     }
 
 
-    public int Execute(string commandLine, CliTokenSubstitutionPreprocessor preProcessor)
+    public int Execute(string commandLine, CliTokenDecoder decoder)
     {
         commandLine = ThrowIf.ArgumentNullOrWhiteSpace(commandLine);
         var match = _schema.Match(
             commandLine, 
-            preProcessor, 
+            decoder, 
             unmatchedTokens =>
         {
             var csv = unmatchedTokens
@@ -231,11 +231,11 @@ internal sealed class CliAction : IComparable<CliAction>
             throw new InvalidOperationException($"The command line did not match any known patterns.");
         }
 
-        var args = _parametersFactory.BuildMethodArguments(match, preProcessor);
+        var args = _parametersFactory.BuildMethodArguments(match, decoder);
 
         foreach (var bundle in _masterOptions)
         {
-            bundle.PopulateFrom(match, preProcessor);
+            bundle.PopulateFrom(match, decoder);
         }
 
         _masterOptions.ForEach(bundle => bundle.OnExecutingAction(commandLine));

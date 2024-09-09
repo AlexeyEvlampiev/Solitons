@@ -178,7 +178,7 @@ internal abstract class CliOperandInfo
     public override string ToString() => Name;
 
 
-    protected bool FindValue(Match match, CliTokenSubstitutionPreprocessor preprocessor, out object? value)
+    protected bool FindValue(Match match, CliTokenDecoder decoder, out object? value)
     {
         value = false;
         if (false == match.Success)
@@ -194,7 +194,7 @@ internal abstract class CliOperandInfo
                 throw new NotImplementedException();
             }
 
-            value = Converter.FromMatch(match, preprocessor);
+            value = Converter.FromMatch(match, decoder);
             return true;
         }
 

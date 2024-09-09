@@ -161,12 +161,12 @@ public sealed class CliProcessor : ICliProcessorCallback
     {
         try
         {
-            commandLine = CliTokenSubstitutionPreprocessor
-                .SubstituteTokens(commandLine, out var preProcessor)
+            commandLine = CliTokenEncoder
+                .Encode(commandLine, out var decoder)
                 .Trim();
             var executableName = Regex
                 .Match(commandLine, @"^\S+")
-                .Convert( m => preProcessor.GetSubstitution(m.Value))
+                .Convert( m => decoder(m.Value))
                 .Convert(Path.GetFileName)
                 .DefaultIfNullOrWhiteSpace("cli");
 
@@ -196,7 +196,7 @@ public sealed class CliProcessor : ICliProcessorCallback
 
             Trace.TraceInformation($"Found an actions that matches the given command line.");
 
-            var result = action.Execute(commandLine, preProcessor);
+            var result = action.Execute(commandLine, decoder);
             Trace.TraceInformation($"The action returned {result}");
 
             return result;

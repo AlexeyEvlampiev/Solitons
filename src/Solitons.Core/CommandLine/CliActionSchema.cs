@@ -256,12 +256,12 @@ internal sealed class CliActionSchema : ICliActionSchema
     /// Matches the specified command line string against the schema.
     /// </summary>
     /// <param name="commandLine">The command line string to match.</param>
-    /// <param name="preProcessor"></param>
+    /// <param name="decoder"></param>
     /// <param name="unrecognizedTokensHandler"></param>
     /// <returns>A <see cref="Match"/> object that contains information about the match.</returns>
     public Match Match(
         string commandLine, 
-        ICliTokenSubstitutionPreprocessor preProcessor,
+        CliTokenDecoder decoder,
         Action<ISet<string>> unrecognizedTokensHandler)
     {
         var match = _regex.Match(commandLine);
@@ -271,7 +271,7 @@ internal sealed class CliActionSchema : ICliActionSchema
             var unrecognizedTokens = unrecognizedParameterGroup
                 .Captures
                 .Select(c => c.Value.Trim())
-                .Select(preProcessor.GetSubstitution)
+                .Select(v => decoder(v))
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
             unrecognizedTokensHandler.Invoke(unrecognizedTokens);
         }

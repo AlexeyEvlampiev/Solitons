@@ -13,9 +13,9 @@ internal sealed class CliBundleOptionInfo(PropertyInfo propertyInfo)
 
     public static implicit operator PropertyInfo(CliBundleOptionInfo optionInfo) => optionInfo._propertyInfo;
 
-    public void SetValues(CliOptionBundle bundle, Match match, CliTokenSubstitutionPreprocessor preprocessor)
+    public void SetValues(CliOptionBundle bundle, Match match, CliTokenDecoder decoder)
     {
-        if (FindValue(match, preprocessor, out var value))
+        if (FindValue(match, decoder, out var value))
         {
             _propertyInfo.SetValue(bundle, value);
         }

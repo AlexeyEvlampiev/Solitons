@@ -14,7 +14,7 @@ internal interface ICliCommandInputBuilder
 {
     Type InputType { get; }
 
-    object? Build(Match commandLineMatch, ICliTokenSubstitutionPreprocessor preProcessor);
+    object? Build(Match commandLineMatch, CliTokenDecoder decoder);
 
 }
 
@@ -32,9 +32,9 @@ internal interface ICliCommandSimpleInputBuilder : ICliCommandInputBuilder
     string GetDescription();
 
     [DebuggerStepThrough]
-    public sealed object Parse(Group group, ICliTokenSubstitutionPreprocessor preProcessor) => Parser.Parse(group, preProcessor);
+    public sealed object Parse(Group group, CliTokenDecoder decoder) => Parser.Parse(group, decoder);
 
-    object? ICliCommandInputBuilder.Build(Match commandLineMatch, ICliTokenSubstitutionPreprocessor preProcessor)
+    object? ICliCommandInputBuilder.Build(Match commandLineMatch, CliTokenDecoder decoder)
     {
         if (commandLineMatch.Success == false)
         {
@@ -71,20 +71,20 @@ internal interface ICliCommandSimpleInputBuilder : ICliCommandInputBuilder
                 : throw new InvalidOperationException(""));
         }
 
-        return Parse(group, preProcessor);
+        return Parse(group, decoder);
     }
 }
 
 internal interface ICliCommandOptionBundleParameterFactory : ICliCommandInputBuilder
 {
-    object? ICliCommandInputBuilder.Build(Match commandLineMatch, ICliTokenSubstitutionPreprocessor preProcessor)
+    object? ICliCommandInputBuilder.Build(Match commandLineMatch, CliTokenDecoder decoder)
     {
         if (false == ICliCommandOptionBundle.IsAssignableFrom(InputType))
         {
             throw new InvalidOperationException();
         }
         var bundle = (ICliCommandOptionBundle)Activator.CreateInstance(this.InputType)!;
-        bundle.PopulateFrom(commandLineMatch, preProcessor);
+        bundle.PopulateFrom(commandLineMatch, decoder);
         return bundle;
     }
 
@@ -93,7 +93,7 @@ internal interface ICliCommandOptionBundleParameterFactory : ICliCommandInputBui
 
 internal interface ICliCommandOptionBundle
 {
-    void PopulateFrom(Match commandLineMatch, ICliTokenSubstitutionPreprocessor preProcessor);
+    void PopulateFrom(Match commandLineMatch, CliTokenDecoder decoder);
 
     public static bool IsAssignableFrom(Type commandInputType)
     {
@@ -138,10 +138,7 @@ interface ICliCommandOptionFactory : ICliCommandSimpleInputBuilder
 }
 
 
-internal interface ICliTokenSubstitutionPreprocessor
-{
-    string GetSubstitution(string key);
-}
+
 
 
 internal class CliCommandOptionBundleParameterFactory : ICliCommandOptionBundleParameterFactory
@@ -183,6 +180,10 @@ internal class CliCommandOptionBundleParameterFactory : ICliCommandOptionBundleP
             });
     }
     public Type InputType { get; }
+    public object? Build(Match commandLineMatch, CliTokenDecoder decoder)
+    {
+        throw new NotImplementedException();
+    }
 
     public IEnumerable<ICliCommandOptionFactory> GetAllOptions() => _innerOptionBuilders.AsEnumerable();
 }
@@ -240,6 +241,11 @@ internal sealed class CliCommandParameterArgumentBuilder : ICliCommandArgumentBu
     public int ParameterIndex { get; }
     public string ParameterName => _parameter.Name!;
     public Type InputType => _parameter.ParameterType;
+    public object? Build(Match commandLineMatch, CliTokenDecoder decoder)
+    {
+        throw new NotImplementedException();
+    }
+
     public string ArgumentRole => _routeArgument.ArgumentRole;
 }
 
@@ -260,6 +266,11 @@ internal sealed class CliCommandParameterOptionFactory : ICliCommandOptionFactor
     public IReadOnlyList<string> OptionAliases => _option.Aliases;
 
     public Type InputType => _parameter.ParameterType;
+    public object? Build(Match commandLineMatch, CliTokenDecoder decoder)
+    {
+        throw new NotImplementedException();
+    }
+
     public CliOperandValueParser Parser { get; }
     public bool HasDefaultValue(out object? defaultValue)
     {
@@ -301,6 +312,11 @@ internal sealed class CliCommandPropertyOptionFactory : ICliCommandPropertyOptio
     }
 
     Type ICliCommandInputBuilder.InputType => PropertyType;
+    public object? Build(Match commandLineMatch, CliTokenDecoder decoder)
+    {
+        throw new NotImplementedException();
+    }
+
     public CliOperandValueParser Parser { get; }
     public bool HasDefaultValue(out object? defaultValue)
     {
@@ -315,7 +331,7 @@ internal sealed class CliCommandPropertyOptionFactory : ICliCommandPropertyOptio
         throw new NotImplementedException();
     }
 
-    public object? Build(Match commandLineMatch, ICliTokenSubstitutionPreprocessor preProcessor)
+    public object? Build(Match commandLineMatch, ICliTokenEncoder preProcessor)
     {
         throw new NotImplementedException();
     }
@@ -348,7 +364,7 @@ internal class CliOperandValueParser
         _operand = operand;
     }
 
-    public object Parse(Group group, ICliTokenSubstitutionPreprocessor preProcessor)
+    public object Parse(Group group, CliTokenDecoder decoder)
     {
         var captures = group.Captures;
         switch (_operand.OptionArity)

@@ -10,12 +10,12 @@ internal interface ICliActionSchema
     /// Matches the specified command line string against the schema.
     /// </summary>
     /// <param name="commandLine">The command line string to match.</param>
-    /// <param name="preProcessor"></param>
+    /// <param name="decoder"></param>
     /// <param name="unrecognizedTokensHandler"></param>
     /// <returns>A <see cref="CliActionSchema.Match"/> object that contains information about the match.</returns>
     Match Match(
         string commandLine, 
-        ICliTokenSubstitutionPreprocessor preProcessor,
+        CliTokenDecoder decoder,
         Action<ISet<string>> unrecognizedTokensHandler);
 
     bool IsMatch(string commandLine);

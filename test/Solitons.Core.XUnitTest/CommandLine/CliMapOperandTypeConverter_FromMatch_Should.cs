@@ -14,7 +14,7 @@ public sealed class CliMapOperandTypeConverter_FromMatch_Should
     [InlineData("--map[A] 3", "A", 3)]
     public void HandleIntValues(string input, string key, int expectedValue)
     {
-        input = CliTokenSubstitutionPreprocessor.SubstituteTokens(input, out var preprocessor);
+        input = CliTokenEncoder.Encode(input, out var preprocessor);
         var target = new CliMapOperandTypeConverter(typeof(Dictionary<string, int>), "test", Array.Empty<object>(), null);
         var pattern = target.ToMatchPattern("--map");
         var match = Regex.Match(input, pattern);

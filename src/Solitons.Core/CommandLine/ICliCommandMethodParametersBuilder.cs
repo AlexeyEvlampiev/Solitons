@@ -5,6 +5,6 @@ namespace Solitons.CommandLine;
 
 internal interface ICliCommandMethodParametersFactory
 {
-    object?[] BuildMethodArguments(Match match, ICliTokenSubstitutionPreprocessor preProcessor);
+    object?[] BuildMethodArguments(Match match, CliTokenDecoder decoder);
     IEnumerable<ICliCommandOptionFactory> OptionFactories { get; }
 }

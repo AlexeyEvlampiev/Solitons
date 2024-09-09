@@ -13,20 +13,20 @@ internal abstract class CliOperandTypeConverter(bool allowsMultipleValues)
     [DebuggerStepThrough]
     public object FromMatch(
         Match match,
-        CliTokenSubstitutionPreprocessor preprocessor)
+        CliTokenDecoder decoder)
     {
         if (false == match.Success)
         {
             throw new ArgumentException();
         }
 
-        return Convert(match, preprocessor);
+        return Convert(match, decoder);
     }
 
 
     protected abstract object Convert(
         Match match,
-        CliTokenSubstitutionPreprocessor preprocessor);
+        CliTokenDecoder decoder);
 
     public abstract string ToMatchPattern(string keyPattern);
 

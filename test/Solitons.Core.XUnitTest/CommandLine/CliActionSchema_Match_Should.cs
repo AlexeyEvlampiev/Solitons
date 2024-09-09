@@ -22,12 +22,11 @@ public sealed class CliActionSchema_Match_Should
     {
         Debug.WriteLine(commandLine);
         var schema = new CliActionSchema(GetType().GetMethod(nameof(ProgramRun))!);
-        var preProcessor = new Mock<ICliTokenSubstitutionPreprocessor>();
-        preProcessor.Setup(m => m.GetSubstitution(It.IsAny<string>())).Returns((string token) => token);
+
 
         var match = schema.Match(
             commandLine, 
-            preProcessor.Object, 
+            (token) => token, 
             unmatched =>
         {
             Assert.Equal(unrecognizedTokensCount, unmatched.Count);
@@ -57,10 +56,10 @@ public sealed class CliActionSchema_Match_Should
         Debug.WriteLine(commandLine);
         var schema = new CliActionSchema(GetType().GetMethod(nameof(Scenario002))!);
 
-        var preProcessor = new Mock<ICliTokenSubstitutionPreprocessor>();
-        preProcessor.Setup(m => m.GetSubstitution(It.IsAny<string>())).Returns((string token) => token);
-
-        var match = schema.Match(commandLine, preProcessor.Object, unmatched =>
+        var match = schema.Match(
+            commandLine, 
+            token => token,
+            unmatched =>
         {
             Assert.Equal(unrecognizedTokensCount, unmatched.Count);
         });

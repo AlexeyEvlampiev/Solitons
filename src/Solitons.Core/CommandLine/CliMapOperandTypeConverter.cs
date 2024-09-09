@@ -42,7 +42,7 @@ internal sealed class CliMapOperandTypeConverter : CliOperandTypeConverter
 
     public Type ValueType { get; }
 
-    protected override object Convert(Match match, CliTokenSubstitutionPreprocessor preprocessor)
+    protected override object Convert(Match match, CliTokenDecoder decoder)
     {
         var dictionaryType = typeof(Dictionary<,>).MakeGenericType(typeof(string), ValueType);
         ICliMapOption? mapOption = _metadata.OfType<ICliMapOption>().FirstOrDefault();
@@ -67,7 +67,7 @@ internal sealed class CliMapOperandTypeConverter : CliOperandTypeConverter
             }
 
             var (key, valueText) = (pair[0], pair[1]);
-            valueText = preprocessor.GetSubstitution(valueText);
+            valueText = decoder(valueText);
             var value = _valueTypeConverter.ConvertFromInvariantString(valueText);
             if (result.Contains(key) && 
                 false == result[key]!.Equals(value))

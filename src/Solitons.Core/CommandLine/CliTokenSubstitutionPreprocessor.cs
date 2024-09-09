@@ -5,20 +5,26 @@ using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
 
-public sealed class CliTokenSubstitutionPreprocessor : ICliTokenSubstitutionPreprocessor
+public delegate string CliTokenDecoder(string token);
+internal interface ICliTokenEncoder
+{
+    string Encode(string text, out CliTokenDecoder decoder);
+}
+
+public sealed class CliTokenEncoder : ICliTokenEncoder
 {
     [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
     private readonly Dictionary<string, string> _substitutions;
 
-    private CliTokenSubstitutionPreprocessor(Dictionary<string, string> substitutions)
+    private CliTokenEncoder()
     {
-        _substitutions = substitutions;
+        _substitutions = new Dictionary<string, string>();
     }
 
-    public static string SubstituteTokens(string commandLine, out CliTokenSubstitutionPreprocessor cliTokenSubstitutionPreprocessor)
+    string ICliTokenEncoder.Encode(string commandLine, out CliTokenDecoder decoder)
     {
         var dictionary = new Dictionary<string, string>(StringComparer.Ordinal);
-        cliTokenSubstitutionPreprocessor = new CliTokenSubstitutionPreprocessor(dictionary);
+        decoder = (key) => dictionary.GetValueOrDefault(key, key);
 
         commandLine = Regex.Replace(
             commandLine,
@@ -34,8 +40,8 @@ public sealed class CliTokenSubstitutionPreprocessor : ICliTokenSubstitutionPrep
 
         commandLine = Regex.Replace(
             commandLine,
-        @"""([^""]*)""",
-        match =>
+            @"""([^""]*)""",
+            match =>
             {
                 var group = match.Groups[1];
                 Debug.Assert(group.Success);
@@ -48,14 +54,11 @@ public sealed class CliTokenSubstitutionPreprocessor : ICliTokenSubstitutionPrep
         return commandLine;
     }
 
-    public string GetSubstitution(string key) => _substitutions.GetValueOrDefault(key, key);
-
-    public static IEnumerable<string> Parse(string commandLine)
+    [DebuggerStepThrough]
+    public static string Encode(string commandLine, out CliTokenDecoder decoder)
     {
-        commandLine = SubstituteTokens(commandLine.Trim(), out var preProcessor);
-        foreach (var key in Regex.Split(commandLine, @"\s+"))
-        {
-            yield return preProcessor.GetSubstitution(key);
-        }
+        ICliTokenEncoder encoder = new CliTokenEncoder();
+        return encoder.Encode(commandLine, out decoder);
     }
+
 }

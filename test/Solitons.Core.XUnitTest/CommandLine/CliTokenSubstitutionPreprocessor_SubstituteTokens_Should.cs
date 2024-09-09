@@ -10,8 +10,8 @@ public sealed class CliTokenSubstitutionPreprocessor_SubstituteTokens_Should
     public void Work(string commandLine, string key, string expectedValue)
     {
         Environment.SetEnvironmentVariable(key, expectedValue);
-        var preprocessedCommandLine = CliTokenSubstitutionPreprocessor.SubstituteTokens(commandLine, out var preprocessor);
-        var actualValue = preprocessor.GetSubstitution(preprocessedCommandLine);
+        var preprocessedCommandLine = CliTokenEncoder.Encode(commandLine, out var decoder);
+        var actualValue = decoder(preprocessedCommandLine);
         Assert.Equal(expectedValue, actualValue);
         Assert.NotEqual(commandLine, preprocessedCommandLine);
     }

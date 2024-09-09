@@ -83,13 +83,13 @@ internal sealed class CliActionHandlerParametersFactory : ICliCommandMethodParam
 
     internal int ParametersCount => _parameterFactories.Count;
 
-    public object?[] BuildMethodArguments(Match match, ICliTokenSubstitutionPreprocessor preProcessor)
+    public object?[] BuildMethodArguments(Match match, CliTokenDecoder decoder)
     {
         var args = new object?[_parameterFactories.Count];
         for (int i = 0; i < _parameterFactories.Count; ++i)
         {
             var operand = _parameterFactories[i];
-            var value = operand.Build(match, preProcessor);
+            var value = operand.Build(match, decoder);
             args[i] = value;
         }
         return args;

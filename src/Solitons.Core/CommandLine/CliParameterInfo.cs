@@ -18,9 +18,9 @@ internal abstract class CliParameterInfo(ParameterInfo parameter)
         return parameter.HasDefaultValue;
     }
 
-    public object? GetValue(Match match, CliTokenSubstitutionPreprocessor preprocessor)
+    public object? GetValue(Match match, CliTokenDecoder decoder)
     {
-        if (FindValue(match, preprocessor, out var value))
+        if (FindValue(match, decoder, out var value))
         {
             return value;
         }

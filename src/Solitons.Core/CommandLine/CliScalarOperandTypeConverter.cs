@@ -32,7 +32,7 @@ internal sealed class CliScalarOperandTypeConverter : CliOperandTypeConverter
                !typeof(IEnumerable).IsAssignableFrom(type);
     }
 
-    protected override object Convert(Match match, CliTokenSubstitutionPreprocessor preprocessor)
+    protected override object Convert(Match match, CliTokenDecoder decoder)
     {
         // Retrieve the value from the match using the parameter name
         if (false == match.Success)
@@ -52,7 +52,7 @@ internal sealed class CliScalarOperandTypeConverter : CliOperandTypeConverter
         }
 
         // Convert the string value to the desired type using TypeConverter
-        valueString = preprocessor.GetSubstitution(valueString);
+        valueString = decoder(valueString);
         var convertedValue = _typeConverter.ConvertFromInvariantString(valueString);
         if (convertedValue == null)
         {

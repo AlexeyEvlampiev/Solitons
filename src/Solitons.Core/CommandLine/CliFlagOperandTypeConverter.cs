@@ -31,7 +31,7 @@ internal sealed class CliFlagOperandTypeConverter : CliOperandTypeConverter
     public static bool IsFlag(Type type) => SupportedTypes.ContainsKey(type);
 
 
-    protected override object Convert(Match match, CliTokenSubstitutionPreprocessor preprocessor)
+    protected override object Convert(Match match, CliTokenDecoder decoder)
     {
         return SupportedTypes[_type];
     }

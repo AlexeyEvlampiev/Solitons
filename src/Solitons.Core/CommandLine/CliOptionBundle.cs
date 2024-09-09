@@ -85,7 +85,7 @@ public abstract class CliOptionBundle
         }
     }
 
-    public void PopulateFrom(Match match, CliTokenSubstitutionPreprocessor preprocessor)
+    public void PopulateFrom(Match match, CliTokenDecoder decoder)
     {
         throw new NotImplementedException();
     }
