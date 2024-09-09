@@ -122,7 +122,6 @@ internal sealed class CliAction : IComparable<CliAction>
                     }
 
                     parameterDeserializers[i] = argument.Deserialize;
-                    continue;
                 }
                 else
                 {
