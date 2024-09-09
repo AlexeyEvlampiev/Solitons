@@ -11,22 +11,32 @@ namespace Solitons.CommandLine;
 
 internal sealed class CliAction : IComparable<CliAction>
 {
-    private readonly ParameterInfo[] _parameters;
-    private readonly JazzyOptionInfo[] _options;
     private readonly CliDeserializer[] _parameterDeserializers;
-
-
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-    private readonly Func<object?[], Task<int>> _actionHandler;
-    private readonly CliMasterOptionBundle[] _masterOptions;
+    private readonly CliMasterOptionBundle[] _masterOptionBundles;
+    private readonly ActionHandler _handler;
     private readonly ICliActionSchema _schema;
-    private readonly ICliCommandMethodParametersFactory _parametersFactory;
 
-    public CliAction(
+    delegate Task<int> ActionHandler(object?[] args);
+
+    private CliAction(
+        ActionHandler handler,
+        CliDeserializer[] parameterDeserializers,
+        CliMasterOptionBundle[] masterOptionBundles,
+        ICliActionSchema schema)
+    {
+        _parameterDeserializers = parameterDeserializers;
+        _masterOptionBundles = masterOptionBundles;
+        _handler = ThrowIf.ArgumentNull(handler);
+        _schema = ThrowIf.ArgumentNull(schema);
+    }
+
+
+
+    internal static CliAction Create(
         object? instance,
         MethodInfo method,
         CliMasterOptionBundle[] masterOptionBundles,
-        IEnumerable<CliRouteAttribute> baseRoutes)
+        CliRouteAttribute[] baseRoutes)
     {
         ThrowIf.ArgumentNull(method);
         ThrowIf.ArgumentNull(masterOptionBundles);
@@ -34,16 +44,16 @@ internal sealed class CliAction : IComparable<CliAction>
 
 
 
-        _parameters = method.GetParameters();
-
+        var parameters = method.GetParameters();
         var methodAttributes = method.GetCustomAttributes().ToList();
-        
+        var argumentInfos = new Dictionary<CliRouteArgumentAttribute, JazzArgumentInfo>();
+
         var arguments = methodAttributes
             .OfType<CliRouteArgumentAttribute>()
             .Select(arg => new
             {
                 Argument = arg,
-                Selection = _parameters.Where(arg.References).ToList()
+                Selection = parameters.Where(arg.References).ToList()
             })
             .Do(item =>
             {
@@ -55,7 +65,7 @@ internal sealed class CliAction : IComparable<CliAction>
                         $"could not be found in the method signature. " +
                         $"Verify that the parameter name is correct and matches the method's defined parameters.");
                 }
-            
+
 
                 if (selection.Count > 1)
                 {
@@ -76,16 +86,21 @@ internal sealed class CliAction : IComparable<CliAction>
             .Select(item => new
             {
                 Argument = item.Argument,
-                Parameter = item.Selection.Single()
+                Parameter = item.Selection.Single(),
+                Info = new JazzArgumentInfo(item.Argument, item.Selection.Single())
             })
-            .ToDictionary(item => item.Parameter, item => new JazzArgumentInfo(item.Argument, item.Parameter));
+            .Do(item =>
+            {
+                argumentInfos.Add(item.Argument, item.Info);
+            })
+            .ToDictionary(item => item.Parameter, item => item.Info);
 
 
         var parameterDeserializers = new List<CliDeserializer>();
         var options = new List<JazzyOptionInfo>();
-        for(int i = 0; i < _parameters.Length; ++i)
+        for (int i = 0; i < parameters.Length; ++i)
         {
-            var parameter = _parameters[i];
+            var parameter = parameters[i];
             var parameterAttributes = parameter.GetCustomAttributes().ToList();
             var optionAttribute = parameterAttributes.OfType<CliOptionAttribute>().SingleOrDefault();
             var description = parameterAttributes
@@ -150,38 +165,33 @@ internal sealed class CliAction : IComparable<CliAction>
             options.AddRange(bundle.GetOptions());
         }
 
-        _options = options.ToArray();
-        _parameterDeserializers = parameterDeserializers.ToArray();
+        var schemaMetadata = new List<object>()
+        {
+            baseRoutes.SelectMany(route => route)
+        };
+        foreach (var methodAttribute in methodAttributes)
+        {
+            if (methodAttribute is CliRouteAttribute route)
+            {
+                schemaMetadata.AddRange(route);
+            }
 
-        ThrowIf.False(_parameters.Length == _parameterDeserializers.Length);
-    }
+            if (methodAttribute is CliRouteArgumentAttribute arg)
+            {
+                var info = argumentInfos[arg];
+                schemaMetadata.Add(info);
+            }
+        }
 
-    [DebuggerNonUserCode]
-    internal CliAction(
-        Func<object?[], Task<int>> actionHandler,
-        ICliActionSchema schema,
-        ICliCommandMethodParametersFactory parametersFactory,
-        CliMasterOptionBundle[] masterOptions)
-    {
-        _actionHandler = actionHandler;
-        _schema = schema;
-        _parametersFactory = parametersFactory;
-        _masterOptions = masterOptions;
-    }
+        schemaMetadata.AddRange(options);
+        schemaMetadata.AddRange(methodAttributes.OfType<CliCommandExampleAttribute>());
+        
+
+        ICliActionSchema schema = new CliActionSchema(schemaMetadata);
 
 
-    internal static CliAction Create(
-        object? instance,
-        MethodInfo method,
-        CliMasterOptionBundle[] masterOptionBundles,
-        IEnumerable<CliRouteAttribute> baseRouteMetadata)
-    {
-        ThrowIf.ArgumentNull(method);
-        ThrowIf.ArgumentNull(masterOptionBundles);
-
-        var schema = new CliActionSchema(method, masterOptionBundles, baseRouteMetadata);
-        var parametersFactory = new CliActionHandlerParametersFactory(method);
-        return new CliAction(InvokeAsync, schema, parametersFactory, masterOptionBundles);
+        ThrowIf.False(parameters.Length == parameterDeserializers.Count);
+        return new CliAction(InvokeAsync, parameterDeserializers.ToArray(), masterOptionBundles, schema);
 
         [DebuggerStepThrough]
         async Task<int> InvokeAsync(object?[] args)
@@ -231,17 +241,23 @@ internal sealed class CliAction : IComparable<CliAction>
             throw new InvalidOperationException($"The command line did not match any known patterns.");
         }
 
-        var args = _parametersFactory.BuildMethodArguments(match, decoder);
-
-        foreach (var bundle in _masterOptions)
+        var args = new object?[_parameterDeserializers.Length];
+        for (int i = 0; i < args.Length; ++i)
         {
-            bundle.PopulateFrom(match, decoder);
+            var deserializer = _parameterDeserializers[i];
+            args[i] = deserializer.Invoke(match, decoder);
         }
 
-        _masterOptions.ForEach(bundle => bundle.OnExecutingAction(commandLine));
+        var masterBundles = _masterOptionBundles.Select(bundle => bundle.Clone()).ToList();
+        foreach (var bundle in masterBundles)
+        {
+            bundle.PopulateOptions(match, decoder);
+        }
+
+        masterBundles.ForEach(bundle => bundle.OnExecutingAction(commandLine));
         try
         {
-            var task = _actionHandler.Invoke(args);
+            var task = _handler.Invoke(args);
             task.GetAwaiter().GetResult();
             var resultProperty = task.GetType().GetProperty("Result");
             object result = 0;
@@ -250,14 +266,14 @@ internal sealed class CliAction : IComparable<CliAction>
                 result = resultProperty.GetValue(task) ?? 0;
             }
 
-            _masterOptions.ForEach(bundle => bundle.OnActionExecuted(commandLine));
+            masterBundles.ForEach(bundle => bundle.OnActionExecuted(commandLine));
             
             return result is int exitCode ? exitCode : 0;
         }
         catch (Exception e)
         {
             Debug.WriteLine(e.GetType().Name);
-            _masterOptions.ForEach(bundle => bundle.OnError(commandLine, e));
+            masterBundles.ForEach(bundle => bundle.OnError(commandLine, e));
             throw;
         }
 

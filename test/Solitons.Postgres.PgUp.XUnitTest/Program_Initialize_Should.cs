@@ -3,7 +3,7 @@ using Solitons.CommandLine;
 
 namespace Solitons.Postgres.PgUp;
 
-public class PgUpProgram_Initialize_Should
+public class Program_Initialize_Should
 {
     [Theory]
     [InlineData("pgup init --template basic", "basic")]

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Reactive.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -14,34 +13,23 @@ namespace Solitons.CommandLine;
 /// </summary>
 internal sealed class CliActionSchema : ICliActionSchema
 {
-    private readonly List<object> _fields = new();
+    private readonly List<object> _metadata = new();
     private readonly Regex _regex;
     private readonly Regex _rankRegex;
 
+
     [DebuggerStepThrough]
-    internal CliActionSchema(MethodInfo method) : this(method, [], []) { }
-
     internal CliActionSchema(
-        MethodInfo method, 
-        IReadOnlyList<CliMasterOptionBundle> masterOptionBundles,
-        IEnumerable<CliRouteAttribute> baseRoutes)
+        IJazzCommandSegment[] commandSegments,
+        JazzyOptionInfo[] options,
+        IJazzExampleMetadata[] examples,
+        string description)
     {
-        ThrowIf.ArgumentNull(method);
-        var methodAttributes = method.GetCustomAttributes().ToList();
-        var parameters = method.GetParameters();
+        _commandSegments =  ThrowIf.ArgumentNull(commandSegments);
 
-        _fields.AddRange(baseRoutes
-            .SelectMany(route => route)
-            .Distinct()
-            .Select(subCommand => new RouteSubCommand(subCommand.Aliases)));
+        CommandDescription = description;
 
-        CommandDescription = methodAttributes
-            .OfType<DescriptionAttribute>()
-            .Select(a => a.Description)
-            .SingleOrDefault($"Invokes {method.Name} method.");
-
-        Examples = methodAttributes
-            .OfType<CliCommandExampleAttribute>()
+        Examples = examples
             .Select(a => new Example(a.Example, a.Description))
             .ToArray();
 
@@ -53,17 +41,17 @@ internal sealed class CliActionSchema : ICliActionSchema
         {
             if (attribute is CliRouteAttribute route)
             {
-                route.ForEach(subCommand => _fields.Add(new RouteSubCommand(subCommand.Aliases)));
+                route.ForEach(subCommand => _metadata.Add(new RouteSubCommand(subCommand.Aliases)));
             }
 
             if (attribute is CliRouteArgumentAttribute argument)
             {
-                _fields.Add(new RouteArgument(argument.ParameterName, argument.ArgumentRole, _fields.OfType<RouteSubCommand>() ));
+                _metadata.Add(new RouteArgument(argument.ParameterName, argument.ArgumentRole, _metadata.OfType<RouteSubCommand>()));
                 if (false == parameters.Any(argument.References))
                 {
                     throw new InvalidOperationException($"Too bad");
                 }
-                if(parameters.Where(argument.References).Count() > 1)
+                if (parameters.Where(argument.References).Count() > 1)
                 {
                     throw new InvalidOperationException($"Oh my...");
                 }
@@ -83,7 +71,7 @@ internal sealed class CliActionSchema : ICliActionSchema
             });
 
 
-        
+
         foreach (var parameter in parameters)
         {
             if (routeArgumentAttributes.Any(a => a.References(parameter)))
@@ -100,10 +88,6 @@ internal sealed class CliActionSchema : ICliActionSchema
                 var parameterAttributes = parameter
                     .GetCustomAttributes()
                     .ToList();
-                var description = parameterAttributes
-                    .OfType<DescriptionAttribute>()
-                    .Select(a => a.Description)
-                    .FirstOrDefault($"{method.Name} method parameter.");
                 var option = parameterAttributes
                     .OfType<CliOptionAttribute>()
                     .SingleOrDefault() ?? new CliOptionAttribute($"--{parameterName.ToLowerInvariant()}", description);
@@ -121,7 +105,7 @@ internal sealed class CliActionSchema : ICliActionSchema
 
                 if (typeConverter.CanConvertTo(underlyingType))
                 {
-                    _fields.Add(new Option(
+                    _metadata.Add(new Option(
                         $"{parameter.Name}_{OptionsCount:000}",
                         option.Aliases,
                         optionArity,
@@ -176,11 +160,12 @@ internal sealed class CliActionSchema : ICliActionSchema
                 .Count(argument.References) == 1));
     }
 
-    public IEnumerable<ICommandSegment> CommandSegments => _fields
-        .OfType<ICommandSegment>();
 
 
-    public IEnumerable<IOption> Options => _fields
+    IReadOnlyList<IJazzCommandSegment> ICliActionSchema.CommandSegments => _commandSegments;
+
+
+    public IEnumerable<IOption> Options => _metadata
         .OfType<IOption>();
 
     public string CommandRouteExpression { get; }
@@ -189,7 +174,7 @@ internal sealed class CliActionSchema : ICliActionSchema
     public string CommandDescription { get; }
     public IReadOnlyList<Example> Examples { get; }
 
-    public int OptionsCount => _fields.OfType<Option>().Count();
+    public int OptionsCount => _metadata.OfType<Option>().Count();
 
 
     private void RegisterOptionsBundle(Type bundleType)
@@ -234,7 +219,7 @@ internal sealed class CliActionSchema : ICliActionSchema
 
             if (typeConverter.CanConvertTo(underlyingType))
             {
-                _fields.Add(new Option(
+                _metadata.Add(new Option(
                     $"{property.Name}_{OptionsCount:000}",
                     option.Aliases,
                     optionArity,

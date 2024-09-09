@@ -6,6 +6,7 @@ namespace Solitons.CommandLine;
 
 internal interface ICliActionSchema
 {
+    IReadOnlyList<IJazzCommandSegment> CommandSegments { get; }
     /// <summary>
     /// Matches the specified command line string against the schema.
     /// </summary>
@@ -27,7 +28,6 @@ internal interface ICliActionSchema
     /// <returns>An integer representing the rank.</returns>
     int Rank(string commandLine);
 
-    IEnumerable<CliActionSchema.ICommandSegment> CommandSegments { get; }
     IEnumerable<CliActionSchema.IOption> Options { get; }
     string CommandRouteExpression { get; }
     string CommandDescription { get; }
