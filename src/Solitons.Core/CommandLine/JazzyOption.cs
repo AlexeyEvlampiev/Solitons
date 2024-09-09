@@ -4,12 +4,13 @@ using System.Text.RegularExpressions;
 using System;
 using System.ComponentModel;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using Solitons.Collections;
 
 namespace Solitons.CommandLine;
 
-internal sealed record JazzyOption
+internal sealed record JazzyOptionInfo
 {
     private static readonly Regex MapKeyValueRegex;
     delegate object? GroupBinder(Group group, CliTokenDecoder decoder);
@@ -20,7 +21,7 @@ internal sealed record JazzyOption
     private readonly GroupBinder _groupBinder;
 
 
-    static JazzyOption()
+    static JazzyOptionInfo()
     {
         var pattern = @"(?:\[$key\]\s+$value)|(?:$key\s+$value)"
             .Replace("$key", @"(?<key>\S+)?")
@@ -33,7 +34,10 @@ internal sealed record JazzyOption
         );
     }
 
-    public JazzyOption(
+
+
+
+    public JazzyOptionInfo(
         ICliOptionMetadata metadata,
         object? defaultValue,
         string description,
@@ -49,7 +53,7 @@ internal sealed record JazzyOption
         if (defaultValue is not null && 
             optionType.IsInstanceOfType(defaultValue) == false)
         {
-            throw new InvalidOperationException($"The provided default value is not of type {optionType}.");
+            throw new CliConfigurationException($"The provided default value is not of type {optionType}.");
         }
 
         _converter = metadata.GetCustomTypeConverter() 
@@ -61,7 +65,7 @@ internal sealed record JazzyOption
 
         if (_converter.CanConvertTo(OptionUnderlyingType) == false)
         {
-            throw new InvalidOperationException(
+            throw new CliConfigurationException(
                 $"The option value tokens cannot be converted to the specified option type '{OptionUnderlyingType}' using the default converter. " +
                 $"To resolve this, either provide a valid value that matches the option type, " +
                 $"fix the option type if it's incorrect, or specify a custom type converter " +
@@ -78,9 +82,9 @@ internal sealed record JazzyOption
         
         _groupBinder = Arity switch
         {
-            (CliOptionArity.Map) => ToDictionary,
-            (CliOptionArity.Vector) => ToCollection,
-            (CliOptionArity.Scalar) => ToScalar,
+            (CliOptionArity.Dictionary) => ToDictionary,
+            (CliOptionArity.Collection) => ToCollection,
+            (CliOptionArity.Value) => ToScalar,
             (CliOptionArity.Flag) => ToFlag,
             _ => throw new InvalidOperationException()
         };
@@ -101,7 +105,7 @@ internal sealed record JazzyOption
     public string Description { get; }
     public Type OptionType { get; }
 
-    public object? Bind(Match commandLineMatch, CliTokenDecoder decoder)
+    public object? Deserialize(Match commandLineMatch, CliTokenDecoder decoder)
     {
         Debug.Assert(commandLineMatch.Success);
         var group = commandLineMatch.Groups[RegexMatchGroupName];

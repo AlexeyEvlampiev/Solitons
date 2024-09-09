@@ -21,18 +21,18 @@ internal static class CliUtils
                     i.IsGenericType &&
                     i.GetGenericTypeDefinition() == typeof(IDictionary<,>) &&
                     i.GetGenericArguments()[0] == typeof(string))
-                => CliOptionArity.Map,
+                => CliOptionArity.Dictionary,
 
             // Check if the type implements IEnumerable but is not a string
             { } t when typeof(IEnumerable).IsAssignableFrom(t) && t != typeof(string)
-                => CliOptionArity.Vector,
+                => CliOptionArity.Collection,
 
             // Check if the type represents a Unit (assuming Unit is a specific type in your code)
             { } t when t == typeof(Unit)
                 => CliOptionArity.Flag,
 
             // Default case: Scalar
-            _ => CliOptionArity.Scalar,
+            _ => CliOptionArity.Value,
         };
     }
 

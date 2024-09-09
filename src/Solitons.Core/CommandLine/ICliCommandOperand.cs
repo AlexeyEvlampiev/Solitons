@@ -121,7 +121,7 @@ interface ICliCommandArgumentBuilder :
 
     bool ICliCommandSimpleInputBuilder.IsRequired => true;
 
-    CliOptionArity ICliCommandSimpleInputBuilder.OptionArity => CliOptionArity.Scalar;
+    CliOptionArity ICliCommandSimpleInputBuilder.OptionArity => CliOptionArity.Value;
 
 }
 
@@ -210,7 +210,7 @@ internal sealed class CliCommandParameterArgumentBuilder : ICliCommandArgumentBu
         }
 
         var arity = CliUtils.GetOptionArity(parameter.ParameterType);
-        if (arity != CliOptionArity.Scalar)
+        if (arity != CliOptionArity.Value)
         {
             throw new InvalidOperationException("Arguments can be only scalars.");
         }
@@ -355,7 +355,7 @@ internal class CliOperandValueParser
         {
             case (CliOptionArity.Flag):
                 return Unit.Default;
-            case (CliOptionArity.Scalar):
+            case (CliOptionArity.Value):
             {
                 if (captures.Count > 1)
                 {

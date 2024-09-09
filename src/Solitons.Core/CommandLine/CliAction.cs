@@ -12,8 +12,6 @@ namespace Solitons.CommandLine;
 
 internal sealed class CliAction : IComparable<CliAction>
 {
-    delegate object? Binder(Match commandLineMatch, CliTokenDecoder decoder);
-
 
     abstract class CliParameterInfo
     {
@@ -42,7 +40,7 @@ internal sealed class CliAction : IComparable<CliAction>
 
         public abstract object? Bind(Match commandLineMatch);
 
-        public abstract IEnumerable<JazzyOption> AsBundle();
+        public abstract IEnumerable<JazzyOptionInfo> AsBundle();
 
         public ParameterInfo ParameterInfo { get; }
         public MethodInfo MethodInfo { get; }
@@ -67,7 +65,7 @@ internal sealed class CliAction : IComparable<CliAction>
 
     sealed class CliOptionBundleParameterInfo : CliParameterInfo
     {
-        private readonly List<JazzyOption> _options = new(10);
+        private readonly List<JazzyOptionInfo> _options = new(10);
         public CliOptionBundleParameterInfo(
             ParameterInfo parameterInfo,
             MethodInfo methodInfo,
@@ -107,7 +105,7 @@ internal sealed class CliAction : IComparable<CliAction>
                 var required = attributes.OfType<RequiredAttribute>().Any();
                 var bundle = Activator.CreateInstance(OptionBundleType) ?? throw new InvalidOperationException();
                 var defaultValue = property.GetValue(bundle, []);
-                _options.Add(new JazzyOption(option, defaultValue, description, property.PropertyType)
+                _options.Add(new JazzyOptionInfo(option, defaultValue, description, property.PropertyType)
                 {
                     IsRequired = required
                 });
@@ -122,7 +120,7 @@ internal sealed class CliAction : IComparable<CliAction>
             throw new NotImplementedException();
         }
 
-        public override IEnumerable<JazzyOption> AsBundle() => _options.AsEnumerable();
+        public override IEnumerable<JazzyOptionInfo> AsBundle() => _options.AsEnumerable();
     }
 
     sealed class CliExplicitParameterInfo : CliParameterInfo
@@ -161,7 +159,7 @@ internal sealed class CliAction : IComparable<CliAction>
             throw new NotImplementedException();
         }
 
-        public override IEnumerable<JazzyOption> AsBundle()
+        public override IEnumerable<JazzyOptionInfo> AsBundle()
         {
             throw new NotImplementedException();
         }
@@ -196,10 +194,10 @@ internal sealed class CliAction : IComparable<CliAction>
     };
 
 
-    private readonly Binder[] _parameterValueBinders;
+    private readonly ParameterInfo[] _parameters;
+    private readonly JazzyOptionInfo[] _options;
     private readonly OperandInfo[] _operands;
-
-
+    private readonly CliDeserializer[] _parameterDeserializers;
 
 
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -217,33 +215,130 @@ internal sealed class CliAction : IComparable<CliAction>
         ThrowIf.ArgumentNull(method);
         ThrowIf.ArgumentNull(masterOptionBundles);
         ThrowIf.ArgumentNull(baseRouteMetadata);
+
+
+
+        _parameters = method.GetParameters();
+
         var methodAttributes = method.GetCustomAttributes().ToList();
-        var parameters = method.GetParameters();
-
-        var parameterValueBinders = new List<Binder>();
-        var operands = new List<OperandInfo>();
-        foreach (var parameter in parameters)
-        {
-            var parameterAttributes = parameter.GetCustomAttributes().ToList();
-            var parameterName = ThrowIf.NullOrWhiteSpace(parameter.Name);
-            if (CliOptionBundle.IsAssignableFrom(parameter.ParameterType))
+        
+        var arguments = methodAttributes
+            .OfType<CliRouteArgumentAttribute>()
+            .Select(arg => new
             {
-                throw new NotImplementedException();
-            }
+                Argument = arg,
+                Selection = _parameters.Where(arg.References).ToList()
+            })
+            .Do(item =>
+            {
+                var (argument, selection) = (item.Argument, Parameters: item.Selection);
+                if (selection.Count == 0)
+                {
+                    throw new CliConfigurationException(
+                        $"The parameter '{argument.ParameterName}', referenced by the '{argument.GetType().Name}' attribute in the '{method.Name}' method, " +
+                        $"could not be found in the method signature. " +
+                        $"Verify that the parameter name is correct and matches the method's defined parameters.");
+                }
+            
 
+                if (selection.Count > 1)
+                {
+                    throw new CliConfigurationException(
+                        $"The parameter '{argument.ParameterName}' in the '{method.Name}' method is referenced by more than one '{argument.GetType().Name}' attribute. " +
+                        $"Each parameter can only be referenced by one attribute. Ensure that only a single attribute is applied to each method parameter.");
+                }
+
+                var parameterType = selection.Select(p => p.ParameterType).Single();
+                if (CliOptionBundle.IsAssignableFrom(parameterType))
+                {
+                    throw new CliConfigurationException(
+                        $"The parameter '{argument.ParameterName}' in the '{method.Name}' method is an option bundle of type '{parameterType}'. " +
+                        $"Option bundles cannot be marked as command arguments. Review the method signature and ensure that bundles are handled correctly.");
+                }
+
+            })
+            .Select(item => new
+            {
+                Argument = item.Argument,
+                Parameter = item.Selection.Single()
+            })
+            .ToDictionary(item => item.Parameter, item => new JazzArgumentInfo(item.Argument, item.Parameter));
+
+
+        var parameterDeserializers = new List<CliDeserializer>();
+        var options = new List<JazzyOptionInfo>();
+        for(int i = 0; i < _parameters.Length; ++i)
+        {
+            var parameter = _parameters[i];
+            var parameterAttributes = parameter.GetCustomAttributes().ToList();
+            var optionAttribute = parameterAttributes.OfType<CliOptionAttribute>().SingleOrDefault();
             var description = parameterAttributes
                 .OfType<DescriptionAttribute>()
-                .Select(a => a.Description)
-                .FirstOrDefault($"{method.Name} method parameter.");
-            var option = parameterAttributes
-                .OfType<CliOptionAttribute>()
-                .SingleOrDefault() ?? new CliOptionAttribute($"--{parameterName.ToLowerInvariant()}", description);
+                .Select(attribute => attribute.Description)
+                .Union(parameterAttributes.OfType<CliOptionAttribute>().Select(attribute => attribute.Description))
+                .Union([$"'{method.Name}' method parameter."])
+                .First();
 
-            var optionArity = CliUtils.GetOptionArity(parameter.ParameterType);
-            var underlyingType = CliUtils.GetUnderlyingType(parameter.ParameterType);
-            var operand = new OperandInfo(parameter);
-            operands.Add(operand);
+            bool isBundle = CliOptionBundle.IsAssignableFrom(parameter.ParameterType);
+
+            if (isBundle)
+            {
+                if (optionAttribute is not null)
+                {
+                    throw new CliConfigurationException(
+                        $"The parameter '{parameter.Name}' in the '{method.Name}' method is an option bundle of type '{parameter.ParameterType}'. " +
+                        $"Option bundles cannot be marked as individual options. Review the method signature and ensure that bundles are handled correctly.");
+                }
+                ThrowIf.True(arguments.ContainsKey(parameter));
+                parameterDeserializers[i] = CliOptionBundle.GetDeserializerFor(parameter.ParameterType);
+                options.AddRange(CliOptionBundle.GetOptions(parameter.ParameterType));
+            }
+            else
+            {
+                if (arguments.TryGetValue(parameter, out var argument))
+                {
+                    if (optionAttribute is not null)
+                    {
+                        throw new CliConfigurationException(
+                            $"The parameter '{parameter.Name}' in the '{method.Name}' method is marked as both a command-line option and " +
+                            $"a command-line argument. A parameter cannot be marked as both. Please review the attributes applied to this parameter."
+                        );
+                    }
+
+                    parameterDeserializers[i] = argument.Deserialize;
+                    continue;
+                }
+                else
+                {
+                    optionAttribute ??= new CliOptionAttribute(
+                        ThrowIf.NullOrWhiteSpace(parameter.Name),
+                        description);
+
+                    var option = new JazzyOptionInfo(
+                        ThrowIf.NullReference(optionAttribute),
+                        parameter.DefaultValue,
+                        description,
+                        parameter.ParameterType)
+                    {
+                        IsRequired = (parameter.HasDefaultValue == false) ||
+                                     parameterAttributes.OfType<RequiredAttribute>().Any()
+                    };
+                    options.Add(option);
+                    parameterDeserializers[i] = option.Deserialize;
+                }
+            }
+
         }
+
+        foreach (var bundle in masterOptionBundles)
+        {
+            options.AddRange(bundle.GetOptions());
+        }
+
+        _options = options.ToArray();
+        _parameterDeserializers = parameterDeserializers.ToArray();
+
+        ThrowIf.False(_parameters.Length == _parameterDeserializers.Length);
     }
 
     [DebuggerNonUserCode]

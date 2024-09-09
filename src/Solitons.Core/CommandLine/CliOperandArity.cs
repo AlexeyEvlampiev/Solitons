@@ -3,7 +3,7 @@
 internal enum CliOptionArity
 {
     Flag,
-    Scalar,
-    Vector,
-    Map
+    Value,
+    Collection,
+    Dictionary
 }

@@ -418,9 +418,9 @@ internal sealed class CliActionSchema : ICliActionSchema
             {
                 case (CliOptionArity.Flag):
                     return $@"(?<{RegexGroupName}>{token})";
-                case (CliOptionArity.Scalar):
+                case (CliOptionArity.Value):
                     return $@"(?:{token})\s*(?<{RegexGroupName}>(?:[^\s-]\S*)?)";
-                case (CliOptionArity.Map):
+                case (CliOptionArity.Dictionary):
                 {
                     var pattern = $@"(?:{token})(?:$dot-notation|$accessor-notation)"
                         .Replace(@"$dot-notation", @$"\.(?<{RegexGroupName}>(?:\S+\s+[^\s-]\S+)?)")
