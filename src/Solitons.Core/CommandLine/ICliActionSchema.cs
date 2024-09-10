@@ -6,7 +6,7 @@ namespace Solitons.CommandLine;
 
 internal interface ICliActionSchema
 {
-    IReadOnlyList<IJazzCommandSegment> CommandSegments { get; }
+    IReadOnlyList<ICliRouteSegment> CommandSegments { get; }
     /// <summary>
     /// Matches the specified command line string against the schema.
     /// </summary>

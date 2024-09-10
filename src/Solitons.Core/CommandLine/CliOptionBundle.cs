@@ -128,7 +128,7 @@ public abstract class CliOptionBundle
             });
     }
 
-    internal static CliDeserializer GetDeserializerFor(Type parameterParameterType)
+    internal static CliDeserializer CreateDeserializerFor(Type parameterParameterType)
     {
         throw new NotImplementedException();
     }

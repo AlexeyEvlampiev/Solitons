@@ -15,14 +15,14 @@ internal sealed class CliActionSchema : ICliActionSchema
 {
     private readonly Regex _regex;
     private readonly Regex _rankRegex;
-    private readonly IJazzCommandSegment[] _commandSegments;
+    private readonly ICliRouteSegment[] _commandSegments;
     private readonly JazzyOptionInfo[] _options;
     private readonly IJazzExampleMetadata[] _examples;
 
 
     [DebuggerStepThrough]
     internal CliActionSchema(
-        IJazzCommandSegment[] commandSegments,
+        ICliRouteSegment[] commandSegments,
         JazzyOptionInfo[] options,
         IJazzExampleMetadata[] examples,
         string description)
@@ -166,7 +166,7 @@ internal sealed class CliActionSchema : ICliActionSchema
 
 
 
-    IReadOnlyList<IJazzCommandSegment> ICliActionSchema.CommandSegments => _commandSegments;
+    IReadOnlyList<ICliRouteSegment> ICliActionSchema.CommandSegments => _commandSegments;
 
 
     public IEnumerable<IOption> Options => _metadata

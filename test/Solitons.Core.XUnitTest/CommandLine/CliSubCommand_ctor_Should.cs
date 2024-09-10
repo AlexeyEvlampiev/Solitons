@@ -21,7 +21,7 @@ public sealed class CliSubCommand_ctor_Should
             .Split(pattern, @"\s*[|]\s*")
             .ToHashSet(StringComparer.Ordinal);
         
-        var target = new CliSubCommandMetadata(pattern);
+        var target = new CliSubCommandInfo(pattern);
         Assert.Equal(expectedPrimaryName, target.PrimaryName);
         Assert.Equal(expectedSubCommandPattern, target.SubCommandPattern);
         Assert.True(actualAliases.All(o => target.Aliases.Contains(o)));
@@ -34,7 +34,7 @@ public sealed class CliSubCommand_ctor_Should
     [InlineData(" ")] // Whitespace only
     public void HandleEmptyOrNullPattern(string pattern)
     {
-        var target = new CliSubCommandMetadata(pattern);
+        var target = new CliSubCommandInfo(pattern);
         Assert.True(target.Aliases.Count == 1);
         Assert.Empty(target.PrimaryName);
         Assert.Equal("(?=.|$)", target.SubCommandPattern); // Default regex pattern
@@ -45,7 +45,7 @@ public sealed class CliSubCommand_ctor_Should
     [InlineData("init|init|update", "init|update")] // Handle duplicate and whitespace
     public void NormalizeInput(string pattern, string expectedPattern)
     {
-        var target = new CliSubCommandMetadata(pattern);
+        var target = new CliSubCommandInfo(pattern);
         Assert.Equal(expectedPattern, target.SubCommandPattern);
     }
 
@@ -54,7 +54,7 @@ public sealed class CliSubCommand_ctor_Should
     [InlineData("init*|update")] // Invalid characters
     public void ThrowArgumentExceptionForInvalidPatterns(string pattern)
     {
-        var exception = Assert.Throws<ArgumentException>(() => new CliSubCommandMetadata(pattern));
-        Assert.Contains(CliSubCommandMetadata.ArgumentExceptionMessage, exception.Message);
+        var exception = Assert.Throws<ArgumentException>(() => new CliSubCommandInfo(pattern));
+        Assert.Contains(CliSubCommandInfo.ArgumentExceptionMessage, exception.Message);
     }
 }

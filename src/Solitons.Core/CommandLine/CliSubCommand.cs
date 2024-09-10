@@ -8,7 +8,7 @@ namespace Solitons.CommandLine;
 /// <summary>
 /// Represents a single CLI subcommand, encapsulating its aliases and providing pattern matching functionality.
 /// </summary>
-internal sealed class CliSubCommandMetadata 
+internal sealed class CliSubCommandInfo : ICliRouteSegment
 {
     private static readonly Regex ValidCommandOptionsRegex;
     private static readonly Regex ValidCommandSegmentRegex = new(@"^(?:\w+(?:-\w+)*)?$");
@@ -18,7 +18,7 @@ internal sealed class CliSubCommandMetadata
 
 
 
-    static CliSubCommandMetadata()
+    static CliSubCommandInfo()
     {
         var pattern = @"^(?:$cmd(?:\|$cmd)*)?$"
             .Replace("$cmd", @"\w+(?:-\w+)*");
@@ -26,11 +26,11 @@ internal sealed class CliSubCommandMetadata
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="CliSubCommandMetadata"/> class with a specific command pattern.
+    /// Initializes a new instance of the <see cref="CliSubCommandInfo"/> class with a specific command pattern.
     /// </summary>
     /// <param name="commandPattern">A pipe-separated string containing different aliases for the command.</param>
     /// <exception cref="ArgumentException">Thrown when any alias in the pattern does not match the allowed command name format.</exception>
-    public CliSubCommandMetadata(string commandPattern)
+    public CliSubCommandInfo(string commandPattern)
     {
         if (!ValidCommandOptionsRegex.IsMatch(commandPattern) &&
             !commandPattern.IsNullOrWhiteSpace())
@@ -81,5 +81,5 @@ internal sealed class CliSubCommandMetadata
     /// <returns>A string that represents the primary name of the subcommand.</returns>
     public override string ToString() => PrimaryName;
 
-    public string BuildPattern() => SubCommandPattern;
+    public string BuildRegularExpression() => SubCommandPattern;
 }

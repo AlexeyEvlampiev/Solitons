@@ -243,7 +243,7 @@ public sealed class CliProcessor : ICliProcessorCallback
             .OrderByDescending(similarActions => similarActions.Key)
             .Take(1)
             .SelectMany(similarActions => similarActions)
-            .Convert(selected => CliActionHelpRtt.Build(executableName, selected));
+            .Convert(selected => CliActionHelpRtt.ToString(executableName, selected));
         Console.WriteLine(text);
     }
 

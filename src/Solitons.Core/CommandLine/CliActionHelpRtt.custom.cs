@@ -1,53 +1,55 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+
 
 namespace Solitons.CommandLine;
 
 internal partial class CliActionHelpRtt
 {
-    private readonly CliActionSchema _schema;
     private readonly CliAction _action;
     private const string Tab = "   ";
 
     sealed record Example(int Index, string Description, string Command);
 
-    private CliActionHelpRtt(CliActionSchema schema)
+    private CliActionHelpRtt(
+        string description,
+        string executableName, 
+        IReadOnlyList<ICliRouteSegment> routeSegments,
+        IReadOnlyList<JazzyOptionInfo> options)
     {
-        _schema = schema;
-        //_action = action;
-        //ExecutableName = executableName;
-        //Description = action.Description;
+        ExecutableName = executableName;
+        Description = description;
 
 
-        //Segments = action.CommandSegments;
-        //UsageOptions = CommandOptions(action.CommandSegments).ToList();
+        Segments = routeSegments;
+        UsageOptions = CommandOptions(routeSegments.OfType<CliSubCommandInfo>()).ToList();
 
-        //Arguments = action
-        //    .Operands
-        //    .OfType<CliArgumentInfo>()
-        //    .Select(o =>
-        //    {
-        //        return o
-        //            .Metadata
-        //            .OfType<CliArgumentAttribute>()
-        //            .Select(argument => $"<{argument.ArgumentRole.ToUpper()}>{Tab}{o.Description}")
-        //            .Single();
-        //    })
-        //    .ToList();
+        Arguments = routeSegments
+            .OfType<JazzArgumentInfo>()
+            .Select(o =>
+            {
+                return o
+                    .Metadata
+                    .OfType<CliArgumentAttribute>()
+                    .Select(argument => $"<{argument.ArgumentRole.ToUpper()}>{Tab}{o.Description}")
+                    .Single();
+            })
+            .ToList();
 
 
-        //Options = action
-        //    .Operands
-        //    .Where(o => o is not CliArgumentInfo)
-        //    .Select(o =>
-        //    {
-        //        var option = o.CustomAttributes
-        //            .OfType<CliOptionAttribute>()
-        //            .FirstOrDefault(new CliOptionAttribute($"--{o.Name}", o.Description))!;
-        //        return $"{option.OptionNamesCsv}{Tab}{o.Description}";
-        //    })
-        //    .ToList();
+        Options = action
+            .Operands
+            .Where(o => o is not CliArgumentInfo)
+            .Select(o =>
+            {
+                var option = o.CustomAttributes
+                    .OfType<CliOptionAttribute>()
+                    .FirstOrDefault(new CliOptionAttribute($"--{o.Name}", o.Description))!;
+                return $"{option.OptionNamesCsv}{Tab}{o.Description}";
+            })
+            .ToList();
     }
 
     public IReadOnlyList<string> UsageOptions { get; }
@@ -65,7 +67,7 @@ internal partial class CliActionHelpRtt
         }
 
         var rhsOptions = CommandOptions(list.Skip(1)).ToList();
-        if (segment is CliSubCommandMetadata command)
+        if (segment is CliSubCommandInfo command)
         {
             foreach (var option in command.Aliases)
             {
@@ -95,13 +97,18 @@ internal partial class CliActionHelpRtt
         .Select((item, index) => new Example(index + 1, item.Description, item.Command));
 
 
-    public static string Build(CliActionSchema schema)
+    [DebuggerStepThrough]
+    public static string ToString(
+        string executableName,
+        IReadOnlyList<ICliRouteSegment> routeSegments,
+        IReadOnlyList<JazzyOptionInfo> options)
     {
-        var rtt = new CliActionHelpRtt(schema);
-        return rtt.ToString().Trim();
+        string help = new CliActionHelpRtt(executableName, routeSegments, options);
+        Debug.WriteLine(help);
+        return help;
     }
 
-    public static string Build(string executableName, IEnumerable<CliAction> actions)
+    public static string ToString(string executableName, IEnumerable<CliAction> actions)
     {
         return actions
             .Select(a => a.GetHelpText())

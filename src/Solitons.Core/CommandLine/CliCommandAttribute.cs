@@ -13,11 +13,11 @@ namespace Solitons.CommandLine;
 /// where each part of the command string represents a distinct subcommand.
 /// </summary>
 [AttributeUsage(AttributeTargets.Method)]
-public class CliRouteAttribute : Attribute, IEnumerable<CliSubCommandMetadata>
+public class CliRouteAttribute : Attribute, IEnumerable<CliSubCommandInfo>
 {
 
     [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
-    private readonly CliSubCommandMetadata[] _subCommands;
+    private readonly CliSubCommandInfo[] _subCommands;
 
     /// <summary>
     /// Initializes a new instance of the CliCommandAttribute class.
@@ -30,7 +30,7 @@ public class CliRouteAttribute : Attribute, IEnumerable<CliSubCommandMetadata>
             .DefaultIfNullOrWhiteSpace(string.Empty)
             .Trim()
             .Convert(cmd => Regex.Split(cmd, @"\s+"))
-            .Select(segment => new CliSubCommandMetadata(segment))
+            .Select(segment => new CliSubCommandInfo(segment))
             .ToArray();
     }
 
@@ -40,7 +40,7 @@ public class CliRouteAttribute : Attribute, IEnumerable<CliSubCommandMetadata>
     public string RouteExpression { get; }
 
     [DebuggerNonUserCode]
-    IEnumerator<CliSubCommandMetadata> IEnumerable<CliSubCommandMetadata>.GetEnumerator()
+    IEnumerator<CliSubCommandInfo> IEnumerable<CliSubCommandInfo>.GetEnumerator()
     {
         foreach (var cmdlet in _subCommands)
         {

@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
 
@@ -9,29 +8,26 @@ internal partial class CliActionRegularExpressionRtt
 {
     public static readonly string UnrecognizedToken = $"unrecognized_token_{typeof(CliActionRegularExpressionRtt).GUID:N}";
 
-    internal CliActionRegularExpressionRtt(CliActionSchema schema)
+    private CliActionRegularExpressionRtt(
+        IReadOnlyList<ICliRouteSegment> routeSegments,
+        IReadOnlyList<JazzyOptionInfo> options)
     {
-        throw new NotImplementedException();
-        //var segments = schema
-        //    .CommandSegments
-        //    .ToArray();
 
-        //CommandSegmentRegularExpressions = segments
-        //    .Select((segment, index) =>
-        //    {
-        //        var expression = segment.BuildRegularExpression();
-        //        if (segment.IsArgument)
-        //        {
-        //            return expression;
-        //        }
-        //        return  $"(?<{GenGroupName(index)}>{expression})";
-        //    })
-        //    .ToArray();
+        CommandSegmentRegularExpressions = routeSegments
+            .Select((segment, index) =>
+            {
+                var expression = segment.BuildRegularExpression();
+                if (segment.IsArgument)
+                {
+                    return expression;
+                }
+                return $"(?<{GenGroupName(index)}>{expression})";
+            })
+            .ToArray();
 
-        //OptionRegularExpressions = schema
-        //    .Options
-        //    .Select(option => option.BuildRegularExpression())
-        //    .ToArray();
+        OptionRegularExpressions = options
+            .Select(option => option.RegularExpression)
+            .ToArray();
     }
 
     private string GenGroupName(int index) => $"segment_{GetType().GUID:N}_{index}";
@@ -39,9 +35,15 @@ internal partial class CliActionRegularExpressionRtt
     private IReadOnlyList<string> CommandSegmentRegularExpressions { get; }
     public IReadOnlyList<string> OptionRegularExpressions { get; }
 
-    public static Regex BuildRegex()
+    [DebuggerStepThrough]
+    public static string ToString(
+        IReadOnlyList<ICliRouteSegment> routeSegments,
+        IReadOnlyList<JazzyOptionInfo> options)
     {
-
-        throw new System.NotImplementedException();
+        string expression = new CliActionRegularExpressionRtt(
+            routeSegments, 
+            options);
+        Debug.WriteLine(expression);
+        return expression;
     }
 }

@@ -5,32 +5,100 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Solitons.CommandLine;
 
 internal sealed class CliAction : IComparable<CliAction>
 {
+    internal delegate Task<int> ActionHandler(object?[] args);
+
+    delegate Match MatchHandler(
+        string commandLine, 
+        CliTokenDecoder decoder, 
+        Action<IEnumerable<string>> handleUnmatchedTokens);
+
+    delegate int CalcRankHandler(string commandLine);
+    delegate bool IsMatchHandler(string commandLine);
+    delegate string GetHelp();
+
     private readonly CliDeserializer[] _parameterDeserializers;
     private readonly CliMasterOptionBundle[] _masterOptionBundles;
     private readonly ActionHandler _handler;
-    private readonly ICliActionSchema _schema;
+    private readonly MatchHandler _match;
+    private readonly IsMatchHandler _isMatch;
+    private readonly CalcRankHandler _calcRank;
+    private readonly GetHelp _help;
 
-    delegate Task<int> ActionHandler(object?[] args);
 
-    private CliAction(
+
+
+    internal CliAction(
         ActionHandler handler,
         CliDeserializer[] parameterDeserializers,
         CliMasterOptionBundle[] masterOptionBundles,
-        ICliActionSchema schema)
+        IReadOnlyList<ICliRouteSegment> route,
+        IReadOnlyList<JazzyOptionInfo> options)
     {
         _parameterDeserializers = parameterDeserializers;
         _masterOptionBundles = masterOptionBundles;
         _handler = ThrowIf.ArgumentNull(handler);
-        _schema = ThrowIf.ArgumentNull(schema);
+        RegularExpression = CliActionRegularExpressionRtt.ToString(route, options);
+        RankerRegularExpression = CliActionRegexMatchRankerRtt.ToString(route, options);
+
+        var regex = new Regex(
+            RegularExpression,
+            RegexOptions.IgnorePatternWhitespace |
+            RegexOptions.Singleline |
+            RegexOptions.IgnoreCase);
+        
+        var rankerRegex = new Regex(
+            RankerRegularExpression,
+            RegexOptions.IgnorePatternWhitespace |
+            RegexOptions.Singleline |
+            RegexOptions.IgnoreCase);
+
+        [DebuggerStepThrough]
+        Match MatchCommandLine(
+            string commandLine, 
+            CliTokenDecoder decoder, 
+            Action<IEnumerable<string>> handleUnmatchedTokens)
+        {
+            var match = regex.Match(commandLine);
+            var unmatchedTokens = match
+                .Groups[CliActionRegularExpressionRtt.UnrecognizedToken]
+            .Captures
+                .Select(c => decoder(c.Value))
+                .ToList();
+            if (unmatchedTokens.Any())
+            {
+                handleUnmatchedTokens(unmatchedTokens);
+            }
+            return match;
+        }
+
+        int CalcRank(string commandLine)
+        {
+            var match = rankerRegex.Match(commandLine);
+            var groups = match.Groups
+                .OfType<Group>()
+                .Where(g => g.Success)
+                .Skip(1) // Exclude group 0 from count
+                .ToList();
+            int rank = groups.Count;
+            return rank;
+        }
+
+        string GetHelp()
+        {
+            return CliActionHelpRtt.ToString(route, options);
+        }
+
+        _match = MatchCommandLine;
+        _isMatch = regex.IsMatch;
+        _calcRank = CalcRank;
     }
-
-
 
     internal static CliAction Create(
         object? instance,
@@ -42,66 +110,94 @@ internal sealed class CliAction : IComparable<CliAction>
         ThrowIf.ArgumentNull(masterOptionBundles);
         ThrowIf.ArgumentNull(baseRoutes);
 
-
-
         var parameters = method.GetParameters();
+        var parameterDeserializers = new CliDeserializer[parameters.Length];
+
         var methodAttributes = method.GetCustomAttributes().ToList();
-        var argumentInfos = new Dictionary<CliRouteArgumentAttribute, JazzArgumentInfo>();
+       
 
-        var arguments = methodAttributes
-            .OfType<CliRouteArgumentAttribute>()
-            .Select(arg => new
+        var routeSegments = new List<ICliRouteSegment>(10);
+        var arguments = new Dictionary<ParameterInfo, JazzArgumentInfo>();
+        foreach (var attribute in methodAttributes)
+        {
+            if (attribute is CliRouteAttribute route)
             {
-                Argument = arg,
-                Selection = parameters.Where(arg.References).ToList()
-            })
-            .Do(item =>
+                routeSegments.AddRange(route);
+            }
+            else if(attribute is CliRouteArgumentAttribute argument)
             {
-                var (argument, selection) = (item.Argument, Parameters: item.Selection);
-                if (selection.Count == 0)
+                try
                 {
-                    throw new CliConfigurationException(
-                        $"The parameter '{argument.ParameterName}', referenced by the '{argument.GetType().Name}' attribute in the '{method.Name}' method, " +
-                        $"could not be found in the method signature. " +
-                        $"Verify that the parameter name is correct and matches the method's defined parameters.");
+                    var parameter = parameters.Single(argument.References);
+                    var type = parameter.ParameterType;
+                    if (CliOptionBundle.IsAssignableFrom(type))
+                    {
+                        throw new CliConfigurationException(
+                            $"The parameter '{argument.ParameterName}' in the '{method.Name}' method is an option bundle of type '{type}'. " +
+                            $"Option bundles cannot be marked as command arguments. Review the method signature and ensure that bundles are handled correctly.");
+                    }
+                    var isOption = parameter
+                        .GetCustomAttributes()
+                        .OfType<CliOptionAttribute>()
+                        .Any();
+                    if (isOption)
+                    {
+                        throw new CliConfigurationException(
+                            $"The parameter '{parameter.Name}' in the '{method.Name}' method is marked as both a command-line option and " +
+                            $"a command-line argument. A parameter cannot be marked as both. Please review the attributes applied to this parameter."
+                        );
+                    }
+
+                    var argumentInfo = new JazzArgumentInfo(argument, parameter, routeSegments);
+                    routeSegments.Add(argumentInfo);
+                    arguments.Add(parameter, argumentInfo);
+
+                    var parameterIndex = Array.IndexOf(parameters, parameter);
+                    ThrowIf.False(parameterIndex >= 0);
+                    parameterDeserializers[parameterIndex] = argumentInfo.Deserialize;
                 }
-
-
-                if (selection.Count > 1)
+                catch (InvalidOperationException e)
                 {
-                    throw new CliConfigurationException(
-                        $"The parameter '{argument.ParameterName}' in the '{method.Name}' method is referenced by more than one '{argument.GetType().Name}' attribute. " +
-                        $"Each parameter can only be referenced by one attribute. Ensure that only a single attribute is applied to each method parameter.");
+                    var refCount = parameters.Where(argument.References).Count();
+                    if (refCount == 0)
+                    {
+                        throw new CliConfigurationException(
+                            $"The parameter '{argument.ParameterName}', referenced by the '{argument.GetType().Name}' attribute in the '{method.Name}' method, " +
+                            $"could not be found in the method signature. " +
+                            $"Verify that the parameter name is correct and matches the method's defined parameters.");
+                    }
+
+                    if (refCount > 1)
+                    {
+                        throw new CliConfigurationException(
+                            $"The parameter '{argument.ParameterName}' in the '{method.Name}' method is referenced by more than one '{argument.GetType().Name}' attribute. " +
+                            $"Each parameter can only be referenced by one attribute. Ensure that only a single attribute is applied to each method parameter.");
+                    }
+
+                    throw;
                 }
-
-                var parameterType = selection.Select(p => p.ParameterType).Single();
-                if (CliOptionBundle.IsAssignableFrom(parameterType))
-                {
-                    throw new CliConfigurationException(
-                        $"The parameter '{argument.ParameterName}' in the '{method.Name}' method is an option bundle of type '{parameterType}'. " +
-                        $"Option bundles cannot be marked as command arguments. Review the method signature and ensure that bundles are handled correctly.");
-                }
-
-            })
-            .Select(item => new
+            }
+            else
             {
-                Argument = item.Argument,
-                Parameter = item.Selection.Single(),
-                Info = new JazzArgumentInfo(item.Argument, item.Selection.Single())
-            })
-            .Do(item =>
-            {
-                argumentInfos.Add(item.Argument, item.Info);
-            })
-            .ToDictionary(item => item.Parameter, item => item.Info);
+                throw new InvalidOperationException();
+            }
+        }
 
 
-        var parameterDeserializers = new List<CliDeserializer>();
+
         var options = new List<JazzyOptionInfo>();
         for (int i = 0; i < parameters.Length; ++i)
         {
             var parameter = parameters[i];
             var parameterAttributes = parameter.GetCustomAttributes().ToList();
+            if (arguments.ContainsKey(parameter))
+            {
+                Debug.Assert(false == parameterAttributes.OfType<CliOptionAttribute>().Any());
+                Debug.Assert(false == CliOptionBundle.IsAssignableFrom(parameter.ParameterType));
+                continue;
+            }
+
+            
             var optionAttribute = parameterAttributes.OfType<CliOptionAttribute>().SingleOrDefault();
             var description = parameterAttributes
                 .OfType<DescriptionAttribute>()
@@ -120,42 +216,26 @@ internal sealed class CliAction : IComparable<CliAction>
                         $"The parameter '{parameter.Name}' in the '{method.Name}' method is an option bundle of type '{parameter.ParameterType}'. " +
                         $"Option bundles cannot be marked as individual options. Review the method signature and ensure that bundles are handled correctly.");
                 }
-                ThrowIf.True(arguments.ContainsKey(parameter));
-                parameterDeserializers[i] = CliOptionBundle.GetDeserializerFor(parameter.ParameterType);
+                parameterDeserializers[i] = CliOptionBundle.CreateDeserializerFor(parameter.ParameterType);
                 options.AddRange(CliOptionBundle.GetOptions(parameter.ParameterType));
             }
             else
             {
-                if (arguments.TryGetValue(parameter, out var argument))
-                {
-                    if (optionAttribute is not null)
-                    {
-                        throw new CliConfigurationException(
-                            $"The parameter '{parameter.Name}' in the '{method.Name}' method is marked as both a command-line option and " +
-                            $"a command-line argument. A parameter cannot be marked as both. Please review the attributes applied to this parameter."
-                        );
-                    }
+                optionAttribute ??= new CliOptionAttribute(
+                    ThrowIf.NullOrWhiteSpace(parameter.Name),
+                    description);
 
-                    parameterDeserializers[i] = argument.Deserialize;
-                }
-                else
+                var option = new JazzyOptionInfo(
+                    ThrowIf.NullReference(optionAttribute),
+                    parameter.DefaultValue,
+                    description,
+                    parameter.ParameterType)
                 {
-                    optionAttribute ??= new CliOptionAttribute(
-                        ThrowIf.NullOrWhiteSpace(parameter.Name),
-                        description);
-
-                    var option = new JazzyOptionInfo(
-                        ThrowIf.NullReference(optionAttribute),
-                        parameter.DefaultValue,
-                        description,
-                        parameter.ParameterType)
-                    {
-                        IsRequired = (parameter.HasDefaultValue == false) ||
-                                     parameterAttributes.OfType<RequiredAttribute>().Any()
-                    };
-                    options.Add(option);
-                    parameterDeserializers[i] = option.Deserialize;
-                }
+                    IsRequired = (parameter.HasDefaultValue == false) ||
+                                 parameterAttributes.OfType<RequiredAttribute>().Any()
+                };
+                options.Add(option);
+                parameterDeserializers[i] = option.Deserialize;
             }
 
         }
@@ -165,10 +245,12 @@ internal sealed class CliAction : IComparable<CliAction>
             options.AddRange(bundle.GetOptions());
         }
 
-        var regex = CliActionRegularExpressionRtt.BuildRegex();
-
-        ThrowIf.False(parameters.Length == parameterDeserializers.Count);
-        return new CliAction(InvokeAsync, parameterDeserializers.ToArray(), masterOptionBundles, schema);
+        return new CliAction(
+            InvokeAsync, 
+            parameterDeserializers.ToArray(), 
+            masterOptionBundles,
+            routeSegments,
+            options);
 
         [DebuggerStepThrough]
         async Task<int> InvokeAsync(object?[] args)
@@ -197,21 +279,24 @@ internal sealed class CliAction : IComparable<CliAction>
         }
     }
 
+    public string RegularExpression { get; }
+
+    public string RankerRegularExpression { get; }
 
     public int Execute(string commandLine, CliTokenDecoder decoder)
     {
         commandLine = ThrowIf.ArgumentNullOrWhiteSpace(commandLine);
-        var match = _schema.Match(
-            commandLine, 
-            decoder, 
+        var match = _match(
+            commandLine,
+            decoder,
             unmatchedTokens =>
-        {
-            var csv = unmatchedTokens
-                .Join(", ");
-            CliExit.With(
-                $"The following options are not recognized as valid for the command: {csv}. " +
-                $"Please check the command syntax.");
-        });
+            {
+                var csv = unmatchedTokens
+                    .Join(", ");
+                CliExit.With(
+                    $"The following options are not recognized as valid for the command: {csv}. " +
+                    $"Please check the command syntax.");
+            });
 
         if (match.Success == false)
         {
@@ -258,11 +343,11 @@ internal sealed class CliAction : IComparable<CliAction>
     }
 
     [DebuggerStepThrough]
-    public int Rank(string commandLine) => _schema.Rank(commandLine);
+    public int Rank(string commandLine) => _calcRank(commandLine);
 
 
     [DebuggerStepThrough]
-    public bool IsMatch(string commandLine) => _schema.IsMatch(commandLine);
+    public bool IsMatch(string commandLine) => _isMatch(commandLine);
 
     public void ShowHelp()
     {
@@ -273,7 +358,7 @@ internal sealed class CliAction : IComparable<CliAction>
     public int CompareTo(CliAction? other)
     {
         other = ThrowIf.ArgumentNull(other, "Cannot compare to a null object.");
-        return String.Compare(_schema.CommandRouteExpression, other._schema.CommandRouteExpression, StringComparison.OrdinalIgnoreCase);
+        return String.Compare(RegularExpression, other.RegularExpression, StringComparison.OrdinalIgnoreCase);
     }
 
 
