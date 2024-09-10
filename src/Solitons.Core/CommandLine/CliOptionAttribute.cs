@@ -136,5 +136,5 @@ public class CliOptionAttribute : Attribute, ICliOptionMetadata
     /// <returns>A string that represents the option specification.</returns>
     public override string ToString() => OptionExpression;
 
-    public virtual StringComparer GetMapKeyComparer() => StringComparer.OrdinalIgnoreCase;
+    public virtual StringComparer GetDictionaryKeyComparer() => StringComparer.OrdinalIgnoreCase;
 }

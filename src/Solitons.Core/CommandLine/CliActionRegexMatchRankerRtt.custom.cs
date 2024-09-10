@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Reactive.Joins;
 using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;

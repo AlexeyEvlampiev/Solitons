@@ -35,5 +35,5 @@ public interface ICliOptionMetadata
 
     bool AllowsCsv { get; }
     TypeConverter? GetCustomTypeConverter();
-    StringComparer GetMapKeyComparer();
+    StringComparer GetDictionaryKeyComparer();
 }

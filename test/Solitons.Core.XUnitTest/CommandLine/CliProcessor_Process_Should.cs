@@ -89,8 +89,8 @@ public class CliProcessor_Process_Should
     }
 
     sealed class CliCaseInsensitiveMapOptionAttribute(string specification, string description = "")
-        : CliOptionAttribute(specification, description), ICliMapOption
+        : CliOptionAttribute(specification, description)
     {
-        public StringComparer GetComparer() => StringComparer.OrdinalIgnoreCase;
+        public override StringComparer GetDictionaryKeyComparer() => StringComparer.OrdinalIgnoreCase;
     }
 }

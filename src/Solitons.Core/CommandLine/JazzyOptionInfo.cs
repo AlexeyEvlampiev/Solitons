@@ -217,7 +217,7 @@ internal sealed record JazzyOptionInfo
     private object? ToDictionary(Group group, CliTokenDecoder decoder)
     {
         var dictionaryType = typeof(Dictionary<,>).MakeGenericType(typeof(string), OptionType);
-        var dictionary = CollectionBuilder.CreateDictionary(dictionaryType, OptionMetadata.GetMapKeyComparer());
+        var dictionary = CollectionBuilder.CreateDictionary(dictionaryType, OptionMetadata.GetDictionaryKeyComparer());
         foreach (Capture capture in group.Captures)
         {
             var match = MapKeyValueRegex.Match(capture.Value);

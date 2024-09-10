@@ -161,9 +161,9 @@ public class Program
     }
 
     sealed class PgUpParametersOptionAttribute()
-        : CliOptionAttribute("--parameter|-p", "Defines parameters for customizing deployment scripts."), ICliMapOption
+        : CliOptionAttribute("--parameter|-p", "Defines parameters for customizing deployment scripts.")
     {
-        public StringComparer GetComparer() => StringComparer.OrdinalIgnoreCase;
+        public override StringComparer GetDictionaryKeyComparer() => StringComparer.OrdinalIgnoreCase;
     }
 
     public sealed class ConnectionBuilderBundle : CliOptionBundle

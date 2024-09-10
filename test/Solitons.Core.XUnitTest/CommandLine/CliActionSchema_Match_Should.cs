@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using Moq;
 using Xunit;
 
 namespace Solitons.CommandLine;

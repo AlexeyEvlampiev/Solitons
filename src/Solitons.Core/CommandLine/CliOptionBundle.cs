@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -11,8 +10,6 @@ namespace Solitons.CommandLine;
 
 public abstract class CliOptionBundle
 {
-    private static readonly ConcurrentDictionary<Type, CliBundleOptionInfo[]> ParametersByType = new();
-
     public static bool IsAssignableFrom(Type type) => typeof(CliOptionBundle).IsAssignableFrom(type);
 
     // [DebuggerStepThrough]
