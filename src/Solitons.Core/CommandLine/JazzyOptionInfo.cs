@@ -4,7 +4,6 @@ using System.Text.RegularExpressions;
 using System;
 using System.ComponentModel;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using Solitons.Collections;
 
@@ -89,9 +88,35 @@ internal sealed record JazzyOptionInfo
             _ => throw new InvalidOperationException()
         };
 
+        var token = Aliases
+            .Select(a => a.Trim().ToLower())
+            .Distinct(StringComparer.Ordinal)
+            .OrderByDescending(a => a.Length)
+            .Join("|");
+        ThrowIf.NullOrWhiteSpace(token);
+        switch (Arity)
+        {
+            case (CliOptionArity.Flag):
+                RegularExpression = $@"(?<{RegexMatchGroupName}>{token})";
+                break;
+            case (CliOptionArity.Value):
+                RegularExpression = $@"(?:{token})\s*(?<{RegexMatchGroupName}>(?:[^\s-]\S*)?)";
+                break;
+            case (CliOptionArity.Dictionary):
+            {
+                RegularExpression = $@"(?:{token})(?:$dot-notation|$accessor-notation)"
+                    .Replace(@"$dot-notation", @$"\.(?<{RegexMatchGroupName}>(?:\S+\s+[^\s-]\S+)?)")
+                    .Replace(@"$accessor-notation", @$"(?<{RegexMatchGroupName}>(?:\[\S+\]\s+[^\s-]\S+)?)");
+            }
+                break;
+            default:
+                throw new NotSupportedException();
+        }
     }
 
     public ICliOptionMetadata OptionMetadata { get; }
+
+    public string RegularExpression { get; }
 
     public Type OptionUnderlyingType { get; }
 
@@ -101,8 +126,11 @@ internal sealed record JazzyOptionInfo
     public required bool IsRequired { get; init; }
 
     private string RegexMatchGroupName { get; }
+
     public IReadOnlyList<string> Aliases { get; }
+
     public string Description { get; }
+
     public Type OptionType { get; }
 
     public object? Deserialize(Match commandLineMatch, CliTokenDecoder decoder)
@@ -225,4 +253,5 @@ internal sealed record JazzyOptionInfo
 
         return dictionary;
     }
+
 }

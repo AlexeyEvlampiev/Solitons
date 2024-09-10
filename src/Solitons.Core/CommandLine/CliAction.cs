@@ -165,30 +165,7 @@ internal sealed class CliAction : IComparable<CliAction>
             options.AddRange(bundle.GetOptions());
         }
 
-        var schemaMetadata = new List<object>()
-        {
-            baseRoutes.SelectMany(route => route)
-        };
-        foreach (var methodAttribute in methodAttributes)
-        {
-            if (methodAttribute is CliRouteAttribute route)
-            {
-                schemaMetadata.AddRange(route);
-            }
-
-            if (methodAttribute is CliRouteArgumentAttribute arg)
-            {
-                var info = argumentInfos[arg];
-                schemaMetadata.Add(info);
-            }
-        }
-
-        schemaMetadata.AddRange(options);
-        schemaMetadata.AddRange(methodAttributes.OfType<CliCommandExampleAttribute>());
-        
-
-        ICliActionSchema schema = new CliActionSchema(schemaMetadata);
-
+        var regex = CliActionRegularExpressionRtt.BuildRegex();
 
         ThrowIf.False(parameters.Length == parameterDeserializers.Count);
         return new CliAction(InvokeAsync, parameterDeserializers.ToArray(), masterOptionBundles, schema);

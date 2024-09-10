@@ -13,9 +13,11 @@ namespace Solitons.CommandLine;
 /// </summary>
 internal sealed class CliActionSchema : ICliActionSchema
 {
-    private readonly List<object> _metadata = new();
     private readonly Regex _regex;
     private readonly Regex _rankRegex;
+    private readonly IJazzCommandSegment[] _commandSegments;
+    private readonly JazzyOptionInfo[] _options;
+    private readonly IJazzExampleMetadata[] _examples;
 
 
     [DebuggerStepThrough]
@@ -25,7 +27,9 @@ internal sealed class CliActionSchema : ICliActionSchema
         IJazzExampleMetadata[] examples,
         string description)
     {
-        _commandSegments =  ThrowIf.ArgumentNull(commandSegments);
+        _commandSegments =  ThrowIf.ArgumentNull(commandSegments).ToArray();
+        _options = ThrowIf.ArgumentNull(options).ToArray();
+        _examples = ThrowIf.ArgumentNull(examples).ToArray();
 
         CommandDescription = description;
 
