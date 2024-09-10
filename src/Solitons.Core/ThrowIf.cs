@@ -475,7 +475,7 @@ public static class ThrowIf
     [DebuggerNonUserCode, MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void False(bool condition, string? message = null, [CallerArgumentExpression("condition")] string argExpression = "")
     {
-        if (condition)
+        if (condition == false)
         {
             message ??= IsVariableName(argExpression)
                 ? $"{argExpression} is not false."

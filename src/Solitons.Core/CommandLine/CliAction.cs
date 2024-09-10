@@ -172,7 +172,7 @@ internal sealed class CliAction : IComparable<CliAction>
                 .Select(attribute => attribute.Description)
                 .Union(parameterAttributes.OfType<CliOptionAttribute>().Select(attribute => attribute.Description))
                 .Union([$"'{method.Name}' method parameter."])
-                .First();
+                .First(d => d.IsPrintable());
 
             bool isBundle = CliOptionBundle.IsAssignableFrom(parameter.ParameterType);
 
