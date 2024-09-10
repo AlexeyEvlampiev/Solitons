@@ -8,6 +8,7 @@ namespace Solitons.CommandLine;
 
 internal partial class CliActionHelpRtt
 {
+    private readonly IReadOnlyList<IJazzExampleMetadata> _examples;
     private readonly CliAction _action;
     private const string Tab = "   ";
 
@@ -17,8 +18,10 @@ internal partial class CliActionHelpRtt
         string description,
         string executableName, 
         IReadOnlyList<ICliRouteSegment> routeSegments,
-        IReadOnlyList<JazzyOptionInfo> options)
+        IReadOnlyList<JazzyOptionInfo> options,
+        IReadOnlyList<IJazzExampleMetadata> examples)
     {
+        _examples = examples;
         ExecutableName = executableName;
         Description = description;
 
@@ -32,23 +35,13 @@ internal partial class CliActionHelpRtt
             {
                 return o
                     .Metadata
-                    .OfType<CliArgumentAttribute>()
-                    .Select(argument => $"<{argument.ArgumentRole.ToUpper()}>{Tab}{o.Description}")
-                    .Single();
+                    .Convert(argument => $"<{argument.ArgumentRole.ToUpper()}>{Tab}{o.Description}");
             })
             .ToList();
 
 
-        Options = action
-            .Operands
-            .Where(o => o is not CliArgumentInfo)
-            .Select(o =>
-            {
-                var option = o.CustomAttributes
-                    .OfType<CliOptionAttribute>()
-                    .FirstOrDefault(new CliOptionAttribute($"--{o.Name}", o.Description))!;
-                return $"{option.OptionNamesCsv}{Tab}{o.Description}";
-            })
+        Options = options
+            .Select(o => $"{o.CsvDeclaration}{Tab}{o.Description}")
             .ToList();
     }
 
@@ -93,17 +86,24 @@ internal partial class CliActionHelpRtt
     public IEnumerable<string> Arguments { get; }
     public string Description { get; }
 
-    private IEnumerable<Example> Examples => _schema.Examples
-        .Select((item, index) => new Example(index + 1, item.Description, item.Command));
+    private IEnumerable<Example> Examples => _examples
+        .Select((item, index) => new Example(index + 1, item.Description, item.Example));
 
 
     [DebuggerStepThrough]
     public static string ToString(
+        string description,
         string executableName,
         IReadOnlyList<ICliRouteSegment> routeSegments,
-        IReadOnlyList<JazzyOptionInfo> options)
+        IReadOnlyList<JazzyOptionInfo> options,
+        IReadOnlyList<IJazzExampleMetadata> examples)
     {
-        string help = new CliActionHelpRtt(executableName, routeSegments, options);
+        string help = new CliActionHelpRtt(
+            description,
+            executableName, 
+            routeSegments, 
+            options,
+            examples);
         Debug.WriteLine(help);
         return help;
     }

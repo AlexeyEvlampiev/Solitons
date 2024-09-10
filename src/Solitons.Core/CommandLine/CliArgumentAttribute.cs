@@ -7,7 +7,7 @@ namespace Solitons.CommandLine;
 /// Attribute to reference a parameter of the target method, describing its purpose and usage in CLI commands.
 /// </summary>
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
-public sealed class CliRouteArgumentAttribute : Attribute
+public sealed class CliRouteArgumentAttribute : Attribute, ICliRouteArgumentMetadata
 {
     /// <summary>
     /// Initializes a new instance of the CliArgumentAttribute class.

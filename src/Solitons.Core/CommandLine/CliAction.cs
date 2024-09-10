@@ -21,7 +21,7 @@ internal sealed class CliAction : IComparable<CliAction>
 
     delegate int CalcRankHandler(string commandLine);
     delegate bool IsMatchHandler(string commandLine);
-    delegate string GetHelp();
+    delegate string GetHelp(string executableName);
 
     private readonly CliDeserializer[] _parameterDeserializers;
     private readonly CliMasterOptionBundle[] _masterOptionBundles;
@@ -39,7 +39,8 @@ internal sealed class CliAction : IComparable<CliAction>
         CliDeserializer[] parameterDeserializers,
         CliMasterOptionBundle[] masterOptionBundles,
         IReadOnlyList<ICliRouteSegment> route,
-        IReadOnlyList<JazzyOptionInfo> options)
+        IReadOnlyList<JazzyOptionInfo> options,
+        IReadOnlyList<IJazzExampleMetadata> examples)
     {
         _parameterDeserializers = parameterDeserializers;
         _masterOptionBundles = masterOptionBundles;
@@ -90,14 +91,21 @@ internal sealed class CliAction : IComparable<CliAction>
             return rank;
         }
 
-        string GetHelp()
+        string GetHelp(string executableName)
         {
-            return CliActionHelpRtt.ToString(route, options);
+            return CliActionHelpRtt
+                .ToString(
+                    Description.DefaultIfNullOrWhiteSpace(""),
+                    executableName,
+                    route, 
+                    options, 
+                    examples);
         }
 
         _match = MatchCommandLine;
         _isMatch = regex.IsMatch;
         _calcRank = CalcRank;
+        _help = GetHelp;
     }
 
     internal static CliAction Create(
@@ -245,12 +253,17 @@ internal sealed class CliAction : IComparable<CliAction>
             options.AddRange(bundle.GetOptions());
         }
 
+        var examples = methodAttributes.OfType<IJazzExampleMetadata>().ToList();
         return new CliAction(
             InvokeAsync, 
             parameterDeserializers.ToArray(), 
             masterOptionBundles,
             routeSegments,
-            options);
+            options,
+            examples)
+        {
+            Description = ""
+        };
 
         [DebuggerStepThrough]
         async Task<int> InvokeAsync(object?[] args)
@@ -282,6 +295,8 @@ internal sealed class CliAction : IComparable<CliAction>
     public string RegularExpression { get; }
 
     public string RankerRegularExpression { get; }
+
+    public required string Description { get; init; }
 
     public int Execute(string commandLine, CliTokenDecoder decoder)
     {
@@ -362,9 +377,10 @@ internal sealed class CliAction : IComparable<CliAction>
     }
 
 
-    public override string ToString() => _schema.CommandRouteExpression;
+    public override string ToString() => _help("");
 
-    public string GetHelpText() => _schema.GetHelpText();
+    public string ToString(string executableName) => _help(executableName);
 
-    public ICliActionSchema GetSchema() => _schema;
+    public string GetHelpText(string executableName) => _help(executableName);
+
 }

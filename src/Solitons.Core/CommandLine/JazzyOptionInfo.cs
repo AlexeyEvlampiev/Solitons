@@ -132,6 +132,7 @@ internal sealed record JazzyOptionInfo
     public string Description { get; }
 
     public Type OptionType { get; }
+    public string CsvDeclaration { get; }
 
     public object? Deserialize(Match commandLineMatch, CliTokenDecoder decoder)
     {

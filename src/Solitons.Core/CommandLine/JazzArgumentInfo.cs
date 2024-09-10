@@ -11,15 +11,18 @@ internal sealed class JazzArgumentInfo : ICliRouteSegment
     private readonly IReadOnlyList<ICliRouteSegment> _routeSegments;
 
     public JazzArgumentInfo(
-        CliRouteArgumentAttribute argument, 
+        CliRouteArgumentAttribute attribute, 
         ParameterInfo parameter,
         IReadOnlyList<ICliRouteSegment> routeSegments)
     {
         _routeSegments = routeSegments;
+        Metadata = attribute;
     }
 
     public string RegexMatchGroupName { get; }
 
+    public ICliRouteArgumentMetadata Metadata { get; }
+    public string Description { get; }
 
     public object? Deserialize(Match commandlineMatch, CliTokenDecoder decoder)
     {
