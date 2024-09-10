@@ -52,7 +52,7 @@ internal sealed record CliOptionInfo
         if (defaultValue is not null && 
             optionType.IsInstanceOfType(defaultValue) == false)
         {
-            throw new CliConfigurationException($"The provided default value is not of type {optionType}.");
+            throw new CliConfigurationException($"The provided default value is not of type {optionType}. Actual type is {defaultValue.GetType()}");
         }
 
         _converter = metadata.GetCustomTypeConverter() 

@@ -17,6 +17,7 @@ internal sealed class CliArgumentInfo : ICliRouteSegment
     {
         _routeSegments = routeSegments;
         Metadata = attribute;
+        RegexMatchGroupName = $"argument_{Guid.NewGuid():N}";
     }
 
     public string RegexMatchGroupName { get; }

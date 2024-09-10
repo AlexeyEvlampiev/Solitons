@@ -145,10 +145,6 @@ internal sealed class CliAction : IComparable<CliAction>
                     throw;
                 }
             }
-            else
-            {
-                throw new InvalidOperationException();
-            }
         }
 
 
@@ -184,8 +180,8 @@ internal sealed class CliAction : IComparable<CliAction>
                         $"The parameter '{parameter.Name}' in the '{method.Name}' method is an option bundle of type '{parameter.ParameterType}'. " +
                         $"Option bundles cannot be marked as individual options. Review the method signature and ensure that bundles are handled correctly.");
                 }
-                parameterDeserializers[i] = CliOptionBundle.CreateDeserializerFor(parameter.ParameterType);
-                options.AddRange(CliOptionBundle.GetOptions(parameter.ParameterType));
+                parameterDeserializers[i] = CliOptionBundle.CreateDeserializerFor(parameter.ParameterType, out var bundleOptions);
+                options.AddRange(bundleOptions);
             }
             else
             {
@@ -193,9 +189,10 @@ internal sealed class CliAction : IComparable<CliAction>
                     ThrowIf.NullOrWhiteSpace(parameter.Name),
                     description);
 
+
                 var option = new CliOptionInfo(
                     ThrowIf.NullReference(optionAttribute),
-                    parameter.DefaultValue,
+                    parameter.HasDefaultValue ? parameter.DefaultValue : null,
                     description,
                     parameter.ParameterType)
                 {
@@ -210,7 +207,7 @@ internal sealed class CliAction : IComparable<CliAction>
 
         foreach (var bundle in masterOptionBundles)
         {
-            options.AddRange(bundle.GetOptions());
+            options.AddRange(bundle.GetOptions().Keys);
         }
 
         var examples = methodAttributes.OfType<ICliExampleMetadata>().ToList();

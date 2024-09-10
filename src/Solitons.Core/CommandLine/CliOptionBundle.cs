@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
@@ -13,7 +14,7 @@ public abstract class CliOptionBundle
     public static bool IsAssignableFrom(Type type) => typeof(CliOptionBundle).IsAssignableFrom(type);
 
     // [DebuggerStepThrough]
-    internal static IEnumerable<CliOptionInfo> GetOptions(Type type)
+    internal static Dictionary<CliOptionInfo, PropertyInfo> GetOptions(Type type)
     {
         if (false == IsAssignableFrom(type))
         {
@@ -35,9 +36,10 @@ public abstract class CliOptionBundle
         return bundle.GetOptions();
     }
 
-    internal IEnumerable<CliOptionInfo> GetOptions()
+    internal Dictionary<CliOptionInfo, PropertyInfo> GetOptions()
     {
         var type = GetType();
+        var result = new Dictionary<CliOptionInfo, PropertyInfo>();
         CliOptionBundle bundle;
         try
         {
@@ -75,11 +77,14 @@ public abstract class CliOptionBundle
                 .Union([$"'{type.Name}' options bundle property."])
                 .First();
             var defaultValue = property.GetValue(bundle);
-            yield return new CliOptionInfo(optionAtt, defaultValue, description, property.PropertyType)
+            var info = new CliOptionInfo(optionAtt, defaultValue, description, property.PropertyType)
             {
                 IsRequired = attributes.OfType<RequiredAttribute>().Any()
             };
+            result.Add(info, property);
         }
+
+        return result;
     }
 
     public void PopulateOptions(Match match, CliTokenDecoder decoder)
@@ -125,8 +130,30 @@ public abstract class CliOptionBundle
             });
     }
 
-    internal static CliDeserializer CreateDeserializerFor(Type parameterParameterType)
+    internal static CliDeserializer CreateDeserializerFor(Type bundleType, out IEnumerable<CliOptionInfo> options)
     {
-        throw new NotImplementedException();
+        ThrowIf.False(IsAssignableFrom(bundleType));
+        var ctor = bundleType.GetConstructor([]);
+        if (ctor is null)
+        {
+            throw new CliConfigurationException("Oops...");
+        }
+
+        var map = GetOptions(bundleType);
+
+        options = map.Keys;
+        return Deserialize;
+        object Deserialize(Match commandLineMatch, CliTokenDecoder decoder)
+        {
+            var bundle = ctor.Invoke([]);
+            foreach (var option in map)
+            {
+                var (info, property) = (option.Key, option.Value);
+                var value = info.Deserialize(commandLineMatch, decoder);
+                property.SetValue(bundle, value);
+            }
+
+            return bundle;
+        }
     }
 }

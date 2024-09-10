@@ -52,6 +52,7 @@ public sealed class CliProcessor : ICliProcessorCallback
                     continue;
                 }
 
+                Debug.WriteLine($"Action: {mi.Name}");
                 actions.Add(CliAction.Create(source.Instance, mi, masterOptionBundles, _baseRouteMetadata));
             }
         }

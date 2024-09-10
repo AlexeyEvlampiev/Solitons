@@ -12,7 +12,6 @@ internal partial class CliActionRegularExpressionRtt
         IReadOnlyList<ICliRouteSegment> routeSegments,
         IReadOnlyList<CliOptionInfo> options)
     {
-
         CommandSegmentRegularExpressions = routeSegments
             .Select((segment, index) =>
             {

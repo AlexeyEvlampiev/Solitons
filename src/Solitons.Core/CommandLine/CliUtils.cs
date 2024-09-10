@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reactive;
 
@@ -68,12 +69,19 @@ internal static class CliUtils
         }
 
         // Handle IDictionary<string, T>
-        if (underlyingType.IsGenericType && underlyingType.GetGenericTypeDefinition() == typeof(IDictionary<,>))
+        if (underlyingType.IsGenericType)
         {
-            var genericArguments = underlyingType.GetGenericArguments();
-            if (genericArguments.Length == 2 && genericArguments[0] == typeof(string))
+            var genericTypeDefinition = underlyingType.GetGenericTypeDefinition();
+
+            // Check if it's either IDictionary<,> or Dictionary<,>, or any type implementing IDictionary<,>
+            if (genericTypeDefinition == typeof(Dictionary<,>) ||
+                typeof(IDictionary<,>).IsAssignableFrom(genericTypeDefinition))
             {
-                return genericArguments[1];
+                var genericArguments = underlyingType.GetGenericArguments();
+                if (genericArguments.Length == 2 && genericArguments[0] == typeof(string))
+                {
+                    return genericArguments[1]; // Return the value type if the key is string
+                }
             }
         }
 
