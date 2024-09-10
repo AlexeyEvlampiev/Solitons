@@ -10,7 +10,7 @@ internal partial class CliActionRegularExpressionRtt
 
     private CliActionRegularExpressionRtt(
         IReadOnlyList<ICliRouteSegment> routeSegments,
-        IReadOnlyList<JazzyOptionInfo> options)
+        IReadOnlyList<CliOptionInfo> options)
     {
 
         CommandSegmentRegularExpressions = routeSegments
@@ -38,7 +38,7 @@ internal partial class CliActionRegularExpressionRtt
     [DebuggerStepThrough]
     public static string ToString(
         IReadOnlyList<ICliRouteSegment> routeSegments,
-        IReadOnlyList<JazzyOptionInfo> options)
+        IReadOnlyList<CliOptionInfo> options)
     {
         string expression = new CliActionRegularExpressionRtt(
             routeSegments, 

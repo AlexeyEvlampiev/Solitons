@@ -13,7 +13,7 @@ public abstract class CliOptionBundle
     public static bool IsAssignableFrom(Type type) => typeof(CliOptionBundle).IsAssignableFrom(type);
 
     // [DebuggerStepThrough]
-    internal static IEnumerable<JazzyOptionInfo> GetOptions(Type type)
+    internal static IEnumerable<CliOptionInfo> GetOptions(Type type)
     {
         if (false == IsAssignableFrom(type))
         {
@@ -35,7 +35,7 @@ public abstract class CliOptionBundle
         return bundle.GetOptions();
     }
 
-    internal IEnumerable<JazzyOptionInfo> GetOptions()
+    internal IEnumerable<CliOptionInfo> GetOptions()
     {
         var type = GetType();
         CliOptionBundle bundle;
@@ -75,7 +75,7 @@ public abstract class CliOptionBundle
                 .Union([$"'{type.Name}' options bundle property."])
                 .First();
             var defaultValue = property.GetValue(bundle);
-            yield return new JazzyOptionInfo(optionAtt, defaultValue, description, property.PropertyType)
+            yield return new CliOptionInfo(optionAtt, defaultValue, description, property.PropertyType)
             {
                 IsRequired = attributes.OfType<RequiredAttribute>().Any()
             };

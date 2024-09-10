@@ -1,6 +1,6 @@
 ﻿namespace Solitons.CommandLine;
 
-internal interface IJazzExampleMetadata
+internal interface ICliExampleMetadata
 {
     string Example { get; }
     string Description { get; }

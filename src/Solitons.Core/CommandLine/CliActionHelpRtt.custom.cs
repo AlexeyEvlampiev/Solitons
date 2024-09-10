@@ -8,7 +8,7 @@ namespace Solitons.CommandLine;
 
 internal partial class CliActionHelpRtt
 {
-    private readonly IReadOnlyList<IJazzExampleMetadata> _examples;
+    private readonly IReadOnlyList<ICliExampleMetadata> _examples;
     private readonly CliAction _action;
     private const string Tab = "   ";
 
@@ -17,8 +17,8 @@ internal partial class CliActionHelpRtt
     private CliActionHelpRtt(
         string description,
         IReadOnlyList<ICliRouteSegment> routeSegments,
-        IReadOnlyList<JazzyOptionInfo> options,
-        IReadOnlyList<IJazzExampleMetadata> examples)
+        IReadOnlyList<CliOptionInfo> options,
+        IReadOnlyList<ICliExampleMetadata> examples)
     {
         _examples = examples;
         Description = description;
@@ -91,8 +91,8 @@ internal partial class CliActionHelpRtt
     public static string ToString(
         string description,
         IReadOnlyList<ICliRouteSegment> routeSegments,
-        IReadOnlyList<JazzyOptionInfo> options,
-        IReadOnlyList<IJazzExampleMetadata> examples)
+        IReadOnlyList<CliOptionInfo> options,
+        IReadOnlyList<ICliExampleMetadata> examples)
     {
         string help = new CliActionHelpRtt(
             description,

@@ -9,7 +9,7 @@ internal partial class CliActionRegexMatchRankerRtt
 {
     private CliActionRegexMatchRankerRtt(
         IReadOnlyList<ICliRouteSegment> routeSegments,
-        IReadOnlyList<JazzyOptionInfo> options)
+        IReadOnlyList<CliOptionInfo> options)
     {
         CommandSegmentRegularExpressions = routeSegments
             .Select((segment, index) => segment.IsArgument 
@@ -31,7 +31,7 @@ internal partial class CliActionRegexMatchRankerRtt
     [DebuggerStepThrough]
     public static string ToString(
         IReadOnlyList<ICliRouteSegment> routeSegments,
-        IReadOnlyList<JazzyOptionInfo> options)
+        IReadOnlyList<CliOptionInfo> options)
     {
         string expression = new CliActionRegexMatchRankerRtt(routeSegments, options);
 #if DEBUG

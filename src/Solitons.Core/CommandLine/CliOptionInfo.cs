@@ -9,7 +9,7 @@ using Solitons.Collections;
 
 namespace Solitons.CommandLine;
 
-internal sealed record JazzyOptionInfo
+internal sealed record CliOptionInfo
 {
     private static readonly Regex MapKeyValueRegex;
     delegate object? GroupBinder(Group group, CliTokenDecoder decoder);
@@ -20,7 +20,7 @@ internal sealed record JazzyOptionInfo
     private readonly GroupBinder _groupBinder;
 
 
-    static JazzyOptionInfo()
+    static CliOptionInfo()
     {
         var pattern = @"(?:\[$key\]\s+$value)|(?:$key\s+$value)"
             .Replace("$key", @"(?<key>\S+)?")
@@ -36,7 +36,7 @@ internal sealed record JazzyOptionInfo
 
 
 
-    public JazzyOptionInfo(
+    public CliOptionInfo(
         ICliOptionMetadata metadata,
         object? defaultValue,
         string description,

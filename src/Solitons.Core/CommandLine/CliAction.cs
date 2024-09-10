@@ -30,8 +30,8 @@ internal sealed class CliAction : IComparable<CliAction>
         CliDeserializer[] parameterDeserializers,
         CliMasterOptionBundle[] masterOptionBundles,
         IReadOnlyList<ICliRouteSegment> routeSegments,
-        IReadOnlyList<JazzyOptionInfo> options,
-        IReadOnlyList<IJazzExampleMetadata> examples,
+        IReadOnlyList<CliOptionInfo> options,
+        IReadOnlyList<ICliExampleMetadata> examples,
         string description)
     {
         _parameterDeserializers = ThrowIf.ArgumentNull(parameterDeserializers);
@@ -153,7 +153,7 @@ internal sealed class CliAction : IComparable<CliAction>
 
 
 
-        var options = new List<JazzyOptionInfo>();
+        var options = new List<CliOptionInfo>();
         for (int i = 0; i < parameters.Length; ++i)
         {
             var parameter = parameters[i];
@@ -193,7 +193,7 @@ internal sealed class CliAction : IComparable<CliAction>
                     ThrowIf.NullOrWhiteSpace(parameter.Name),
                     description);
 
-                var option = new JazzyOptionInfo(
+                var option = new CliOptionInfo(
                     ThrowIf.NullReference(optionAttribute),
                     parameter.DefaultValue,
                     description,
@@ -213,7 +213,7 @@ internal sealed class CliAction : IComparable<CliAction>
             options.AddRange(bundle.GetOptions());
         }
 
-        var examples = methodAttributes.OfType<IJazzExampleMetadata>().ToList();
+        var examples = methodAttributes.OfType<ICliExampleMetadata>().ToList();
         return new CliAction(
             InvokeAsync,
             parameterDeserializers.ToArray(),
