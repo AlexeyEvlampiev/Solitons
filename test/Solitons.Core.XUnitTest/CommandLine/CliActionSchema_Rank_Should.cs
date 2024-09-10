@@ -17,7 +17,7 @@ public sealed class CliActionSchema_Rank_Should
     public void HandleScenario001(string commandLine, int expectedRank)
     {
         Debug.WriteLine(commandLine);
-        var schema = new CliActionSchema(GetType().GetMethod(nameof(ProgramRun))!);
+        var schema = CliAction.Create(null, GetType().GetMethod(nameof(ProgramRun))!, [], []);
 
         var actualRank = schema.Rank(commandLine);
         Assert.Equal(expectedRank, actualRank);
@@ -37,7 +37,7 @@ public sealed class CliActionSchema_Rank_Should
     public void HandleScenario002(string commandLine, int expectedRank)
     {
         Debug.WriteLine(commandLine);
-        var schema = new CliActionSchema(GetType().GetMethod(nameof(ProgramRun2))!);
+        var schema = CliAction.Create(null, GetType().GetMethod(nameof(ProgramRun2))!, [], []);
 
         var actualRank = schema.Rank(commandLine);
         Assert.Equal(expectedRank, actualRank);
@@ -59,7 +59,7 @@ public sealed class CliActionSchema_Rank_Should
     public void HandleScenario003(string commandLine, int expectedRank)
     {
         Debug.WriteLine(commandLine);
-        var schema = new CliActionSchema(GetType().GetMethod(nameof(TaskRun))!);
+        var schema = CliAction.Create(null, GetType().GetMethod(nameof(TaskRun))!, [], []);
 
         var actualRank = schema.Rank(commandLine);
         Assert.Equal(expectedRank, actualRank);
@@ -74,7 +74,7 @@ public sealed class CliActionSchema_Rank_Should
     public void HandleScenario004(string commandLine, int expectedRank)
     {
         Debug.WriteLine(commandLine);
-        var schema = new CliActionSchema(GetType().GetMethod(nameof(TaskRun2))!);
+        var schema = CliAction.Create(null, GetType().GetMethod(nameof(TaskRun2))!, [], []);
 
         var actualRank = schema.Rank(commandLine);
         Assert.Equal(expectedRank, actualRank);
@@ -91,7 +91,7 @@ public sealed class CliActionSchema_Rank_Should
     public void HandleScenario005(string commandLine, int expectedRank)
     {
         Debug.WriteLine(commandLine);
-        var schema = new CliActionSchema(GetType().GetMethod(nameof(Scenario005))!);
+        var schema = CliAction.Create(null, GetType().GetMethod(nameof(Scenario005))!, [], []);
 
         var actualRank = schema.Rank(commandLine);
         Assert.Equal(expectedRank, actualRank);
@@ -108,7 +108,7 @@ public sealed class CliActionSchema_Rank_Should
     public void HandleScenario006(string commandLine, int expectedRank)
     {
         Debug.WriteLine(commandLine);
-        var schema = new CliActionSchema(GetType().GetMethod(nameof(Scenario006))!);
+        var schema = CliAction.Create(null, GetType().GetMethod(nameof(Scenario006))!, [], []);
 
         var actualRank = schema.Rank(commandLine);
         Assert.Equal(expectedRank, actualRank);
