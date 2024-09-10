@@ -14,98 +14,54 @@ internal sealed class CliAction : IComparable<CliAction>
 {
     internal delegate Task<int> ActionHandler(object?[] args);
 
-    delegate Match MatchHandler(
-        string commandLine, 
-        CliTokenDecoder decoder, 
-        Action<IEnumerable<string>> handleUnmatchedTokens);
-
-    delegate int CalcRankHandler(string commandLine);
-    delegate bool IsMatchHandler(string commandLine);
-    delegate string GetHelp(string executableName);
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+    private readonly Regex _regex;
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+    private readonly Regex _rankerRegex;
 
     private readonly CliDeserializer[] _parameterDeserializers;
     private readonly CliMasterOptionBundle[] _masterOptionBundles;
     private readonly ActionHandler _handler;
-    private readonly MatchHandler _match;
-    private readonly IsMatchHandler _isMatch;
-    private readonly CalcRankHandler _calcRank;
-    private readonly GetHelp _help;
-
-
-
+    private readonly string _unrecognizedTokenRegexGroupName;
+    private readonly Lazy<string> _help;
 
     internal CliAction(
         ActionHandler handler,
         CliDeserializer[] parameterDeserializers,
         CliMasterOptionBundle[] masterOptionBundles,
-        IReadOnlyList<ICliRouteSegment> route,
+        IReadOnlyList<ICliRouteSegment> routeSegments,
         IReadOnlyList<JazzyOptionInfo> options,
-        IReadOnlyList<IJazzExampleMetadata> examples)
+        IReadOnlyList<IJazzExampleMetadata> examples,
+        string description)
     {
-        _parameterDeserializers = parameterDeserializers;
-        _masterOptionBundles = masterOptionBundles;
+        _parameterDeserializers = ThrowIf.ArgumentNull(parameterDeserializers);
+        _masterOptionBundles = ThrowIf.ArgumentNull(masterOptionBundles);
         _handler = ThrowIf.ArgumentNull(handler);
-        RegularExpression = CliActionRegularExpressionRtt.ToString(route, options);
-        RankerRegularExpression = CliActionRegexMatchRankerRtt.ToString(route, options);
+        Description = ThrowIf.ArgumentNullOrWhiteSpace(description);
 
-        var regex = new Regex(
+        RegularExpression = CliActionRegularExpressionRtt.ToString(routeSegments, options);
+        RankerRegularExpression = CliActionRegexMatchRankerRtt.ToString(routeSegments, options);
+
+        _unrecognizedTokenRegexGroupName = CliActionRegularExpressionRtt.UnrecognizedToken;
+
+        _regex = new Regex(
             RegularExpression,
             RegexOptions.IgnorePatternWhitespace |
             RegexOptions.Singleline |
             RegexOptions.IgnoreCase);
         
-        var rankerRegex = new Regex(
+        _rankerRegex = new Regex(
             RankerRegularExpression,
             RegexOptions.IgnorePatternWhitespace |
             RegexOptions.Singleline |
             RegexOptions.IgnoreCase);
 
-        [DebuggerStepThrough]
-        Match MatchCommandLine(
-            string commandLine, 
-            CliTokenDecoder decoder, 
-            Action<IEnumerable<string>> handleUnmatchedTokens)
-        {
-            var match = regex.Match(commandLine);
-            var unmatchedTokens = match
-                .Groups[CliActionRegularExpressionRtt.UnrecognizedToken]
-            .Captures
-                .Select(c => decoder(c.Value))
-                .ToList();
-            if (unmatchedTokens.Any())
-            {
-                handleUnmatchedTokens(unmatchedTokens);
-            }
-            return match;
-        }
-
-        int CalcRank(string commandLine)
-        {
-            var match = rankerRegex.Match(commandLine);
-            var groups = match.Groups
-                .OfType<Group>()
-                .Where(g => g.Success)
-                .Skip(1) // Exclude group 0 from count
-                .ToList();
-            int rank = groups.Count;
-            return rank;
-        }
-
-        string GetHelp(string executableName)
-        {
-            return CliActionHelpRtt
-                .ToString(
-                    Description.DefaultIfNullOrWhiteSpace(""),
-                    executableName,
-                    route, 
-                    options, 
-                    examples);
-        }
-
-        _match = MatchCommandLine;
-        _isMatch = regex.IsMatch;
-        _calcRank = CalcRank;
-        _help = GetHelp;
+        _help = new Lazy<string>(() => CliActionHelpRtt
+            .ToString(
+                description,
+                routeSegments,
+                options,
+                examples));
     }
 
     internal static CliAction Create(
@@ -122,6 +78,10 @@ internal sealed class CliAction : IComparable<CliAction>
         var parameterDeserializers = new CliDeserializer[parameters.Length];
 
         var methodAttributes = method.GetCustomAttributes().ToList();
+        var actionDescription = methodAttributes
+            .OfType<DescriptionAttribute>()
+            .Select(a => a.Description)
+            .FirstOrDefault(method.Name);
        
 
         var routeSegments = new List<ICliRouteSegment>(10);
@@ -255,15 +215,13 @@ internal sealed class CliAction : IComparable<CliAction>
 
         var examples = methodAttributes.OfType<IJazzExampleMetadata>().ToList();
         return new CliAction(
-            InvokeAsync, 
-            parameterDeserializers.ToArray(), 
+            InvokeAsync,
+            parameterDeserializers.ToArray(),
             masterOptionBundles,
             routeSegments,
             options,
-            examples)
-        {
-            Description = ""
-        };
+            examples,
+            actionDescription);
 
         [DebuggerStepThrough]
         async Task<int> InvokeAsync(object?[] args)
@@ -296,27 +254,32 @@ internal sealed class CliAction : IComparable<CliAction>
 
     public string RankerRegularExpression { get; }
 
-    public required string Description { get; init; }
+    public string Description { get; }
 
     public int Execute(string commandLine, CliTokenDecoder decoder)
     {
         commandLine = ThrowIf.ArgumentNullOrWhiteSpace(commandLine);
-        var match = _match(
-            commandLine,
-            decoder,
-            unmatchedTokens =>
-            {
-                var csv = unmatchedTokens
-                    .Join(", ");
-                CliExit.With(
-                    $"The following options are not recognized as valid for the command: {csv}. " +
-                    $"Please check the command syntax.");
-            });
+        var match = _regex.Match(commandLine);
 
         if (match.Success == false)
         {
             throw new InvalidOperationException($"The command line did not match any known patterns.");
         }
+
+        if (match.Groups[_unrecognizedTokenRegexGroupName].Success)
+        {
+            var csv = match
+                .Groups[_unrecognizedTokenRegexGroupName]
+                .Captures
+                .Select(c => decoder(c.Value))
+                .Join(", ");
+            CliExit.With(
+                $"The following options are not recognized as valid for the command: {csv}. " +
+                $"Please check the command syntax.");
+        }
+        
+
+
 
         var args = new object?[_parameterDeserializers.Length];
         for (int i = 0; i < args.Length; ++i)
@@ -357,12 +320,21 @@ internal sealed class CliAction : IComparable<CliAction>
 
     }
 
-    [DebuggerStepThrough]
-    public int Rank(string commandLine) => _calcRank(commandLine);
+    public int Rank(string commandLine)
+    {
+        var match = _rankerRegex.Match(commandLine);
+        var groups = match.Groups
+            .OfType<Group>()
+            .Where(g => g.Success)
+            .Skip(1) // Exclude group 0 from count
+            .ToList();
+        int rank = groups.Count;
+        return rank;
+    }
 
 
-    [DebuggerStepThrough]
-    public bool IsMatch(string commandLine) => _isMatch(commandLine);
+    [DebuggerNonUserCode]
+    public bool IsMatch(string commandLine) => _regex.IsMatch(commandLine);
 
     public void ShowHelp()
     {
@@ -377,10 +349,9 @@ internal sealed class CliAction : IComparable<CliAction>
     }
 
 
-    public override string ToString() => _help("");
+    public override string ToString() => _help.Value;
 
-    public string ToString(string executableName) => _help(executableName);
 
-    public string GetHelpText(string executableName) => _help(executableName);
+    public string GetHelpText() => _help.Value;
 
 }

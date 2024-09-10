@@ -16,13 +16,11 @@ internal partial class CliActionHelpRtt
 
     private CliActionHelpRtt(
         string description,
-        string executableName, 
         IReadOnlyList<ICliRouteSegment> routeSegments,
         IReadOnlyList<JazzyOptionInfo> options,
         IReadOnlyList<IJazzExampleMetadata> examples)
     {
         _examples = examples;
-        ExecutableName = executableName;
         Description = description;
 
 
@@ -80,7 +78,6 @@ internal partial class CliActionHelpRtt
         }
     }
 
-    public string ExecutableName { get; }
     public IEnumerable<object> Segments { get; }
 
     public IEnumerable<string> Arguments { get; }
@@ -93,14 +90,12 @@ internal partial class CliActionHelpRtt
     [DebuggerStepThrough]
     public static string ToString(
         string description,
-        string executableName,
         IReadOnlyList<ICliRouteSegment> routeSegments,
         IReadOnlyList<JazzyOptionInfo> options,
         IReadOnlyList<IJazzExampleMetadata> examples)
     {
         string help = new CliActionHelpRtt(
             description,
-            executableName, 
             routeSegments, 
             options,
             examples);
@@ -108,7 +103,7 @@ internal partial class CliActionHelpRtt
         return help;
     }
 
-    public static string ToString(string executableName, IEnumerable<CliAction> actions)
+    public static string ToString(IEnumerable<CliAction> actions)
     {
         return actions
             .Select(a => a.GetHelpText())
