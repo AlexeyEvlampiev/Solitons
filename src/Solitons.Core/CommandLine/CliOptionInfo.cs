@@ -61,15 +61,15 @@ internal sealed record CliOptionInfo
                      ?? (OptionUnderlyingType == typeof(CancellationToken) ? new CliCancellationTokenTypeConverter() : null)
                      ?? TypeDescriptor.GetConverter(OptionUnderlyingType);
 
-
-        if (_converter.CanConvertTo(OptionUnderlyingType) == false)
+        if (_converter.CanConvertFrom(typeof(string)) == false)
         {
             throw new CliConfigurationException(
-                $"The option value tokens cannot be converted to the specified option type '{OptionUnderlyingType}' using the default converter. " +
-                $"To resolve this, either provide a valid value that matches the option type, " +
-                $"fix the option type if it's incorrect, or specify a custom type converter " +
-                $"by overriding '{typeof(CliOptionAttribute).FullName}.{nameof(CliOptionAttribute.GetCustomTypeConverter)}()'.");
+                $"The option value tokens cannot be converted from a string to the specified option type '{OptionUnderlyingType}' using the default type converter. " +
+                $"To resolve this, correct the option type if it's incorrect, or specify a custom type converter " +
+                $"either by inheriting from '{typeof(CliOptionAttribute).FullName}' and overriding '{nameof(CliOptionAttribute.GetCustomTypeConverter)}()', " +
+                $"or by applying the '{typeof(TypeConverterAttribute).FullName}' directly on the parameter or property.");
         }
+
 
 
         _defaultValue = defaultValue;
