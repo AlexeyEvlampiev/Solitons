@@ -5,7 +5,7 @@ using Xunit;
 namespace Solitons.CommandLine;
 
 // ReSharper disable once InconsistentNaming
-public sealed class CliActionSchema_Match_Should
+public sealed class CliAction_Match_Should
 {
     [Theory]
     [InlineData("program run arg",true, 0 )]
@@ -21,10 +21,10 @@ public sealed class CliActionSchema_Match_Should
     public void HandleScenario001(string commandLine, bool success, int unrecognizedTokensCount)
     {
         Debug.WriteLine(commandLine);
-        var schema = new CliActionSchema(GetType().GetMethod(nameof(ProgramRun))!);
+        var action = CliAction.Create(null, GetType().GetMethod(nameof(ProgramRun))!, [], [] );
 
 
-        var match = schema.Match(
+        var match = action.Match(
             commandLine, 
             (token) => token, 
             unmatched =>

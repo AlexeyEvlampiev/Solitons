@@ -7,17 +7,15 @@ internal partial class CliHelpRtt
 {
     sealed record Command(string Path, string Description);
 
-    private CliHelpRtt(string executableName, string logo, string description, CliAction[] actions)
+    private CliHelpRtt(string logo, string description, CliAction[] actions)
     {
-        ExecutableName = executableName;
         Logo = logo;
         Description = description;
         Commands = actions
             .OrderBy(cmd => cmd)
-            .Select(a => a.GetSchema())
             .Select(a => new Command(
-                a.CommandRouteExpression,
-                a.CommandDescription))
+                a.GetHelpText(),
+                a.Description))
             .Distinct()
             .ToArray();
     }
@@ -25,14 +23,13 @@ internal partial class CliHelpRtt
     private IEnumerable<Command> Commands { get; }
     public string Logo { get; }
     public string Description { get; }
-    public string ExecutableName { get; }
 
     public static string Build(
-        string executableName, 
         string logo, 
-        string description, CliAction[] actions)
+        string description, 
+        CliAction[] actions)
     {
-        var rtt = new CliHelpRtt(executableName, logo, description, actions);
+        var rtt = new CliHelpRtt(logo, description, actions);
         return rtt.ToString();
     }
 }

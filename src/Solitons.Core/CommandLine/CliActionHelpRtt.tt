@@ -7,7 +7,7 @@ Description:
   <#= Description #>
 
 Usage:<# foreach(var option in UsageOptions){ #> 
-  <#= ExecutableName #> <#= option #> <# } #> 
+  <#= option #> <# } #> 
   <# if(Arguments.Any()) { #>  
 
 Arguments: <# foreach(string argument in Arguments){ #>  
@@ -18,5 +18,5 @@ Options:<# foreach(string option in Options){ #>
 <# foreach(var example in Examples ){ #> 
 
 Example <#= example.Index #>: <#= example.Description #>
-<#= ExecutableName #> <#= example.Command #>
+<#= example.Command #>
 <# } #>

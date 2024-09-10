@@ -26,9 +26,7 @@ namespace Solitons.CommandLine
         public override string TransformText()
         {
             this.Write(this.ToStringHelper.ToStringWithCulture(Logo));
-            this.Write("\r\nUsage: ");
-            this.Write(this.ToStringHelper.ToStringWithCulture(ExecutableName));
-            this.Write(" COMMAND [ARGS] [OPTIONS]\r\n\r\nDescription:\r\n  ");
+            this.Write("\r\nUsage: COMMAND [ARGS] [OPTIONS]\r\n\r\nDescription:\r\n  ");
             this.Write(this.ToStringHelper.ToStringWithCulture(Description));
             this.Write("\r\n\r\nOptions:\r\n  -h, --help  Show this message and exit.\r\n\r\nCommands:");
  foreach(var cmd in Commands){ 

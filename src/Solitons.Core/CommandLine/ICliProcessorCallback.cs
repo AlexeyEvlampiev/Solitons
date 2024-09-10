@@ -3,6 +3,5 @@
 internal interface ICliProcessorCallback
 {
     void ShowHelp(
-        string executableName,
         string commandLine);
 }

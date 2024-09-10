@@ -172,7 +172,7 @@ public sealed class CliProcessor : ICliProcessorCallback
 
             if (CliHelpOptionAttribute.IsMatch(commandLine))
             {
-                _callback.ShowHelp(executableName, commandLine);
+                _callback.ShowHelp(commandLine);
                 return 0;
             }
 
@@ -188,7 +188,7 @@ public sealed class CliProcessor : ICliProcessorCallback
             if (selectedActions.Count != 1)
             {
                 Console.WriteLine("No matching commands found. See closest commands description below. ");
-                _callback.ShowHelp(executableName, commandLine);
+                _callback.ShowHelp(commandLine);
                 return 1;
             }
 
@@ -216,7 +216,6 @@ public sealed class CliProcessor : ICliProcessorCallback
     }
 
     void ICliProcessorCallback.ShowHelp(
-        string executableName, 
         string commandLine)
     {
         var anyMatchesFound = _actions.Any(a => a.IsMatch(commandLine));
@@ -224,7 +223,6 @@ public sealed class CliProcessor : ICliProcessorCallback
             CliHelpOptionAttribute.IsRootHelpCommand(commandLine))
         {
             var help = CliHelpRtt.Build(
-                executableName, 
                 _logo, 
                 _description, 
                 _actions);
@@ -243,7 +241,7 @@ public sealed class CliProcessor : ICliProcessorCallback
             .OrderByDescending(similarActions => similarActions.Key)
             .Take(1)
             .SelectMany(similarActions => similarActions)
-            .Convert(selected => CliActionHelpRtt.ToString(executableName, selected));
+            .Convert(CliActionHelpRtt.ToString);
         Console.WriteLine(text);
     }
 
