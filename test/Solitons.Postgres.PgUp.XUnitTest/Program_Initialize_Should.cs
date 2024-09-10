@@ -6,7 +6,7 @@ namespace Solitons.Postgres.PgUp;
 public class Program_Initialize_Should
 {
     [Theory]
-    [InlineData("pgup init --template basic", "basic")]
+    [InlineData("pgup init . --template basic", "basic")]
     public void BeInvokedByCliProcessor(string commandLine, string template)
     {
         var program = new Mock<IPgUpProgram>();

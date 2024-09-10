@@ -84,7 +84,7 @@ public class CliOptionAttribute : Attribute, ICliOptionMetadata
         ShortOptionNames = shortNames.AsReadOnly();
         Description = description;
 
-        OptionExpression = LongOptionNames
+        OptionPipeAliases = LongOptionNames
             .OrderByDescending(n => n.Length)
             .Select(n => $"--{n}")
             .Union(ShortOptionNames
@@ -106,7 +106,7 @@ public class CliOptionAttribute : Attribute, ICliOptionMetadata
     /// <summary>
     /// Specification of options as used in the CLI.
     /// </summary>
-    public string OptionExpression { get; }
+    public string OptionPipeAliases { get; }
 
     /// <summary>
     /// Description of the CLI options.
@@ -134,7 +134,7 @@ public class CliOptionAttribute : Attribute, ICliOptionMetadata
     /// Returns a string representation of the option specification.
     /// </summary>
     /// <returns>A string that represents the option specification.</returns>
-    public override string ToString() => OptionExpression;
+    public override string ToString() => OptionPipeAliases;
 
     public virtual StringComparer GetDictionaryKeyComparer() => StringComparer.OrdinalIgnoreCase;
 }

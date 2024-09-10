@@ -72,14 +72,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\README.md">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-    <None Include="..\Solitons.png">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
     <None Include="Data\Common\Postgres\SolitonsPgScriptRttOptions.generated.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>

@@ -12,10 +12,10 @@ namespace Solitons.CommandLine;
 internal sealed record CliOptionInfo
 {
     private static readonly Regex MapKeyValueRegex;
+
     delegate object? GroupBinder(Group group, CliTokenDecoder decoder);
 
     private readonly object? _defaultValue;
-    private readonly string _expression;
     private readonly TypeConverter _converter;
     private readonly GroupBinder _groupBinder;
 
@@ -25,15 +25,13 @@ internal sealed record CliOptionInfo
         var pattern = @"(?:\[$key\]\s+$value)|(?:$key\s+$value)"
             .Replace("$key", @"(?<key>\S+)?")
             .Replace("$value", @"(?<value>\S+)?");
-        MapKeyValueRegex = new Regex(pattern, 
+        MapKeyValueRegex = new Regex(pattern,
             RegexOptions.Singleline
 #if DEBUG
             | RegexOptions.Compiled
 #endif
         );
     }
-
-
 
 
     public CliOptionInfo(
@@ -49,22 +47,25 @@ internal sealed record CliOptionInfo
 
 
 
-        if (defaultValue is not null && 
+        if (defaultValue is not null &&
             optionType.IsInstanceOfType(defaultValue) == false)
         {
-            throw new CliConfigurationException($"The provided default value is not of type {optionType}. Actual type is {defaultValue.GetType()}");
+            throw new CliConfigurationException(
+                $"The provided default value is not of type {optionType}. Actual type is {defaultValue.GetType()}");
         }
 
-        _converter = metadata.GetCustomTypeConverter() 
+        _converter = metadata.GetCustomTypeConverter()
                      ?? (Arity == CliOptionArity.Flag ? new CliFlagConverter() : null)
                      ?? (OptionUnderlyingType == typeof(TimeSpan) ? new MultiFormatTimeSpanConverter() : null)
-                     ?? (OptionUnderlyingType == typeof(CancellationToken) ? new CliCancellationTokenTypeConverter() : null)
+                     ?? (OptionUnderlyingType == typeof(CancellationToken)
+                         ? new CliCancellationTokenTypeConverter()
+                         : null)
                      ?? TypeDescriptor.GetConverter(OptionUnderlyingType);
 
         if (_converter.CanConvertFrom(typeof(string)) == false)
         {
             throw new CliConfigurationException(
-                $"The option value tokens cannot be converted from a string to the specified option type '{OptionUnderlyingType}' using the default type converter. " +
+                $"The '{AliasPipeExpression}' option value tokens cannot be converted from a string to the specified option type '{OptionUnderlyingType}' using the default type converter. " +
                 $"To resolve this, correct the option type if it's incorrect, or specify a custom type converter " +
                 $"either by inheriting from '{typeof(CliOptionAttribute).FullName}' and overriding '{nameof(CliOptionAttribute.GetCustomTypeConverter)}()', " +
                 $"or by applying the '{typeof(TypeConverterAttribute).FullName}' directly on the parameter or property.");
@@ -77,8 +78,12 @@ internal sealed record CliOptionInfo
         Description = description;
         OptionType = optionType;
         RegexMatchGroupName = $"option_{Guid.NewGuid():N}";
-        _expression = Aliases.Join("|");
-        
+        AliasPipeExpression = Aliases.Join("|");
+        AliasCsvExpression = Aliases
+            .OrderBy(alias => alias.StartsWith("--") ? 1 : 0)
+            .ThenBy(alias => alias.Length)
+            .Join(",");
+
         _groupBinder = Arity switch
         {
             (CliOptionArity.Dictionary) => ToDictionary,
@@ -88,23 +93,19 @@ internal sealed record CliOptionInfo
             _ => throw new InvalidOperationException()
         };
 
-        var token = Aliases
-            .Select(a => a.Trim().ToLower())
-            .Distinct(StringComparer.Ordinal)
-            .OrderByDescending(a => a.Length)
-            .Join("|");
-        ThrowIf.NullOrWhiteSpace(token);
+
+        ThrowIf.NullOrWhiteSpace(AliasPipeExpression);
         switch (Arity)
         {
             case (CliOptionArity.Flag):
-                RegularExpression = $@"(?<{RegexMatchGroupName}>{token})";
+                RegularExpression = $@"(?<{RegexMatchGroupName}>{AliasPipeExpression})";
                 break;
             case (CliOptionArity.Value):
-                RegularExpression = $@"(?:{token})\s*(?<{RegexMatchGroupName}>(?:[^\s-]\S*)?)";
+                RegularExpression = $@"(?:{AliasPipeExpression})\s*(?<{RegexMatchGroupName}>(?:[^\s-]\S*)?)";
                 break;
             case (CliOptionArity.Dictionary):
             {
-                RegularExpression = $@"(?:{token})(?:$dot-notation|$accessor-notation)"
+                RegularExpression = $@"(?:{AliasPipeExpression})(?:$dot-notation|$accessor-notation)"
                     .Replace(@"$dot-notation", @$"\.(?<{RegexMatchGroupName}>(?:\S+\s+[^\s-]\S+)?)")
                     .Replace(@"$accessor-notation", @$"(?<{RegexMatchGroupName}>(?:\[\S+\]\s+[^\s-]\S+)?)");
             }
@@ -125,7 +126,7 @@ internal sealed record CliOptionInfo
 
     public required bool IsRequired { get; init; }
 
-    private string RegexMatchGroupName { get; }
+    internal string RegexMatchGroupName { get; }
 
     public IReadOnlyList<string> Aliases { get; }
 
@@ -133,6 +134,9 @@ internal sealed record CliOptionInfo
 
     public Type OptionType { get; }
     public string CsvDeclaration { get; }
+
+    public string AliasPipeExpression { get; }
+    public string AliasCsvExpression { get; }
 
     public object? Deserialize(Match commandLineMatch, CliTokenDecoder decoder)
     {
@@ -145,7 +149,7 @@ internal sealed record CliOptionInfo
 
         if (IsRequired)
         {
-            CliExit.With($"{_expression} option is required.");
+            CliExit.With($"{AliasPipeExpression} option is required.");
         }
 
         return _defaultValue;
@@ -160,7 +164,10 @@ internal sealed record CliOptionInfo
 
     private object? ToScalar(Group group, CliTokenDecoder decoder)
     {
-        Debug.Assert(group.Success);
+        ThrowIf.ArgumentNull(group);
+        ThrowIf.ArgumentNull(decoder);
+        ThrowIf.False(group.Success);
+
         if (group.Captures.Count > 1 &&
             group.Captures
                 .Select(c => c.Value)
@@ -168,18 +175,27 @@ internal sealed record CliOptionInfo
                 .Count() > 1)
         {
             CliExit.With(
-                $"The option '{_expression}' has multiple conflicting values. Please provide a single value.");
+                $"The option '{AliasPipeExpression}' has multiple conflicting values. Please provide a single value.");
         }
+
         var input = group.Captures[0].Value;
         try
         {
-            return _converter.ConvertFromInvariantString(input);
+            return _converter.ConvertFromInvariantString(input, OptionUnderlyingType);
         }
-        catch (Exception e)
+        catch (Exception e) when (e is InvalidOperationException)
         {
+            throw new CliConfigurationException(
+                $"The option '{AliasPipeExpression}' is misconfigured. " +
+                $"The input '{input}' could not be converted to '{OptionUnderlyingType.FullName}'. " +
+                "Ensure that a valid type converter is provided.");
+        }
+        catch (Exception e) when (e is FormatException or ArgumentException)
+        {
+            // Means the user supplied a wrong input text
             CliExit.With(
-                $"Invalid input for option '{_expression}': '{input}' could not be converted to the expected type '{OptionUnderlyingType}'.");
-            throw;
+                $"Invalid input for option '{AliasPipeExpression}': '{input}' could not be parsed to '{OptionUnderlyingType.FullName}'");
+            return null;
         }
     }
 
@@ -197,15 +213,24 @@ internal sealed record CliOptionInfo
             .Select(text => decoder(text))
             .Select(text =>
             {
-                var item = _converter.ConvertFromInvariantString(text);
-                if (item is null)
+                try
+                {
+                    var item = _converter.ConvertFromInvariantString(text, OptionUnderlyingType);
+                    return item;
+                }
+                catch (Exception e) when (e is InvalidOperationException)
+                {
+                    throw new CliConfigurationException(
+                        $"The option '{AliasPipeExpression}' is misconfigured. " +
+                        $"The input tokens could not be converted to '{OptionUnderlyingType.FullName}'. " +
+                        "Ensure that a valid type converter is provided.");
+                }
+                catch (Exception e) when (e is FormatException or ArgumentException)
                 {
                     CliExit.With(
-                        $"The input '{text}' could not be converted to the expected type '{OptionUnderlyingType}'. " +
-                        $"Please provide a valid value.");
+                        $"Invalid input for option '{AliasPipeExpression}': token could not be parsed to '{OptionUnderlyingType.FullName}'");
+                    return null; // This won't actually return because CliExit.With likely terminates the program
                 }
-
-                return item;
             })
             .Cast<object>()
             .ToList();
@@ -221,26 +246,39 @@ internal sealed record CliOptionInfo
         foreach (Capture capture in group.Captures)
         {
             var match = MapKeyValueRegex.Match(capture.Value);
-            
+
             var keyGroup = match.Groups["key"];
             var valueGroup = match.Groups["value"];
             if (keyGroup.Success && valueGroup.Success)
             {
                 var key = decoder(keyGroup.Value);
-                var value = _converter.ConvertFromInvariantString(
-                    decoder(valueGroup.Value));
-                if (value is null)
+                var input = decoder(valueGroup.Value);
+
+                try
                 {
-                    CliExit.With("Invalid value...");
+                    var value = _converter.ConvertFromInvariantString(input, OptionUnderlyingType);
+                    dictionary[key] = value;
                 }
-                dictionary[key] = value;
+                catch (Exception e) when (e is InvalidOperationException)
+                {
+                    throw new CliConfigurationException(
+                        $"The option '{AliasPipeExpression}' is misconfigured. " +
+                        $"The input value for key '{key}' could not be converted to '{OptionUnderlyingType.FullName}'. " +
+                        "Ensure that a valid type converter is provided.");
+                }
+                catch (Exception e) when (e is FormatException or ArgumentException)
+                {
+                    CliExit.With(
+                        $"Invalid input for option '{AliasPipeExpression}': '{valueGroup.Value}' could not be parsed to '{OptionUnderlyingType.FullName}'.");
+                    return null;
+                }
             }
-            else if(keyGroup.Success == valueGroup.Success)
+            else if (keyGroup.Success == valueGroup.Success)
             {
                 Debug.Assert(false == keyGroup.Success);
                 CliExit.With("Key value pair is required");
             }
-            else if(keyGroup.Success)
+            else if (keyGroup.Success)
             {
                 Debug.Assert(false == valueGroup.Success);
                 CliExit.With("Key is required");
@@ -254,5 +292,4 @@ internal sealed record CliOptionInfo
 
         return dictionary;
     }
-
 }

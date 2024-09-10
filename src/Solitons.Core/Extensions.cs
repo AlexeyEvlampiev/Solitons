@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
@@ -23,6 +24,85 @@ namespace Solitons;
 
 public static partial class Extensions
 {
+    /// <summary>
+    /// Converts the specified invariant string to the desired type using the provided <see cref="TypeConverter"/>.
+    /// </summary>
+    /// <param name="converter">The <see cref="TypeConverter"/> to perform the conversion.</param>
+    /// <param name="input">The input string to convert from.</param>
+    /// <param name="targetType">The desired target <see cref="Type"/> for the conversion result.</param>
+    /// <returns>The converted object of the specified <paramref name="targetType"/>.</returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown if <paramref name="converter"/> or <paramref name="targetType"/> is <c>null</c>.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown if the conversion succeeds but the resulting value is not of the specified <paramref name="targetType"/>.
+    /// </exception>
+    public static object ConvertFromInvariantString(this TypeConverter converter, string input, Type targetType)
+    {
+        // Null checks for arguments
+        if (converter == null)
+            throw new ArgumentNullException(nameof(converter), "The type converter cannot be null.");
+
+        if (targetType == null)
+            throw new ArgumentNullException(nameof(targetType), "The target type cannot be null.");
+
+        // Attempt to convert the input
+        var value = converter.ConvertFromInvariantString(input);
+
+        // Check if the converted value is of the required type
+        if (value == null || !targetType.IsInstanceOfType(value))
+        {
+            throw new InvalidOperationException(
+                $"Conversion succeeded, but the result is not of the expected type. " +
+                $"Expected: '{targetType.FullName}', but got: '{value?.GetType().FullName ?? "null"}'. " +
+                $"Input: '{input}'.");
+        }
+
+        return value;
+    }
+
+
+    /// <summary>
+    /// Creates an instance of the <see cref="TypeConverter"/> specified by the <see cref="TypeConverterAttribute"/>.
+    /// </summary>
+    /// <param name="attribute">The <see cref="TypeConverterAttribute"/> that specifies the converter type.</param>
+    /// <returns>An instance of the <see cref="TypeConverter"/> specified by the attribute.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when the <paramref name="attribute"/> is <c>null</c>.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the <see cref="TypeConverterAttribute"/> does not specify a converter type or 
+    /// when the specified type is not a valid <see cref="TypeConverter"/>.
+    /// </exception>
+    /// <exception cref="TypeLoadException">Thrown when the converter type cannot be found.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when an instance of the converter type cannot be created.</exception>
+    public static TypeConverter CreateInstance(this TypeConverterAttribute attribute)
+    {
+        if (attribute == null)
+            throw new ArgumentNullException(nameof(attribute));
+
+        string converterTypeName = attribute.ConverterTypeName;
+
+        if (string.IsNullOrWhiteSpace(converterTypeName))
+            throw new InvalidOperationException("The TypeConverterAttribute does not specify a converter type.");
+
+        var converterType = Type.GetType(converterTypeName);
+        if (converterType == null)
+            throw new TypeLoadException($"Unable to load the type '{converterTypeName}'.");
+
+        if (!typeof(TypeConverter).IsAssignableFrom(converterType))
+            throw new InvalidOperationException($"The type '{converterTypeName}' is not a valid TypeConverter.");
+
+        try
+        {
+            return Activator.CreateInstance(converterType) as TypeConverter 
+                   ?? throw new InvalidOperationException($"The type '{converterTypeName}' could not be cast to TypeConverter.");
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Failed to create an instance of '{converterTypeName}'.", ex);
+        }
+    }
+
+
     [DebuggerStepThrough]
     public static Task InvokeAsync(this MethodInfo method, object? instance, object?[] args)
     {

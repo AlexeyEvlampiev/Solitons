@@ -348,7 +348,7 @@ internal sealed class CliCommandPropertyOptionFactory : ICliCommandPropertyOptio
 
     public string PropertyName => _property.Name;
     public Type PropertyType => _property.PropertyType;
-    public string OptionExpression => _option.OptionExpression;
+    public string OptionExpression => _option.OptionPipeAliases;
     public IReadOnlyList<string> OptionAliases => _option.Aliases;
 }
 
