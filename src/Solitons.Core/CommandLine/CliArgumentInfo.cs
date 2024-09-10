@@ -1,24 +1,75 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
 
-internal sealed class CliArgumentInfo : CliParameterInfo
+internal sealed class CliArgumentInfo : ICliRouteSegment
 {
-    private readonly CliAction _action;
-    private readonly CliRouteArgumentAttribute _metadata;
+    private readonly IReadOnlyList<ICliRouteSegment> _routeSegments;
 
-    public CliArgumentInfo(ParameterInfo parameter, CliAction action, CliRouteArgumentAttribute metadata) 
-        : base(parameter)
+    public CliArgumentInfo(
+        CliRouteArgumentAttribute attribute, 
+        ParameterInfo parameter,
+        IReadOnlyList<ICliRouteSegment> routeSegments)
     {
-        ParameterInfo = parameter;
-        _action = action;
-        _metadata = metadata;
+        _routeSegments = routeSegments;
+        Metadata = attribute;
     }
 
-    public ParameterInfo ParameterInfo { get; }
-    public string ArgumentRole => _metadata.ArgumentRole;
+    public string RegexMatchGroupName { get; }
+
+    public ICliRouteArgumentMetadata Metadata { get; }
+    public string Description { get; }
+    public string ArgumentRole => Metadata.ArgumentRole;
+
+    public object? Deserialize(Match commandlineMatch, CliTokenDecoder decoder)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public string BuildRegularExpression()
+    {
+        var index = _routeSegments
+            .Select((seg, i) => ReferenceEquals(this, seg) ? i : -1)
+            .Where(i => i >= 0)
+            .FirstOrDefault(-1);
+        ThrowIf.False(index >= 0, "Oops...");
+
+        var subCommandExpression = _routeSegments
+            .OfType<CliSubCommandInfo>()
+            .Select(sc => sc.BuildRegularExpression())
+            .Select(exp => $"(?:{exp})")
+            .Join("|")
+            .Convert(exp => $"(?:{exp})");
 
 
+        return _routeSegments
+            .Take(index)
+            .Select(cs =>
+            {
+                if (cs is CliSubCommandInfo subCommand)
+                {
+                    return subCommand.BuildRegularExpression();
+                }
+                if (cs is CliArgumentInfo argument)
+                {
+                    return @$"(?!{subCommandExpression})(?!-)\S+";
+                }
 
-    public string GetExpressionGroup() => Name;
+                throw new InvalidOperationException();
+            })
+            .Select(p => $"(?:{p})")
+            .Join("\\s+")
+            .Convert(p => p.IsPrintable() ? @$"(?<={p}\s+)" : string.Empty)
+            .Convert(lookBehindExpression
+                =>
+            {
+                var lookAheadExpression = $"(?!{subCommandExpression})(?!-)";
+                return @$"{lookBehindExpression}{lookAheadExpression}(?<{RegexMatchGroupName}>\S+)";
+            });
+
+    }
 }

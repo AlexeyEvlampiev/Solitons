@@ -28,7 +28,7 @@ internal partial class CliActionHelpRtt
         UsageOptions = CommandOptions(routeSegments.OfType<CliSubCommandInfo>()).ToList();
 
         Arguments = routeSegments
-            .OfType<JazzArgumentInfo>()
+            .OfType<CliArgumentInfo>()
             .Select(o =>
             {
                 return o

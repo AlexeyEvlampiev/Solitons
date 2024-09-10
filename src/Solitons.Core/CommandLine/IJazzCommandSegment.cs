@@ -3,5 +3,5 @@
 interface ICliRouteSegment
 {
     string BuildRegularExpression();
-    public bool IsArgument => GetType() == typeof(JazzArgumentInfo);
+    public bool IsArgument => GetType() == typeof(CliArgumentInfo);
 }

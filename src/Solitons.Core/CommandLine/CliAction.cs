@@ -85,7 +85,7 @@ internal sealed class CliAction : IComparable<CliAction>
        
 
         var routeSegments = new List<ICliRouteSegment>(10);
-        var arguments = new Dictionary<ParameterInfo, JazzArgumentInfo>();
+        var arguments = new Dictionary<ParameterInfo, CliArgumentInfo>();
         foreach (var attribute in methodAttributes)
         {
             if (attribute is CliRouteAttribute route)
@@ -116,7 +116,7 @@ internal sealed class CliAction : IComparable<CliAction>
                         );
                     }
 
-                    var argumentInfo = new JazzArgumentInfo(argument, parameter, routeSegments);
+                    var argumentInfo = new CliArgumentInfo(argument, parameter, routeSegments);
                     routeSegments.Add(argumentInfo);
                     arguments.Add(parameter, argumentInfo);
 
