@@ -164,12 +164,20 @@ public sealed class CliProcessor : ICliProcessorCallback
         {
             commandLine = CliTokenEncoder
                 .Encode(commandLine, out var decoder)
+                .Trim()
+                .Convert(encoded => Regex.Replace(encoded, @"(?xis-m)^\S+", match =>
+                {
+                    try
+                    {
+                        return Path.GetFileName(match.Value);
+                    }
+                    catch (Exception e)
+                    {
+                        return match.Value;
+                    }
+                }))
                 .Trim();
-            var executableName = Regex
-                .Match(commandLine, @"^\S+")
-                .Convert( m => decoder(m.Value))
-                .Convert(Path.GetFileName)
-                .DefaultIfNullOrWhiteSpace("cli");
+
 
             if (CliHelpOptionAttribute.IsMatch(commandLine))
             {

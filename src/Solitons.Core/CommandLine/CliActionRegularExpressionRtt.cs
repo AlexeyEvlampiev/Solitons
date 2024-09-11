@@ -25,7 +25,7 @@ namespace Solitons.CommandLine
         /// </summary>
         public override string TransformText()
         {
-            this.Write("^\\s*\\S+ # EXECUTABLE PATH\r\n# --- command segments --- ");
+            this.Write("^\\s*\\S+\r\n# --- command segments --- ");
  foreach(var segmentExp in CommandSegmentRegularExpressions){ 
             this.Write(" \r\n\\s+ ");
             this.Write(this.ToStringHelper.ToStringWithCulture(segmentExp));

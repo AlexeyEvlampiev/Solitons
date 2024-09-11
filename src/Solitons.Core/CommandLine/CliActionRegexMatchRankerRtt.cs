@@ -25,7 +25,7 @@ namespace Solitons.CommandLine
         /// </summary>
         public override string TransformText()
         {
-            this.Write("^\\s*\\S+ # EXECUTABLE PATH\r\n(?:\r\n    # --- OPTIMAL MATCH\r\n    (?<");
+            this.Write("^\\s*\\S+\r\n(?:\r\n    # --- OPTIMAL MATCH\r\n    (?<");
             this.Write(this.ToStringHelper.ToStringWithCulture(OptimalMatchGroupName));
             this.Write(">\r\n      (?:\r\n        # --- command segments ---\r\n        ");
  foreach(var segmentExp in CommandSegmentRegularExpressions){ 

@@ -3,7 +3,7 @@
 <#@ import namespace="System.Linq" #>
 <#@ import namespace="System.Text" #>
 <#@ import namespace="System.Collections.Generic" #>
-^\s*\S+ # EXECUTABLE PATH
+^\s*\S+
 # --- command segments --- <# foreach(var segmentExp in CommandSegmentRegularExpressions){ #> 
 \s+ <#= segmentExp #> <# }/* Loop over command segments */ #> 
 # --- command segments ---
