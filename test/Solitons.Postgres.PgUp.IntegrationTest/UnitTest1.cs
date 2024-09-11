@@ -9,7 +9,7 @@ public class UnitTest1
     {
         var processor = CliProcessor
             .Setup(options => options
-                .UseCommandsFrom<Program>());
+                .UseCommandsFrom(new Program()));
         var templates = PgUpTemplateManager
             .GetTemplateDirectories()
                 .ToList();

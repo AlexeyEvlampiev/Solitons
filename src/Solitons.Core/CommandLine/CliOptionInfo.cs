@@ -409,9 +409,9 @@ internal sealed record CliOptionInfo
 
         var collectionInterfaceType = optionType
             .GetInterfaces()
+            .Where(_ => optionType != typeof(string))
             .FirstOrDefault(i => i.IsGenericType &&
-                                 i.GetGenericTypeDefinition() == typeof(IEnumerable<>) &&
-                                 i != typeof(string));
+                                 i.GetGenericTypeDefinition() == typeof(IEnumerable<>));
 
 
         if (collectionInterfaceType is null &&
