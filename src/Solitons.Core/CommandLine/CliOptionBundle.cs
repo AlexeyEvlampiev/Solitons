@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -11,12 +12,25 @@ namespace Solitons.CommandLine;
 
 public abstract class CliOptionBundle
 {
+    private static readonly ConcurrentDictionary<Type, Dictionary<CliOptionInfo, PropertyInfo>> 
+        OptionsByBundleType = new();
+
     public static bool IsAssignableFrom(Type type) => typeof(CliOptionBundle).IsAssignableFrom(type);
 
     // [DebuggerStepThrough]
     internal static Dictionary<CliOptionInfo, PropertyInfo> GetOptions(Type type)
     {
-        if (false == IsAssignableFrom(type))
+        return OptionsByBundleType.GetOrAdd(type, () => LoadOptions(type));
+    }
+
+    internal Dictionary<CliOptionInfo, PropertyInfo> GetOptions()
+    {
+        return OptionsByBundleType.GetOrAdd(GetType(), () => LoadOptions(GetType()));
+    }
+
+    private static Dictionary<CliOptionInfo, PropertyInfo> LoadOptions(Type bundleType)
+    {
+        if (false == IsAssignableFrom(bundleType))
         {
             throw new ArgumentException();
         }
@@ -24,40 +38,23 @@ public abstract class CliOptionBundle
         CliOptionBundle bundle;
         try
         {
-            bundle = ThrowIf.NullReference(Activator.CreateInstance(type) as CliOptionBundle);
+            bundle = ThrowIf.NullReference(Activator.CreateInstance(bundleType) as CliOptionBundle);
         }
         catch (Exception e)
         {
             throw new CliConfigurationException(
-                $"An error occurred while attempting to instantiate the options bundle of type '{type}'. " +
+                $"An error occurred while attempting to instantiate the options bundle of type '{bundleType}'. " +
                 $"Ensure the type has a parameterless constructor and is a valid CliOptionBundle. {e.Message}");
         }
 
-        return bundle.GetOptions();
-    }
-
-    internal Dictionary<CliOptionInfo, PropertyInfo> GetOptions()
-    {
-        var type = GetType();
         var result = new Dictionary<CliOptionInfo, PropertyInfo>();
-        CliOptionBundle bundle;
-        try
-        {
-            bundle = ThrowIf.NullReference(Activator.CreateInstance(type) as CliOptionBundle);
-        }
-        catch (Exception e)
-        {
-            throw new CliConfigurationException(
-                $"An error occurred while attempting to instantiate the options bundle of type '{type}'. " +
-                $"Ensure the type has a parameterless constructor and is a valid CliOptionBundle. {e.Message}");
-        }
 
-        var properties = type.GetProperties();
+        var properties = bundleType.GetProperties();
         foreach (var property in properties)
         {
             if (IsAssignableFrom(property.PropertyType))
             {
-                throw new CliConfigurationException($"The property '{property.Name}' in the bundle of type '{type}' contains a nested bundle property, which is not allowed. " +
+                throw new CliConfigurationException($"The property '{property.Name}' in the bundle of type '{bundleType}' contains a nested bundle property, which is not allowed. " +
                                                     $"Please ensure that bundle properties do not contain other bundles.");
 
             }
@@ -74,7 +71,7 @@ public abstract class CliOptionBundle
                 .OfType<DescriptionAttribute>()
                 .Select(attribute => attribute.Description)
                 .Union(attributes.OfType<CliOptionAttribute>().Select(attribute => attribute.Description))
-                .Union([$"'{type.Name}' options bundle property."])
+                .Union([$"'{bundleType.Name}' options bundle property."])
                 .First();
             var defaultValue = property.GetValue(bundle);
             var info = new CliOptionInfo(optionAtt, defaultValue, description, property.PropertyType)
@@ -87,9 +84,15 @@ public abstract class CliOptionBundle
         return result;
     }
 
-    public void PopulateOptions(Match match, CliTokenDecoder decoder)
+    public void PopulateOptions(Match commandLineMatch, CliTokenDecoder decoder)
     {
-        throw new NotImplementedException();
+        var options = GetOptions();
+        foreach (var pair in options)
+        {
+            var (option, property) = (pair.Key, pair.Value);
+            var value = option.Deserialize(commandLineMatch, decoder);
+            property.SetValue(this, value);
+        }
     }
 
     public static object Create(Type bundleType, Match commandLineMatch)

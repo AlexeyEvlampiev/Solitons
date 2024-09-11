@@ -80,17 +80,16 @@ public class CliProcessor_Process_Should
     [CliRoute("use maps")]
     public int UseMaps(
         [CliOption("-cs")]Dictionary<string, int> defaultMap,
-        [CliCaseInsensitiveMapOption("-ci")] Dictionary<string, int> customizedMap)
+        [CliCaseSensitiveMapOption("-ci")] Dictionary<string, int> customizedMap)
     {
-        var defaultComparer = new Dictionary<string, int>().Comparer;
-        Assert.True(defaultMap.Comparer.Equals(defaultComparer));
-        Assert.True(customizedMap.Comparer.Equals(StringComparer.OrdinalIgnoreCase));
+        Assert.True(defaultMap.Comparer.Equals(StringComparer.OrdinalIgnoreCase));
+        Assert.True(customizedMap.Comparer.Equals(StringComparer.Ordinal));
         return 0;
     }
 
-    sealed class CliCaseInsensitiveMapOptionAttribute(string specification, string description = "")
+    sealed class CliCaseSensitiveMapOptionAttribute(string specification, string description = "")
         : CliOptionAttribute(specification, description)
     {
-        public override StringComparer GetValueComparer() => StringComparer.OrdinalIgnoreCase;
+        public override StringComparer GetValueComparer() => StringComparer.Ordinal;
     }
 }

@@ -12,6 +12,7 @@ namespace Solitons.CommandLine;
 
 internal sealed class CliAction : IComparable<CliAction>
 {
+    internal const int OptimalMatchRankIncrement = 1;
     internal delegate Task<int> ActionHandler(object?[] args);
 
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -23,6 +24,7 @@ internal sealed class CliAction : IComparable<CliAction>
     private readonly CliMasterOptionBundle[] _masterOptionBundles;
     private readonly ActionHandler _handler;
     private readonly string _unrecognizedTokenRegexGroupName;
+    private readonly string _optimalMatchRegexGroupName;
     private readonly Lazy<string> _help;
 
     internal CliAction(
@@ -43,6 +45,7 @@ internal sealed class CliAction : IComparable<CliAction>
         RankerRegularExpression = CliActionRegexMatchRankerRtt.ToString(routeSegments, options);
 
         _unrecognizedTokenRegexGroupName = CliActionRegularExpressionRtt.UnrecognizedToken;
+        _optimalMatchRegexGroupName = CliActionRegexMatchRankerRtt.OptimalMatchGroupName;
 
         _regex = new Regex(
             RegularExpression,
@@ -326,6 +329,11 @@ internal sealed class CliAction : IComparable<CliAction>
             .Skip(1) // Exclude group 0 from count
             .ToList();
         int rank = groups.Count;
+        if (match.Groups[_optimalMatchRegexGroupName].Success)
+        {
+            rank -= 1;
+            rank += OptimalMatchRankIncrement;
+        }
         return rank;
     }
 

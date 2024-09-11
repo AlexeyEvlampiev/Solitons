@@ -155,8 +155,8 @@ internal sealed record CliOptionInfo
         RegularExpression = TypeDescriptor switch
         {
             (CliDictionaryTypeDescriptor) => $@"(?:{AliasPipeExpression})(?:$dot-notation|$accessor-notation)"
-                .Replace(@"$dot-notation", @$"\.(?<{RegexMatchGroupName}>(?:\S+\s+[^\s-]\S+)?)")
-                .Replace(@"$accessor-notation", @$"(?<{RegexMatchGroupName}>(?:\[\S+\]\s+[^\s-]\S+)?)"),
+                .Replace(@"$dot-notation", @$"\.(?<{RegexMatchGroupName}>(?:\S+\s+[^\s-]\S*)?)")
+                .Replace(@"$accessor-notation", @$"(?<{RegexMatchGroupName}>(?:\[\S+\]\s+[^\s-]\S*)?)"),
             (CliCollectionOptionTypeDescriptor) => $@"(?:{AliasPipeExpression})\s*(?<{RegexMatchGroupName}>(?:[^\s-]\S*)?)",
             (CliValueOptionTypeDescriptor) => $@"(?:{AliasPipeExpression})\s*(?<{RegexMatchGroupName}>(?:[^\s-]\S*)?)",
             (CliFlagOptionTypeDescriptor) => $@"(?<{RegexMatchGroupName}>{AliasPipeExpression})",

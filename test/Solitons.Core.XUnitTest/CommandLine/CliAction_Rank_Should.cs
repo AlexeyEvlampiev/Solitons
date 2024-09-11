@@ -8,7 +8,7 @@ namespace Solitons.CommandLine;
 public sealed class CliAction_Rank_Should
 {
     [Theory]
-    [InlineData("program run arg",2 + 1 /* optimal match */ )]
+    [InlineData("program run arg",2 + CliAction.OptimalMatchRankIncrement)]
     [InlineData("program arg run",1)]
     [InlineData("program run run", 1)]
     [InlineData("program arg arg", 0)]
@@ -28,7 +28,7 @@ public sealed class CliAction_Rank_Should
     public int ProgramRun(string arg) => 0;
 
     [Theory]
-    [InlineData("program run arg1", 2 + 1 /* optimal match */ )]
+    [InlineData("program run arg1", 2 + CliAction.OptimalMatchRankIncrement )]
     [InlineData("program arg1 arg2 run", 1)]
     [InlineData("program run run", 1)]
     [InlineData("program arg1 arg2", 0)]
@@ -104,7 +104,7 @@ public sealed class CliAction_Rank_Should
         [CliOption("--parameter")]Dictionary<string, string> parameters) => 0;
 
     [Theory]
-    [InlineData("program run arg --parameter[key] value", 3 + 1 /* optimal match */ )]
+    [InlineData("program run arg --parameter[key] value", 3 + CliAction.OptimalMatchRankIncrement )]
     [InlineData("program run --parameter.key value", 2 )]
     [InlineData("program --parameter.key1 value1 --parameter.key2 value2", 1)]
     [InlineData("program --parameter[key1] value1 --parameter[key2] value2", 1)]
