@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ComponentModel;
 using System.Text.RegularExpressions;
 using Moq;
 using Xunit;
