@@ -286,7 +286,8 @@ internal sealed record CliOptionInfo
             .Cast<object>()
             .ToList();
 
-        return CollectionBuilder.BuildCollection(OptionType, items);
+        var comparer = OptionMetadata.GetValueComparer();
+        return CollectionBuilder.BuildCollection(OptionType, items, comparer);
     }
 
 
@@ -295,7 +296,7 @@ internal sealed record CliOptionInfo
         ThrowIf.ArgumentNull(group);
         ThrowIf.ArgumentNull(decoder);
         var descriptor = ThrowIf.NullReference(TypeDescriptor as CliDictionaryTypeDescriptor);
-        var dictionary = CollectionBuilder.CreateDictionary(descriptor.ConcreteType, OptionMetadata.GetDictionaryKeyComparer());
+        var dictionary = CollectionBuilder.CreateDictionary(descriptor.ConcreteType, OptionMetadata.GetValueComparer());
 
         Debug.WriteLine(dictionary.GetType().FullName);
         foreach (Capture capture in group.Captures)
@@ -410,10 +411,15 @@ internal sealed record CliOptionInfo
             .GetInterfaces()
             .FirstOrDefault(i => i.IsGenericType &&
                                  i.GetGenericTypeDefinition() == typeof(IEnumerable<>) &&
-                                 i != typeof(IEnumerable<string>));
+                                 i != typeof(string));
 
 
-        
+        if (collectionInterfaceType is null &&
+            optionType.IsInterface &&
+            optionType.IsGenericType && typeof(IEnumerable<>).IsAssignableFrom(optionType.GetGenericTypeDefinition()))
+        {
+            collectionInterfaceType = optionType;
+        }
 
 
         if (collectionInterfaceType is not null)

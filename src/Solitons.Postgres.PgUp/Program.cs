@@ -163,7 +163,7 @@ public class Program
     sealed class PgUpParametersOptionAttribute()
         : CliOptionAttribute("--parameter|-p", "Defines parameters for customizing deployment scripts.")
     {
-        public override StringComparer GetDictionaryKeyComparer() => StringComparer.OrdinalIgnoreCase;
+        public override StringComparer GetValueComparer() => StringComparer.OrdinalIgnoreCase;
     }
 
     public sealed class ConnectionBuilderBundle : CliOptionBundle
