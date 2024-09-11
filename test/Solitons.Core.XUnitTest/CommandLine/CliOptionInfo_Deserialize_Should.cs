@@ -67,8 +67,14 @@ public sealed class CliOptionInfo_Deserialize_Should
   
     }
 
-    [Fact]
-    public void ThrowCliExitExceptionOnIncompleteDictionaryCapture()
+    [Theory]
+    [InlineData("", "Invalid input for option '--map'. Expected a key-value pair but received ''. Please provide both a key and a value.")]
+    [InlineData("key1 ", "A value is missing for the key 'key1' in option '--map'. Please specify a corresponding value.")]
+    [InlineData("[key2] ", "A value is missing for the key 'key2' in option '--map'. Please specify a corresponding value.")]
+    [InlineData("[key3] -other", "A value is missing for the key 'key3' in option '--map'. Please specify a corresponding value.")]
+    public void ThrowCliExitExceptionOnIncompleteDictionaryCapture(
+        string input,
+        string expectedMessage)
     {
         var metadata = new Mock<ICliOptionMetadata>();
         metadata.SetupGet(m => m.Aliases).Returns(new[] { "--map" });
@@ -85,20 +91,12 @@ public sealed class CliOptionInfo_Deserialize_Should
         Assert.Equal("Test dictionary", target.Description);
 
         //var inputs = FluentArray.Create("", "key ", "[key] ");
-        var errorMessagesByInput = new Dictionary<string, string>()
-        {
-            [""] = $"Invalid input for option '--map'. Expected a key-value pair but received ''. Please provide both a key and a value.",
-            ["key1 "] = $"A value is missing for the key 'key1' in option '--map'. Please specify a corresponding value.",
-            ["[key2] "] = $"A value is missing for the key 'key2' in option '--map'. Please specify a corresponding value.",
-        };
+        Debug.WriteLine($"Input: {input}");
+        Debug.WriteLine($"Expected message: {input}");
 
-        foreach (var pair in errorMessagesByInput)
-        {
-            var (input, errorMessage) = (pair.Key, pair.Value);
-            var match = Regex.Match(input, $@"(?xis-m)(?<{target.RegexMatchGroupName}>.*)");
-            var exception = Assert.Throws<CliExitException>(() => target.Deserialize(match, key => key));
-            Debug.WriteLine(exception.Message);
-            Assert.Equal(errorMessage, exception.Message, StringComparer.Ordinal);
-        }
+        var match = Regex.Match(input, $@"(?xis-m)(?<{target.RegexMatchGroupName}>.*)");
+        var exception = Assert.Throws<CliExitException>(() => target.Deserialize(match, key => key));
+        Debug.WriteLine($"Actual message: {exception.Message}");
+        Assert.Equal(expectedMessage, exception.Message, StringComparer.Ordinal);
     }
 }
