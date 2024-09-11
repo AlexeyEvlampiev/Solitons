@@ -85,14 +85,14 @@ public sealed class CliOptionInfo_Deserialize_Should
         Assert.Equal("Test dictionary", target.Description);
 
         //var inputs = FluentArray.Create("", "key ", "[key] ");
-        var inputs = new Dictionary<string, string>()
+        var errorMessagesByInput = new Dictionary<string, string>()
         {
             [""] = $"Invalid input for option '--map'. Expected a key-value pair but received ''. Please provide both a key and a value.",
             ["key1 "] = $"A value is missing for the key 'key1' in option '--map'. Please specify a corresponding value.",
             ["[key2] "] = $"A value is missing for the key 'key2' in option '--map'. Please specify a corresponding value.",
         };
 
-        foreach (var pair in inputs)
+        foreach (var pair in errorMessagesByInput)
         {
             var (input, errorMessage) = (pair.Key, pair.Value);
             var match = Regex.Match(input, $@"(?xis-m)(?<{target.RegexMatchGroupName}>.*)");
