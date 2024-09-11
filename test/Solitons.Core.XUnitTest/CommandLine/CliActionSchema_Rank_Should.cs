@@ -28,7 +28,7 @@ public sealed class CliActionSchema_Rank_Should
 
     [Theory]
     [InlineData("program run arg1 arg2", 3 + 1 /* optimal match */ )]
-    [InlineData("program arg1 arg2 run", 2)]
+    [InlineData("program arg1 arg2 run", 1)]
     [InlineData("program run run", 1)]
     [InlineData("program arg1 arg2", 1)]
     [InlineData("program", 0)]

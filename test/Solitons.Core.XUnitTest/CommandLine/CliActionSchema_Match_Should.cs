@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using Xunit;
 
 namespace Solitons.CommandLine;
@@ -24,9 +25,9 @@ public sealed class CliAction_Match_Should
 
         Assert.Equal(expectedMatchResult, action.IsMatch(commandLine));
 
-        if (!expectedMatchResult)
+        if (false == expectedMatchResult)
         {
-            Assert.Throws<CliExitException>(() => action.Execute(commandLine, key => key));
+            Assert.Throws<InvalidOperationException>(() => action.Execute(commandLine, key => key));
         }
     }
 
