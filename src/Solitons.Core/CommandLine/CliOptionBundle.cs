@@ -97,38 +97,7 @@ public abstract class CliOptionBundle
         throw new NotImplementedException();
     }
 
-    [DebuggerStepThrough]
-    internal IEnumerable<ICliCommandOptionFactory> BuildOptionFactories()
-    {
-        return BuildOptionFactories(GetType());
-    }
 
-    [DebuggerStepThrough]
-    internal static IEnumerable<ICliCommandOptionFactory> BuildOptionFactories<T>() where T : CliOptionBundle, new() => BuildOptionFactories(typeof(T));
-
-    internal static IEnumerable<ICliCommandOptionFactory> BuildOptionFactories(Type bundleType)
-    {
-        return bundleType
-            .GetProperties()
-            .SelectMany(property =>
-            {
-                if (IsAssignableFrom(property.PropertyType))
-                {
-                    throw new InvalidOperationException("Nested bundles are not allowed.");
-                }
-
-                var option = property
-                    .GetCustomAttributes(true)
-                    .OfType<CliOptionAttribute>()
-                    .SingleOrDefault();
-                if (option is not null)
-                {
-                    return [new CliCommandPropertyOptionFactory(property, option)];
-                }
-
-                return Enumerable.Empty<ICliCommandOptionFactory>();
-            });
-    }
 
     internal static CliDeserializer CreateDeserializerFor(Type bundleType, out IEnumerable<CliOptionInfo> options)
     {

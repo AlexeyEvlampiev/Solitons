@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Text.RegularExpressions;
 using Moq;
 using Xunit;
@@ -25,7 +26,6 @@ public sealed class CliOptionInfo_ctor_Should
             IsRequired = isRequired
         };
 
-        Assert.Equal(CliOptionArity.Value, target.Arity);
         Assert.Equal(description, target.Description, StringComparer.Ordinal);
         Assert.Equal(isRequired, target.IsRequired);
 
