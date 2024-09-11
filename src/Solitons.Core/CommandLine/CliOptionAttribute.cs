@@ -128,7 +128,11 @@ public class CliOptionAttribute : Attribute, ICliOptionMetadata
     public virtual bool AllowsCsv => true;
 
 
-    public virtual TypeConverter? GetCustomTypeConverter() => null;
+    public virtual TypeConverter? GetCustomTypeConverter(out string inputSample)
+    {
+        inputSample = String.Empty;
+        return null;
+    }
 
     /// <summary>
     /// Returns a string representation of the option specification.

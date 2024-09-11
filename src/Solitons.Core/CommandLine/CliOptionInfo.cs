@@ -79,7 +79,39 @@ internal sealed record CliOptionInfo
                 $"The provided default value is not of type {optionType}. Actual type is {defaultValue.GetType()}");
         }
 
-        _converter = metadata.GetCustomTypeConverter()
+        var customConverter = metadata.GetCustomTypeConverter(out var inputSample);
+        if (customConverter is not null &&
+            customConverter.CanConvertFrom(typeof(string)))
+        {
+            try
+            {
+                var value = customConverter.ConvertFromInvariantString(inputSample);
+                if (value is null)
+                {
+                    throw new CliConfigurationException(
+                        $"The sample value '{inputSample}' for the option '{AliasPipeExpression}' cannot be converted using the specified custom converter '{customConverter.GetType().FullName}'. " +
+                        $"Ensure that the converter is compatible with the option type '{OptionType.FullName}', " +
+                        $"or update the option type to align with the converter.");
+
+                }
+
+                if (false == OptionType.IsInstanceOfType(value))
+                {
+                    throw new CliConfigurationException(
+                        $"The converted value of type '{value.GetType().FullName}' is not compatible with the expected option type '{OptionType.FullName}' " +
+                        $"for the '{AliasPipeExpression}' option. " +
+                        $"Verify that the custom converter produces values that match the expected type.");
+                }
+            }
+            catch (Exception e) when(e is not CliConfigurationException)
+            {
+                throw new CliConfigurationException(
+                    $"An error occurred while converting the sample value '{inputSample}' for the option '{AliasPipeExpression}' using the custom converter '{customConverter.GetType().FullName}'. " +
+                    $"See inner exception for more details.", e);
+            }
+        }
+
+        _converter = customConverter
                      ?? (TypeDescriptor is CliFlagOptionTypeDescriptor ? new CliFlagConverter() : null)
                      ?? (OptionType == typeof(TimeSpan) ? new MultiFormatTimeSpanConverter() : null)
                      ?? (OptionType == typeof(CancellationToken)
