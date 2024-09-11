@@ -50,7 +50,7 @@ internal sealed record CliOptionInfo
     {
         var pattern = @"(?:\[$key\]\s+$value)|(?:$key\s+$value)"
             .Replace("$key", @"(?<key>\S+)?")
-            .Replace("$value", @"(?<value>\S+)?");
+            .Replace("$value", @"(?<value>[^-\s]\S*)?");
         MapKeyValueRegex = new Regex(pattern,
             RegexOptions.Singleline
 #if DEBUG
@@ -265,7 +265,7 @@ internal sealed record CliOptionInfo
         var descriptor = ThrowIf.NullReference(TypeDescriptor as CliDictionaryTypeDescriptor);
         var dictionary = CollectionBuilder.CreateDictionary(descriptor.ConcreteType, OptionMetadata.GetDictionaryKeyComparer());
 
-        Debug.WriteLine(dictionary.GetType().Name);
+        Debug.WriteLine(dictionary.GetType().FullName);
         foreach (Capture capture in group.Captures)
         {
             var match = MapKeyValueRegex.Match(capture.Value);
@@ -298,18 +298,24 @@ internal sealed record CliOptionInfo
             }
             else if (keyGroup.Success == valueGroup.Success)
             {
-                Debug.Assert(false == keyGroup.Success);
-                CliExit.With("Key value pair is required");
+                Debug.Assert(false == keyGroup.Success && false == valueGroup.Success);
+                CliExit.With(
+                    $"Invalid input for option '{AliasPipeExpression}'. " +
+                    $"Expected a key-value pair but received '{capture.Value}'. Please provide both a key and a value.");
             }
             else if (keyGroup.Success)
             {
-                Debug.Assert(false == valueGroup.Success);
-                CliExit.With("Key is required");
+                Debug.Assert(valueGroup.Success == false);
+                CliExit.With(
+                    $"A value is missing for the key '{keyGroup.Value}' in option '{AliasPipeExpression}'. " +
+                    "Please specify a corresponding value.");
             }
             else if (valueGroup.Success)
             {
-                Debug.Assert(false == keyGroup.Success);
-                CliExit.With("Value is required");
+                Debug.Assert(keyGroup.Success == false);
+                CliExit.With(
+                    $"A key is missing for the value '{valueGroup.Value}' in option '{AliasPipeExpression}'. " +
+                    "Please specify a corresponding key.");
             }
         }
 
