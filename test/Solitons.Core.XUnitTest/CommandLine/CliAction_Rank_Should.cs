@@ -4,7 +4,7 @@ using Xunit;
 namespace Solitons.CommandLine;
 
 // ReSharper disable once InconsistentNaming
-public sealed class CliActionSchema_Rank_Should
+public sealed class CliAction_Rank_Should
 {
     [Theory]
     [InlineData("program run arg",2 + 1 /* optimal match */ )]
@@ -17,9 +17,9 @@ public sealed class CliActionSchema_Rank_Should
     public void HandleScenario001(string commandLine, int expectedRank)
     {
         Debug.WriteLine(commandLine);
-        var schema = CliAction.Create(null, GetType().GetMethod(nameof(ProgramRun))!, [], []);
+        var action = CliAction.Create(null, GetType().GetMethod(nameof(ProgramRun))!, [], []);
 
-        var actualRank = schema.Rank(commandLine);
+        var actualRank = action.Rank(commandLine);
         Assert.Equal(expectedRank, actualRank);
     }
 
@@ -37,9 +37,9 @@ public sealed class CliActionSchema_Rank_Should
     public void HandleScenario002(string commandLine, int expectedRank)
     {
         Debug.WriteLine(commandLine);
-        var schema = CliAction.Create(null, GetType().GetMethod(nameof(ProgramRun2))!, [], []);
+        var action = CliAction.Create(null, GetType().GetMethod(nameof(ProgramRun2))!, [], []);
 
-        var actualRank = schema.Rank(commandLine);
+        var actualRank = action.Rank(commandLine);
         Assert.Equal(expectedRank, actualRank);
     }
 
@@ -59,9 +59,9 @@ public sealed class CliActionSchema_Rank_Should
     public void HandleScenario003(string commandLine, int expectedRank)
     {
         Debug.WriteLine(commandLine);
-        var schema = CliAction.Create(null, GetType().GetMethod(nameof(TaskRun))!, [], []);
+        var action = CliAction.Create(null, GetType().GetMethod(nameof(TaskRun))!, [], []);
 
-        var actualRank = schema.Rank(commandLine);
+        var actualRank = action.Rank(commandLine);
         Assert.Equal(expectedRank, actualRank);
     }
 
@@ -74,9 +74,9 @@ public sealed class CliActionSchema_Rank_Should
     public void HandleScenario004(string commandLine, int expectedRank)
     {
         Debug.WriteLine(commandLine);
-        var schema = CliAction.Create(null, GetType().GetMethod(nameof(TaskRun2))!, [], []);
+        var action = CliAction.Create(null, GetType().GetMethod(nameof(TaskRun2))!, [], []);
 
-        var actualRank = schema.Rank(commandLine);
+        var actualRank = action.Rank(commandLine);
         Assert.Equal(expectedRank, actualRank);
     }
 
@@ -91,9 +91,9 @@ public sealed class CliActionSchema_Rank_Should
     public void HandleScenario005(string commandLine, int expectedRank)
     {
         Debug.WriteLine(commandLine);
-        var schema = CliAction.Create(null, GetType().GetMethod(nameof(Scenario005))!, [], []);
+        var action = CliAction.Create(null, GetType().GetMethod(nameof(Scenario005))!, [], []);
 
-        var actualRank = schema.Rank(commandLine);
+        var actualRank = action.Rank(commandLine);
         Assert.Equal(expectedRank, actualRank);
     }
 
@@ -108,9 +108,9 @@ public sealed class CliActionSchema_Rank_Should
     public void HandleScenario006(string commandLine, int expectedRank)
     {
         Debug.WriteLine(commandLine);
-        var schema = CliAction.Create(null, GetType().GetMethod(nameof(Scenario006))!, [], []);
+        var action = CliAction.Create(null, GetType().GetMethod(nameof(Scenario006))!, [], []);
 
-        var actualRank = schema.Rank(commandLine);
+        var actualRank = action.Rank(commandLine);
         Assert.Equal(expectedRank, actualRank);
     }
 
