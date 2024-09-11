@@ -33,7 +33,6 @@ public sealed class CliOptionInfo_Deserialize_Should
 
         var metadata = new Mock<ICliOptionMetadata>();
         metadata.SetupGet(m => m.Aliases).Returns(new[] { "--test" });
-        metadata.Setup(m => m.GetCustomTypeConverter()).Returns((TypeConverter)null);
 
         foreach (var scenario in scenarios)
         {
