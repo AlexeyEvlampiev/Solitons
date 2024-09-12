@@ -5,7 +5,7 @@ using Solitons.CommandLine;
 
 namespace Solitons.Postgres.PgUp;
 
-public interface IJazzy
+public interface IPgUpProgram
 {
     const string DeployCommandDescription = "Deploys a PostgreSQL database according to the pgup.json deployment plan, ensuring all configurations and resources are correctly applied.";
     const string InitializeProjectCommand = "init|initialize";

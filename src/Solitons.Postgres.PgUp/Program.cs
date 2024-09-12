@@ -5,7 +5,7 @@ using Solitons.CommandLine;
 namespace Solitons.Postgres.PgUp;
 
 
-public class Program : IJazzy
+public class Program : IPgUpProgram
 {
     private static readonly TimeSpan DefaultActionTimeout = TimeSpan.FromMinutes(10);
 

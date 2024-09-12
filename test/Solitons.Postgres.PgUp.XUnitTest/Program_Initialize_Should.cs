@@ -11,7 +11,7 @@ public class Program_Initialize_Should
     [InlineData("pgup init . --template basic", "basic")]
     public void BeInvokedByCliProcessor(string commandLine, string template)
     {
-        var program = new Mock<IJazzy>();
+        var program = new Mock<IPgUpProgram>();
         var processor = CliProcessor
             .Setup(config => config
                 .UseCommandsFrom(program.Object));
@@ -23,12 +23,12 @@ public class Program_Initialize_Should
     [Fact]
     public void Work()
     {
-        var examples = typeof(IJazzy)
+        var examples = typeof(IPgUpProgram)
             .GetMethods()
             .SelectMany(mi => mi.GetCustomAttributes(true)
                 .OfType<CliCommandExampleAttribute>())
             .ToArray();
-        var program = new Mock<IJazzy>();
+        var program = new Mock<IPgUpProgram>();
         var processor = CliProcessor
             .Setup(config => config
                 .UseCommandsFrom(program.Object));
