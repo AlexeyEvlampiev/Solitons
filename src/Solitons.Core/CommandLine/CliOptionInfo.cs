@@ -13,6 +13,8 @@ namespace Solitons.CommandLine;
 internal abstract record CliOptionTypeDescriptor
 {
     public abstract TypeConverter GetDefaultTypeConverter();
+
+    public abstract string CreateRegularExpression(string regexGroupName, string pipeExpression);
 }
 
 internal sealed record CliFlagOptionTypeDescriptor(Type FlagType) : CliOptionTypeDescriptor
@@ -20,21 +22,34 @@ internal sealed record CliFlagOptionTypeDescriptor(Type FlagType) : CliOptionTyp
     public override TypeConverter GetDefaultTypeConverter() => FlagType == typeof(CliFlag) 
         ? new CliFlagConverter() 
         : new UnitConverter();
+
+    public override string CreateRegularExpression(string regexGroupName, string pipeExpression) => 
+        $@"(?<{regexGroupName}>{pipeExpression})";
 }
 
 internal sealed record CliValueOptionTypeDescriptor(Type ValueType) : CliOptionTypeDescriptor
 {
     public override TypeConverter GetDefaultTypeConverter() => TypeDescriptor.GetConverter(ValueType);
+    public override string CreateRegularExpression(string regexGroupName, string pipeExpression) => 
+        $@"(?:{pipeExpression})\s*(?<{regexGroupName}>(?:[^\s-]\S*)?)";
 }
 
 internal sealed record CliCollectionOptionTypeDescriptor(Type ConcreteType, Type ItemType, bool AcceptsCustomEqualityComparer) : CliOptionTypeDescriptor
 {
     public override TypeConverter GetDefaultTypeConverter() => TypeDescriptor.GetConverter(ItemType);
+
+    public override string CreateRegularExpression(string regexGroupName, string pipeExpression) =>
+        $@"(?:{pipeExpression})\s*(?<{regexGroupName}>(?:[^\s-]\S*)?)";
 }
 
 internal sealed record CliDictionaryTypeDescriptor(Type ConcreteType, Type ValueType, bool AcceptsCustomStringComparer) : CliOptionTypeDescriptor
 {
     public override TypeConverter GetDefaultTypeConverter() => TypeDescriptor.GetConverter(ValueType);
+
+    public override string CreateRegularExpression(string regexGroupName, string pipeExpression) =>
+        $@"(?:{pipeExpression})(?:$dot-notation|$accessor-notation)"
+            .Replace(@"$dot-notation", @$"\.(?<{regexGroupName}>(?:\S+\s+[^\s-]\S*)?)")
+            .Replace(@"$accessor-notation", @$"(?<{regexGroupName}>(?:\[\S+\]\s+[^\s-]\S*)?)");
 }
 
 internal sealed record CliOptionInfo
@@ -156,16 +171,7 @@ internal sealed record CliOptionInfo
 
         ThrowIf.NullOrWhiteSpace(AliasPipeExpression);
         var pipeExp = AliasPipeExpression.Replace("?", "[?]");
-        RegularExpression = TypeDescriptor switch
-        {
-            (CliDictionaryTypeDescriptor) => $@"(?:{pipeExp})(?:$dot-notation|$accessor-notation)"
-                .Replace(@"$dot-notation", @$"\.(?<{RegexMatchGroupName}>(?:\S+\s+[^\s-]\S*)?)")
-                .Replace(@"$accessor-notation", @$"(?<{RegexMatchGroupName}>(?:\[\S+\]\s+[^\s-]\S*)?)"),
-            (CliCollectionOptionTypeDescriptor) => $@"(?:{pipeExp})\s*(?<{RegexMatchGroupName}>(?:[^\s-]\S*)?)",
-            (CliValueOptionTypeDescriptor) => $@"(?:{pipeExp})\s*(?<{RegexMatchGroupName}>(?:[^\s-]\S*)?)",
-            (CliFlagOptionTypeDescriptor) => $@"(?<{RegexMatchGroupName}>{pipeExp})",
-            _ => throw new InvalidOperationException()
-        };
+        RegularExpression = TypeDescriptor.CreateRegularExpression(RegexMatchGroupName, pipeExp);
     }
 
     public ICliOptionMetadata OptionMetadata { get; }
