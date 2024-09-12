@@ -373,7 +373,7 @@ internal sealed record CliOptionInfo
             AsCollectionTypeDescriptor(optionType) ??
             AsValueTypeDescriptor(optionType) ??
             AsFlagTypeDescriptor(optionType) ??
-            throw new NotSupportedException("Oops...");
+            throw new NotSupportedException($"The type '{optionType.FullName}' is not supported by the CLI option system.");
     }
 
     private static CliOptionTypeDescriptor? AsFlagTypeDescriptor(Type optionType)
