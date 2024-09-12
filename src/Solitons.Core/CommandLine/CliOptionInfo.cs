@@ -229,7 +229,7 @@ internal sealed record CliOptionInfo
                 $"The option '{AliasPipeExpression}' has multiple conflicting values. Please provide a single value.");
         }
 
-        var input = group.Captures[0].Value;
+        var input = decoder(group.Captures[0].Value);
         try
         {
             return _converter.ConvertFromInvariantString(input, descriptor.ValueType);
