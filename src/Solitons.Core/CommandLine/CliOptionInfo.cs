@@ -402,6 +402,9 @@ internal sealed record CliOptionInfo
 
     private static CliOptionTypeDescriptor? AsCollectionTypeDescriptor(Type optionType)
     {
+        if (optionType == typeof(string)) 
+            return null;
+
         var collectionInterfaceType = optionType
             .GetInterfaces()
             .Where(_ => optionType != typeof(string))
@@ -417,26 +420,27 @@ internal sealed record CliOptionInfo
         }
 
 
-        if (collectionInterfaceType is not null)
+        if (collectionInterfaceType is null)
         {
-            var itemType = collectionInterfaceType.GetGenericArguments()[0];
-            if (!optionType.IsAbstract)
-            {
-                var ctor = optionType.GetConstructor(Type.EmptyTypes);
-                if (ctor != null)
-                {
-                    return new CliCollectionOptionTypeDescriptor(optionType, itemType, false);
-                }
-
-                throw new ArgumentException("No suitable constructor found for the collection type.", nameof(optionType));
-
-            }
-
-            var listType = typeof(List<>).MakeGenericType(itemType);
-            return new CliCollectionOptionTypeDescriptor(listType, itemType, false);
+            return null;
         }
 
-        return null;
+        var itemType = collectionInterfaceType.GetGenericArguments()[0];
+        if (!optionType.IsAbstract)
+        {
+            var ctor = optionType.GetConstructor(Type.EmptyTypes);
+            if (ctor != null)
+            {
+                return new CliCollectionOptionTypeDescriptor(optionType, itemType, false);
+            }
+
+            throw new ArgumentException("No suitable constructor found for the collection type.", nameof(optionType));
+
+        }
+
+        var listType = typeof(List<>).MakeGenericType(itemType);
+        return new CliCollectionOptionTypeDescriptor(listType, itemType, false);
+
     }
 
     private static CliOptionTypeDescriptor? AsDictionaryTypeDescriptor(Type optionType)
