@@ -402,44 +402,49 @@ internal sealed record CliOptionInfo
 
     private static CliOptionTypeDescriptor? AsCollectionTypeDescriptor(Type optionType)
     {
-        if (optionType == typeof(string)) 
+        if (optionType == typeof(string) ||
+            optionType == typeof(Unit) ||
+            optionType == typeof(CliFlag)) 
             return null;
 
-        var collectionInterfaceType = optionType
+        var enumerable = optionType
             .GetInterfaces()
-            .Where(_ => optionType != typeof(string))
-            .FirstOrDefault(i => i.IsGenericType &&
-                                 i.GetGenericTypeDefinition() == typeof(IEnumerable<>));
+            .Union([optionType])
+            .Where(type => type.IsGenericType)
+            .FirstOrDefault(type => typeof(IEnumerable<>)
+                .IsAssignableFrom(type
+                    .GetGenericTypeDefinition()));
 
 
-        if (collectionInterfaceType is null &&
-            optionType.IsInterface &&
-            optionType.IsGenericType && typeof(IEnumerable<>).IsAssignableFrom(optionType.GetGenericTypeDefinition()))
+        if (enumerable is null) return null;
+
+        var it = optionType.GetGenericArguments()[0];
+        var genericOptionType = optionType.GetGenericTypeDefinition().MakeGenericType(typeof(Unit));
+        if (genericOptionType.IsAssignableFrom(typeof(List<Unit>)))
         {
-            collectionInterfaceType = optionType;
+            return new CliCollectionOptionTypeDescriptor(
+                typeof(List<>).MakeGenericType(it), it, false);
         }
 
-
-        if (collectionInterfaceType is null)
+        if (genericOptionType.IsAssignableFrom(typeof(Stack<Unit>)))
         {
-            return null;
+            return new CliCollectionOptionTypeDescriptor(
+                typeof(Stack<>).MakeGenericType(it), it, false);
         }
 
-        var itemType = collectionInterfaceType.GetGenericArguments()[0];
-        if (!optionType.IsAbstract)
+        if (genericOptionType.IsAssignableFrom(typeof(Queue<Unit>)))
         {
-            var ctor = optionType.GetConstructor(Type.EmptyTypes);
-            if (ctor != null)
-            {
-                return new CliCollectionOptionTypeDescriptor(optionType, itemType, false);
-            }
-
-            throw new ArgumentException("No suitable constructor found for the collection type.", nameof(optionType));
-
+            return new CliCollectionOptionTypeDescriptor(
+                typeof(Queue<>).MakeGenericType(it), it, false);
         }
 
-        var listType = typeof(List<>).MakeGenericType(itemType);
-        return new CliCollectionOptionTypeDescriptor(listType, itemType, false);
+        if (genericOptionType.IsAssignableFrom(typeof(HashSet<Unit>)))
+        {
+            return new CliCollectionOptionTypeDescriptor(
+                typeof(HashSet<>).MakeGenericType(it), it, true);
+        }
+
+        throw new NotSupportedException($"No idea what is the best concrete type to materialize option of type '{optionType.FullName}'.");
 
     }
 
