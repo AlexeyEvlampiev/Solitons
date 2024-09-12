@@ -17,7 +17,9 @@ internal abstract record CliOptionTypeDescriptor
 
 internal sealed record CliFlagOptionTypeDescriptor(Type FlagType) : CliOptionTypeDescriptor
 {
-    public override TypeConverter GetDefaultTypeConverter() => new CliFlagConverter();
+    public override TypeConverter GetDefaultTypeConverter() => FlagType == typeof(CliFlag) 
+        ? new CliFlagConverter() 
+        : new UnitConverter();
 }
 
 internal sealed record CliValueOptionTypeDescriptor(Type ValueType) : CliOptionTypeDescriptor
@@ -62,6 +64,7 @@ internal sealed record CliOptionInfo
 
     public CliOptionInfo(
         ICliOptionMetadata metadata,
+        string name,
         object? defaultValue,
         string description,
         Type optionType)
@@ -112,7 +115,7 @@ internal sealed record CliOptionInfo
         }
 
         _converter = customConverter
-                     ?? (TypeDescriptor is CliFlagOptionTypeDescriptor ? new CliFlagConverter() : null)
+                     ?? (TypeDescriptor is CliFlagOptionTypeDescriptor flagDesc ? flagDesc.GetDefaultTypeConverter() : null)
                      ?? (OptionType == typeof(TimeSpan) ? new MultiFormatTimeSpanConverter() : null)
                      ?? (OptionType == typeof(CancellationToken)
                          ? new CliCancellationTokenTypeConverter()
@@ -134,7 +137,7 @@ internal sealed record CliOptionInfo
         Aliases = metadata.Aliases;
         Description = description;
         OptionType = optionType;
-        RegexMatchGroupName = $"option_{Guid.NewGuid():N}";
+        RegexMatchGroupName = $"option_{name}_{Guid.NewGuid():N}";
         AliasPipeExpression = Aliases.Join("|");
         AliasCsvExpression = Aliases
             .OrderBy(alias => alias.StartsWith("--") ? 1 : 0)
@@ -152,14 +155,15 @@ internal sealed record CliOptionInfo
 
 
         ThrowIf.NullOrWhiteSpace(AliasPipeExpression);
+        var pipeExp = AliasPipeExpression.Replace("?", "[?]");
         RegularExpression = TypeDescriptor switch
         {
-            (CliDictionaryTypeDescriptor) => $@"(?:{AliasPipeExpression})(?:$dot-notation|$accessor-notation)"
+            (CliDictionaryTypeDescriptor) => $@"(?:{pipeExp})(?:$dot-notation|$accessor-notation)"
                 .Replace(@"$dot-notation", @$"\.(?<{RegexMatchGroupName}>(?:\S+\s+[^\s-]\S*)?)")
                 .Replace(@"$accessor-notation", @$"(?<{RegexMatchGroupName}>(?:\[\S+\]\s+[^\s-]\S*)?)"),
-            (CliCollectionOptionTypeDescriptor) => $@"(?:{AliasPipeExpression})\s*(?<{RegexMatchGroupName}>(?:[^\s-]\S*)?)",
-            (CliValueOptionTypeDescriptor) => $@"(?:{AliasPipeExpression})\s*(?<{RegexMatchGroupName}>(?:[^\s-]\S*)?)",
-            (CliFlagOptionTypeDescriptor) => $@"(?<{RegexMatchGroupName}>{AliasPipeExpression})",
+            (CliCollectionOptionTypeDescriptor) => $@"(?:{pipeExp})\s*(?<{RegexMatchGroupName}>(?:[^\s-]\S*)?)",
+            (CliValueOptionTypeDescriptor) => $@"(?:{pipeExp})\s*(?<{RegexMatchGroupName}>(?:[^\s-]\S*)?)",
+            (CliFlagOptionTypeDescriptor) => $@"(?<{RegexMatchGroupName}>{pipeExp})",
             _ => throw new InvalidOperationException()
         };
     }

@@ -204,6 +204,7 @@ internal sealed class CliAction : IComparable<CliAction>
 
                 var option = new CliOptionInfo(
                     ThrowIf.NullReference(optionAttribute),
+                    ThrowIf.NullOrWhiteSpace(parameter.Name),
                     parameter.HasDefaultValue ? parameter.DefaultValue : null,
                     description,
                     parameter.ParameterType)

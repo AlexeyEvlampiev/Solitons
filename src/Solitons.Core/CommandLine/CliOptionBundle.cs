@@ -74,7 +74,7 @@ public abstract class CliOptionBundle
                 .Union([$"'{bundleType.Name}' options bundle property."])
                 .First();
             var defaultValue = property.GetValue(bundle);
-            var info = new CliOptionInfo(optionAtt, defaultValue, description, property.PropertyType)
+            var info = new CliOptionInfo(optionAtt, property.Name, defaultValue, description, property.PropertyType)
             {
                 IsRequired = attributes.OfType<RequiredAttribute>().Any()
             };
