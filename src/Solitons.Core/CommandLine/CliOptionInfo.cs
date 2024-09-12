@@ -180,7 +180,6 @@ internal sealed record CliOptionInfo
     public string Description { get; }
 
     public Type OptionType { get; }
-    public string CsvDeclaration { get; }
 
     public string AliasPipeExpression { get; }
     public string AliasCsvExpression { get; }

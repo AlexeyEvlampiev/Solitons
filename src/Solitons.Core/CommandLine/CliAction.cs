@@ -20,11 +20,20 @@ internal sealed class CliAction : IComparable<CliAction>
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private readonly Regex _rankerRegex;
 
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private readonly CliDeserializer[] _parameterDeserializers;
     private readonly CliMasterOptionBundle[] _masterOptionBundles;
+
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private readonly ActionHandler _handler;
+
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private readonly string _unrecognizedTokenRegexGroupName;
+
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private readonly string _optimalMatchRegexGroupName;
+
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private readonly Lazy<string> _help;
 
     internal CliAction(
@@ -256,6 +265,8 @@ internal sealed class CliAction : IComparable<CliAction>
 
     public string Description { get; }
 
+    public string Help => _help.Value;
+
     public int Execute(string commandLine, CliTokenDecoder decoder)
     {
         commandLine = ThrowIf.ArgumentNullOrWhiteSpace(commandLine);
@@ -320,20 +331,20 @@ internal sealed class CliAction : IComparable<CliAction>
 
     }
 
-    public int Rank(string commandLine)
+    public double Rank(string commandLine)
     {
         var match = _rankerRegex.Match(commandLine);
-        var groups = match.Groups
+        var matchedGroupsCount = match.Groups
             .OfType<Group>()
             .Where(g => g.Success)
             .Skip(1) // Exclude group 0 from count
-            .ToList();
-        int rank = groups.Count;
-        if (match.Groups[_optimalMatchRegexGroupName].Success)
-        {
-            rank -= 1;
-            rank += OptimalMatchRankIncrement;
-        }
+            .Count()
+            .Convert(count => match.Groups[_optimalMatchRegexGroupName].Success 
+                ? (count -1 + OptimalMatchRankIncrement)
+                : count)
+            .Convert(Convert.ToDouble);
+
+        double rank = matchedGroupsCount / Convert.ToDouble(match.Groups.Count).Min(1.0);
         return rank;
     }
 

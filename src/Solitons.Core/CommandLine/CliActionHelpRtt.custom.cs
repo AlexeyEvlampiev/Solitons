@@ -39,7 +39,7 @@ internal partial class CliActionHelpRtt
 
 
         Options = options
-            .Select(o => $"{o.CsvDeclaration}{Tab}{o.Description}")
+            .Select(o => $"{o.AliasCsvExpression}{Tab}{o.Description}")
             .ToList();
     }
 

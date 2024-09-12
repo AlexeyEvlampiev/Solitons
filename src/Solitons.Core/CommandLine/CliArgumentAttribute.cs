@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Reflection;
 
 namespace Solitons.CommandLine;
@@ -7,7 +8,7 @@ namespace Solitons.CommandLine;
 /// Attribute to reference a parameter of the target method, describing its purpose and usage in CLI commands.
 /// </summary>
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
-public sealed class CliRouteArgumentAttribute : Attribute, ICliRouteArgumentMetadata
+public class CliRouteArgumentAttribute : Attribute, ICliRouteArgumentMetadata
 {
     /// <summary>
     /// Initializes a new instance of the CliArgumentAttribute class.
@@ -62,6 +63,12 @@ public sealed class CliRouteArgumentAttribute : Attribute, ICliRouteArgumentMeta
     /// <param name="pi">The ParameterInfo to check against.</param>
     /// <returns>True if this attribute's parameter name matches the provided ParameterInfo's name; otherwise, false.</returns>
     public bool References(ParameterInfo pi) => ParameterName.Equals(pi.Name);
+
+    public virtual TypeConverter? GetCustomTypeConverter(out string inputSample)
+    {
+        inputSample = String.Empty;
+        return null;
+    }
 
     /// <summary>
     /// Returns a string that represents the parameter name.

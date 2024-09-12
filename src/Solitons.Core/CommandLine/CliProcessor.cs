@@ -39,9 +39,17 @@ public sealed class CliProcessor : ICliProcessorCallback
         var options = new Options(this);
         config.Invoke(options);
         var actions = new List<CliAction>();
+
         foreach (var source in _sources)
         {
-            foreach (var mi in source.DeclaringType.GetMethods(source.BindingFlags))
+            var methods = source
+                .DeclaringType
+                .Convert(type => type.GetInterfaces().Concat([type]))
+                .Distinct()
+                .SelectMany(type => type.GetMethods(source.BindingFlags))
+                .Distinct();
+
+            foreach (var mi in methods)
             {
                 if (false == mi
                         .GetCustomAttributes()

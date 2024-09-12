@@ -134,4 +134,6 @@ internal sealed class CliArgumentInfo : ICliRouteSegment
                 return @$"{lookBehindExpression}{lookAheadExpression}(?<{RegexMatchGroupName}>\S+)";
             });
     }
+
+    public override string ToString() => $"<{ArgumentRole.ToUpper()}>";
 }

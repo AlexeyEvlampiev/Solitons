@@ -13,4 +13,6 @@ public sealed class CliCommandExampleAttribute : Attribute
 
     public string Example { get; }
     public string Description { get; }
+
+    public override string ToString() => Example;
 }
