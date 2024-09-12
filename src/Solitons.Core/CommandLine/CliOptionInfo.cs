@@ -365,11 +365,8 @@ internal sealed record CliOptionInfo
     }
 
 
-    public static CliOptionTypeDescriptor GetOptionTypeDescriptor(Type optionType, Action<string>? raiseArgumentError = null)
+    public static CliOptionTypeDescriptor GetOptionTypeDescriptor(Type optionType)
     {
-        raiseArgumentError ??= (message) => Debug.Fail(message);
-        raiseArgumentError += (msg) => throw new ArgumentException(msg, nameof(optionType));
-
         optionType = Nullable.GetUnderlyingType(optionType) ?? optionType;
 
         var dictionaryInterfaceType = optionType
@@ -400,7 +397,7 @@ internal sealed record CliOptionInfo
 
                 if (optionType.IsAbstract)
                 {
-                    raiseArgumentError("Abstract dictionary types not supported");
+                    throw new ArgumentException("Abstract dictionary types not supported", nameof(optionType));
                 }
 
                 var ctor = optionType.GetConstructor(Type.EmptyTypes);
@@ -410,10 +407,10 @@ internal sealed record CliOptionInfo
                     return new CliDictionaryTypeDescriptor(optionType, valueType, cmpCtor is not null);
                 }
 
-                raiseArgumentError("No suitable constructor found for the dictionary type.");
+                throw new ArgumentException("No suitable constructor found for the dictionary type.", nameof(optionType));
             }
 
-            raiseArgumentError("Dictionary key type must be a string.");
+            throw new ArgumentException("Dictionary key type must be a string.", nameof(optionType));
         }
 
         var collectionInterfaceType = optionType
@@ -442,13 +439,12 @@ internal sealed record CliOptionInfo
                     return new CliCollectionOptionTypeDescriptor(optionType, itemType, false);
                 }
 
-                raiseArgumentError("No suitable constructor found for the collection type.");
+                throw new ArgumentException("No suitable constructor found for the collection type.", nameof(optionType));
+
             }
-            else
-            {
-                var listType = typeof(List<>).MakeGenericType(itemType);
-                return new CliCollectionOptionTypeDescriptor(listType, itemType, false);
-            }
+
+            var listType = typeof(List<>).MakeGenericType(itemType);
+            return new CliCollectionOptionTypeDescriptor(listType, itemType, false);
         }
 
         if (optionType == typeof(Unit) || optionType == typeof(CliFlag))
@@ -461,7 +457,6 @@ internal sealed record CliOptionInfo
             return new CliValueOptionTypeDescriptor(optionType);
         }
 
-        raiseArgumentError("Unsupported option type.");
-        throw new InvalidOperationException(); // Just to satisfy method return
+        throw new ArgumentException("Unsupported option type.", nameof(optionType));
     }
 }
