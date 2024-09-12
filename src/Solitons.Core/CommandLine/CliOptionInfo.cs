@@ -368,51 +368,40 @@ internal sealed record CliOptionInfo
     public static CliOptionTypeDescriptor GetOptionTypeDescriptor(Type optionType)
     {
         optionType = Nullable.GetUnderlyingType(optionType) ?? optionType;
+        return
+            AsDictionaryTypeDescriptor(optionType) ??
+            AsCollectionTypeDescriptor(optionType) ??
+            AsValueTypeDescriptor(optionType) ??
+            AsFlagTypeDescriptor(optionType) ??
+            throw new NotSupportedException("Oops...");
+    }
 
-        var dictionaryInterfaceType = optionType
-            .GetInterfaces()
-            .Where(i =>
-                i.IsGenericType &&
-                i.GetGenericTypeDefinition() == typeof(IDictionary<,>))
-            .MinBy(t => t.GetGenericArguments().First() == typeof(string) ? 0 : 1);
-
-        if (dictionaryInterfaceType is null && 
-            optionType.IsInterface && 
-            optionType.IsGenericType && typeof(IDictionary<,>).IsAssignableFrom(optionType.GetGenericTypeDefinition()))
+    private static CliOptionTypeDescriptor? AsFlagTypeDescriptor(Type optionType)
+    {
+        if (optionType == typeof(Unit) || optionType == typeof(CliFlag))
         {
-            dictionaryInterfaceType = optionType;
-        }
-        if (dictionaryInterfaceType is not null)
-        {
-            var args = dictionaryInterfaceType.GetGenericArguments();
-            var (keyType, valueType) = (args[0], args[1]);
-            if (keyType == typeof(string))
-            {
-                if (optionType.IsInterface)
-                {
-                    var dictionaryType = typeof(Dictionary<,>).MakeGenericType([keyType, valueType]);
-                    return new CliDictionaryTypeDescriptor(dictionaryType, valueType, true);
-
-                }
-
-                if (optionType.IsAbstract)
-                {
-                    throw new ArgumentException("Abstract dictionary types not supported", nameof(optionType));
-                }
-
-                var ctor = optionType.GetConstructor(Type.EmptyTypes);
-                var cmpCtor = optionType.GetConstructor([typeof(StringComparer)]);
-                if (ctor is not null || cmpCtor is not null)
-                {
-                    return new CliDictionaryTypeDescriptor(optionType, valueType, cmpCtor is not null);
-                }
-
-                throw new ArgumentException("No suitable constructor found for the dictionary type.", nameof(optionType));
-            }
-
-            throw new ArgumentException("Dictionary key type must be a string.", nameof(optionType));
+            return new CliFlagOptionTypeDescriptor(optionType);
         }
 
+        return null;
+    }
+
+
+    private static CliOptionTypeDescriptor? AsValueTypeDescriptor(Type optionType)
+    {
+        if (optionType == typeof(Unit) || 
+            optionType == typeof(CliFlag) || 
+            optionType.IsAbstract)
+        {
+            return null;
+        }
+
+        return new CliValueOptionTypeDescriptor(optionType);
+    }
+
+
+    private static CliOptionTypeDescriptor? AsCollectionTypeDescriptor(Type optionType)
+    {
         var collectionInterfaceType = optionType
             .GetInterfaces()
             .Where(_ => optionType != typeof(string))
@@ -447,16 +436,57 @@ internal sealed record CliOptionInfo
             return new CliCollectionOptionTypeDescriptor(listType, itemType, false);
         }
 
-        if (optionType == typeof(Unit) || optionType == typeof(CliFlag))
+        return null;
+    }
+
+    private static CliOptionTypeDescriptor? AsDictionaryTypeDescriptor(Type optionType)
+    {
+        var dictionaryInterfaceType = optionType
+            .GetInterfaces()
+            .Where(i =>
+                i.IsGenericType &&
+                i.GetGenericTypeDefinition() == typeof(IDictionary<,>))
+            .MinBy(t => t.GetGenericArguments().First() == typeof(string) ? 0 : 1);
+
+        if (dictionaryInterfaceType is null &&
+            optionType.IsInterface &&
+            optionType.IsGenericType && typeof(IDictionary<,>).IsAssignableFrom(optionType.GetGenericTypeDefinition()))
         {
-            return new CliFlagOptionTypeDescriptor(optionType);
+            dictionaryInterfaceType = optionType;
         }
 
-        if (!optionType.IsAbstract)
+        if (dictionaryInterfaceType is null)
         {
-            return new CliValueOptionTypeDescriptor(optionType);
+            return null;
         }
 
-        throw new ArgumentException("Unsupported option type.", nameof(optionType));
+        var args = dictionaryInterfaceType.GetGenericArguments();
+        var (keyType, valueType) = (args[0], args[1]);
+        if (keyType != typeof(string))
+        {
+            throw new ArgumentException("Dictionary key type must be a string.", nameof(optionType));
+        }
+            
+        if (optionType.IsInterface)
+        {
+            var dictionaryType = typeof(Dictionary<,>).MakeGenericType([keyType, valueType]);
+            return new CliDictionaryTypeDescriptor(dictionaryType, valueType, true);
+
+        }
+
+        if (optionType.IsAbstract)
+        {
+            throw new ArgumentException("Abstract dictionary types not supported", nameof(optionType));
+        }
+
+        var ctor = optionType.GetConstructor(Type.EmptyTypes);
+        var cmpCtor = optionType.GetConstructor([typeof(StringComparer)]);
+        if (ctor is not null || cmpCtor is not null)
+        {
+            return new CliDictionaryTypeDescriptor(optionType, valueType, cmpCtor is not null);
+        }
+
+        throw new ArgumentException("No suitable constructor found for the dictionary type.", nameof(optionType));
+
     }
 }
