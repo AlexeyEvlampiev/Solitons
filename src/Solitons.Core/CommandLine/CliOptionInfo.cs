@@ -242,16 +242,11 @@ internal sealed record CliOptionInfo
                 }
                 catch (Exception e) when (e is InvalidOperationException)
                 {
-                    throw new CliConfigurationException(
-                        $"The option '{AliasPipeExpression}' is misconfigured. " +
-                        $"The input tokens could not be converted to '{descriptor.ItemType}'. " +
-                        "Ensure that a valid type converter is provided.");
+                    throw CliConfigurationException.InvalidCollectionOptionConversion(AliasPipeExpression, descriptor.ItemType);
                 }
                 catch (Exception e) when (e is FormatException or ArgumentException)
                 {
-                    CliExit.With(
-                        $"Invalid input for option '{AliasPipeExpression}': token could not be parsed to '{descriptor.ItemType.FullName}'");
-                    return null; // This won't actually return because CliExit.With likely terminates the program
+                    throw CliExitException.CollectionOptionParsingFailure(AliasPipeExpression, descriptor.ItemType);
                 }
             })
             .Cast<object>()
@@ -302,16 +297,12 @@ internal sealed record CliOptionInfo
             else if (keyGroup.Success)
             {
                 Debug.Assert(valueGroup.Success == false);
-                CliExit.With(
-                    $"A value is missing for the key '{keyGroup.Value}' in option '{AliasPipeExpression}'. " +
-                    "Please specify a corresponding value.");
+                throw CliExitException.DictionaryKeyMissingValue(AliasPipeExpression, keyGroup);
             }
             else if (valueGroup.Success)
             {
                 Debug.Assert(keyGroup.Success == false);
-                CliExit.With(
-                    $"A key is missing for the value '{valueGroup.Value}' in option '{AliasPipeExpression}'. " +
-                    "Please specify a corresponding key.");
+                throw CliExitException.DictionaryValueMissingKey(AliasPipeExpression, valueGroup);
             }
         }
 

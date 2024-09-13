@@ -128,5 +128,13 @@ public sealed class CliConfigurationException : Exception
             $"The input '{input}' could not be converted to the expected type '{valueType.FullName}'. " +
             "Ensure that the correct type converter is provided.");
     }
+
+    public static CliConfigurationException InvalidCollectionOptionConversion(string option, Type itemType)
+    {
+        return new CliConfigurationException(
+            $"The collection option '{option}' is not configured correctly. " +
+            $"The input tokens could not be converted to the expected item type '{itemType.FullName}'. " +
+            "Ensure that a valid type converter is available for the target type.");
+    }
 }
 
