@@ -57,7 +57,7 @@ internal sealed record CliCollectionOptionTypeDescriptor(Type ConcreteType, Type
         foreach (var genericType in SupportedGenericTypes)
         {
             var supportedType = genericType.MakeGenericType(it);
-            if (supportedType.IsAssignableFrom(optionType))
+            if (optionType.IsAssignableFrom(supportedType))
             {
                 descriptor = new CliCollectionOptionTypeDescriptor(supportedType, it);
                 return true;

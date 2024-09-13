@@ -49,7 +49,6 @@ public sealed class CliOptionInfo_Deserialize_Should
             var descriptor = target.TypeDescriptor as CliDictionaryTypeDescriptor;
             Assert.NotNull(descriptor);
             Assert.Equal(typeof(Guid), descriptor.ValueType);
-            Assert.True(descriptor.AcceptsCustomStringComparer);
             Assert.Equal("Test dictionary", target.Description);
 
             var expected = Enumerable
@@ -246,7 +245,6 @@ public sealed class CliOptionInfo_Deserialize_Should
         var descriptor = target.TypeDescriptor as CliDictionaryTypeDescriptor;
         Assert.NotNull(descriptor);
         Assert.Equal(typeof(string), descriptor.ValueType);
-        Assert.True(descriptor.AcceptsCustomStringComparer);
         Assert.Equal("Test dictionary", target.Description);
 
         //var inputs = FluentArray.Create("", "key ", "[key] ");

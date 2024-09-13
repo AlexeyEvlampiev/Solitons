@@ -2,12 +2,9 @@
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System;
-using System.Collections;
 using System.ComponentModel;
 using System.Linq;
-using System.Threading;
 using Solitons.Collections;
-using System.Reactive;
 using Solitons.Caching;
 namespace Solitons.CommandLine;
 
@@ -21,11 +18,6 @@ internal sealed record CliOptionInfo
 
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private readonly GroupBinder _groupBinder;
-    private readonly object? _customInputSample;
-
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-    private readonly TypeConverter _customTypeConverter;
-
 
     public CliOptionInfo(
         ICliOptionMetadata metadata,
@@ -49,32 +41,91 @@ internal sealed record CliOptionInfo
             .ThenBy(alias => alias.Length)
             .Join(",");
 
-        
+
+        Func<Type, bool> checkTypeCompatibility = (type) => true;
         if (metadata.HasCustomTypeConverter(
                 out var customConverter, 
                 out var inputSample))
         {
-            _customTypeConverter = customConverter;
+            _converter = customConverter;
             try
             {
-                _customInputSample = customConverter.ConvertFromInvariantString(inputSample);
-                if (_customInputSample is null)
-                {
-                    throw new CliConfigurationException(
-                        $"The sample value '{inputSample}' for the option '{AliasPipeExpression}' cannot be converted using the specified custom converter '{customConverter.GetType().FullName}'. " +
-                        $"Ensure that the converter is compatible with the option type '{OptionType.FullName}', " +
-                        $"or update the option type to align with the converter.");
-                }
+                var sampleValue = ThrowIf.NullReference(customConverter
+                    .ConvertFromInvariantString(inputSample));
+                checkTypeCompatibility = (type) => type.IsInstanceOfType(sampleValue);
             }
             catch (Exception e)
             {
-                throw new CliConfigurationException("Oops");
+                throw CliConfigurationException
+                    .OptionSampleConversionWithCustomConverterFailed(
+                        AliasPipeExpression,
+                        inputSample,
+                        OptionType,
+                        customConverter.GetType());
             }
         }
 
-        TypeDescriptor = ToOptionTypeDescriptor();
 
+        if (CliFlagOptionTypeDescriptor.IsMatch(OptionType, out var flag))
+        {
+            TypeDescriptor = flag;
+            _groupBinder = ToFlag;
+            _converter = flag.GetDefaultTypeConverter();
+        }
+        else if (CliDictionaryTypeDescriptor.IsMatch(OptionType, out var dictionary))
+        {
+            TypeDescriptor = dictionary;
+            _groupBinder = ToDictionary;
+            var valueType = Nullable.GetUnderlyingType(dictionary.ValueType) ?? dictionary.ValueType;
+            _converter ??= valueType == typeof(TimeSpan) 
+                ? new MultiFormatTimeSpanConverter() 
+                : System.ComponentModel.TypeDescriptor.GetConverter(valueType);
+            if (checkTypeCompatibility(valueType) == false)
+            {
+                throw CliConfigurationException
+                    .OptionDictionaryValueTypeMismatch(
+                        AliasPipeExpression,
+                        _converter.GetType(),
+                        dictionary.ValueType);
+            }
+        }
+        else if (CliCollectionOptionTypeDescriptor.IsMatch(OptionType, out var collection))
+        {
+            TypeDescriptor = collection;
+            _groupBinder = ToCollection;
+            var itemType = Nullable.GetUnderlyingType(collection.ItemType) ?? collection.ItemType;
+            _converter ??=
+                (itemType == typeof(TimeSpan) ? new MultiFormatTimeSpanConverter() : null) ??
+                System.ComponentModel.TypeDescriptor.GetConverter(itemType);
+            if (checkTypeCompatibility(itemType) == false)
+            {
+                throw CliConfigurationException
+                    .OptionCollectionItemTypeMismatch(
+                        AliasPipeExpression,
+                        _converter.GetType(),
+                        itemType);
+            }
+        }
+        else
+        {
+            TypeDescriptor = new CliValueOptionTypeDescriptor(OptionType);
+            _groupBinder = ToValue;
+            _converter ??= System.ComponentModel.TypeDescriptor.GetConverter(OptionType);
+            if (checkTypeCompatibility(OptionType) == false)
+            {
+                throw CliConfigurationException
+                    .InvalidOptionTypeConverter(
+                        AliasPipeExpression,
+                        OptionType,
+                        _converter.GetType());
+            }
+        }
 
+        ThrowIf.NullReference(TypeDescriptor);
+        ThrowIf.NullReference(_converter);
+
+        Debug.Assert(_converter is not null);
+        
 
         if (defaultValue is not null &&
             optionType.IsInstanceOfType(defaultValue) == false)
@@ -82,37 +133,6 @@ internal sealed record CliOptionInfo
             throw new CliConfigurationException(
                 $"The provided default value is not of type {optionType}. Actual type is {defaultValue.GetType()}");
         }
-
-        if (customConverter is not null &&
-            customConverter.CanConvertFrom(typeof(string)))
-        {
-            try
-            {
-                var value = customConverter.ConvertFromInvariantString(inputSample);
-                if (value is null)
-                {
-                    throw new CliConfigurationException(
-                        $"The sample value '{inputSample}' for the option '{AliasPipeExpression}' cannot be converted using the specified custom converter '{customConverter.GetType().FullName}'. " +
-                        $"Ensure that the converter is compatible with the option type '{OptionType.FullName}', " +
-                        $"or update the option type to align with the converter.");
-                }
-
-            }
-            catch (Exception e) when(e is not CliConfigurationException)
-            {
-                throw new CliConfigurationException(
-                    $"An error occurred while converting the sample value '{inputSample}' for the option '{AliasPipeExpression}' using the custom converter '{customConverter.GetType().FullName}'. " +
-                    $"See inner exception for more details.", e);
-            }
-        }
-
-        _converter = customConverter
-                     ?? (TypeDescriptor is CliFlagOptionTypeDescriptor flagDesc ? flagDesc.GetDefaultTypeConverter() : null)
-                     ?? (OptionType == typeof(TimeSpan) ? new MultiFormatTimeSpanConverter() : null)
-                     ?? (OptionType == typeof(CancellationToken)
-                         ? new CliCancellationTokenTypeConverter()
-                         : null)
-                     ?? TypeDescriptor.GetDefaultTypeConverter();
 
         if (_converter.CanConvertFrom(typeof(string)) == false)
         {
@@ -123,18 +143,6 @@ internal sealed record CliOptionInfo
                 $"or by applying the '{typeof(TypeConverterAttribute).FullName}' directly on the parameter or property.");
         }
 
-
-
-        
-
-        _groupBinder = TypeDescriptor switch
-        {
-            (CliDictionaryTypeDescriptor) => ToDictionary,
-            (CliCollectionOptionTypeDescriptor) => ToCollection,
-            (CliValueOptionTypeDescriptor) => ToValue,
-            (CliFlagOptionTypeDescriptor) => ToFlag,
-            _ => throw new InvalidOperationException()
-        };
 
 
         ThrowIf.NullOrWhiteSpace(AliasPipeExpression);
@@ -324,131 +332,4 @@ internal sealed record CliOptionInfo
         return dictionary;
     }
 
-
-    public CliOptionTypeDescriptor ToOptionTypeDescriptor()
-    {
-        Debug.Assert(AliasPipeExpression.IsPrintable());
-        Debug.Assert(AliasCsvExpression.IsPrintable());
-        Debug.Assert(OptionType is not null);
-        return
-            AsDictionaryTypeDescriptor() ??
-            AsCollectionTypeDescriptor() ??
-            AsValueTypeDescriptor() ??
-            AsFlagTypeDescriptor() ??
-            throw new NotSupportedException($"The type '{OptionType.FullName}' is not supported by the CLI option system.");
-    }
-
-    private CliOptionTypeDescriptor? AsFlagTypeDescriptor()
-    {
-        if (OptionType == typeof(Unit) || 
-            OptionType == typeof(CliFlag))
-        {
-            return new CliFlagOptionTypeDescriptor(OptionType);
-        }
-
-        return null;
-    }
-
-
-    private CliOptionTypeDescriptor? AsValueTypeDescriptor()
-    {
-        if (OptionType == typeof(Unit) ||
-            OptionType == typeof(CliFlag) ||
-            OptionType.IsAbstract)
-        {
-            return null;
-        }
-
-        return new CliValueOptionTypeDescriptor(OptionType);
-    }
-
-
-    private CliOptionTypeDescriptor? AsCollectionTypeDescriptor()
-    {
-        ThrowIf.NullReference(OptionType);
-        ThrowIf.NullOrWhiteSpace(AliasPipeExpression);
-
-        if (CliCollectionOptionTypeDescriptor.IsMatch(
-                OptionType, 
-                out var descriptor))
-        {
-            if (_customInputSample is not null &&
-                descriptor.ItemType.IsInstanceOfType(_customInputSample) == false)
-            {
-                throw CliConfigurationException
-                    .OptionCollectionItemTypeMismatch(
-                        AliasPipeExpression, 
-                        _customInputSample.GetType(), 
-                        descriptor.ItemType);
-            }
-
-            return descriptor;
-        }
-
-        if (OptionType == typeof(string) ||
-            OptionType == typeof(Unit) ||
-            OptionType == typeof(CliFlag) ||
-            OptionType.IsEnum ||
-            typeof(IDictionary).IsAssignableFrom(OptionType) ||
-            typeof(IEnumerable).IsAssignableFrom(OptionType) == false)
-        {
-            Debug.WriteLine($"{OptionType} is not a collection or an incompatible type.");
-            return null;
-        }
-
-        Debug.WriteLine($"{OptionType} is assignable from {typeof(IEnumerable)}");
-        throw CliConfigurationException
-            .UnsupportedOptionCollectionType(AliasPipeExpression, OptionType);
-    }
-
-    private CliOptionTypeDescriptor? AsDictionaryTypeDescriptor()
-    {
-        var dictionaryInterfaceType = OptionType
-            .GetInterfaces()
-            .Where(i =>
-                i.IsGenericType &&
-                i.GetGenericTypeDefinition() == typeof(IDictionary<,>))
-            .MinBy(t => t.GetGenericArguments().First() == typeof(string) ? 0 : 1);
-
-        if (dictionaryInterfaceType is null &&
-            OptionType.IsInterface &&
-            OptionType.IsGenericType && typeof(IDictionary<,>).IsAssignableFrom(OptionType.GetGenericTypeDefinition()))
-        {
-            dictionaryInterfaceType = OptionType;
-        }
-
-        if (dictionaryInterfaceType is null)
-        {
-            return null;
-        }
-
-        var args = dictionaryInterfaceType.GetGenericArguments();
-        var (keyType, valueType) = (args[0], args[1]);
-        if (keyType != typeof(string))
-        {
-            throw new ArgumentException("Dictionary key type must be a string.", nameof(OptionType));
-        }
-            
-        if (OptionType.IsInterface)
-        {
-            var dictionaryType = typeof(Dictionary<,>).MakeGenericType([keyType, valueType]);
-            return new CliDictionaryTypeDescriptor(dictionaryType, valueType, true);
-
-        }
-
-        if (OptionType.IsAbstract)
-        {
-            throw new ArgumentException("Abstract dictionary types not supported", nameof(OptionType));
-        }
-
-        var ctor = OptionType.GetConstructor(Type.EmptyTypes);
-        var cmpCtor = OptionType.GetConstructor([typeof(StringComparer)]);
-        if (ctor is not null || cmpCtor is not null)
-        {
-            return new CliDictionaryTypeDescriptor(OptionType, valueType, cmpCtor is not null);
-        }
-
-        throw new ArgumentException("No suitable constructor found for the dictionary type.", nameof(OptionType));
-
-    }
 }

@@ -47,14 +47,12 @@ public sealed class CliConfigurationException : Exception
 
     public static CliConfigurationException OptionCollectionItemTypeMismatch(
         string option,
-        Type customSampleType, 
+        Type converterType, 
         Type expectedItemType)
     {
         return new CliConfigurationException(
-            $"The converted value of type '{customSampleType.FullName}' is not compatible with the expected collection " +
-            $"item type '{expectedItemType.FullName}' " +
-            $"for the '{option}' option. " +
-            $"Verify that the custom converter produces values that match the expected type.");
+            $"The value converted by '{converterType.FullName}' is not compatible with the expected collection item type '{expectedItemType.FullName}' " +
+            $"for the '{option}' option. Ensure that the custom converter produces values of the expected type.");
     }
 
 
@@ -65,5 +63,47 @@ public sealed class CliConfigurationException : Exception
             $"The input value for key '{key}' could not be converted to '{valueType}'. " +
             "Ensure that a valid type converter is provided.");
     }
+
+    public static CliConfigurationException OptionSampleConversionWithCustomConverterFailed(
+        string option, 
+        string inputSample, 
+        Type optionType,
+        Type customConverterType)
+    {
+        return new CliConfigurationException(
+            $"The sample value '{inputSample}' for the option '{option}' cannot be converted using the specified custom converter '{customConverterType.FullName}'. " +
+            $"Ensure that the converter is compatible with the option type '{optionType.FullName}', " +
+            $"or update the option type to align with the converter.");
+    }
+
+    public static CliConfigurationException InvalidOptionTypeConverter(string option, Type optionType, Type converterType)
+    {
+        return new CliConfigurationException(
+            $"The option '{option}' of type '{optionType.FullName}' is invalid. " +
+            $"The specified converter '{converterType.FullName}' is not able to convert the provided string to the required type. " +
+            "Ensure that the converter is appropriate for the target option type or provide a valid custom converter.");
+    }
+
+    public static CliConfigurationException OptionDictionaryValueTypeMismatch(
+        string option, 
+        Type actualType, 
+        Type expectedType)
+    {
+        return new CliConfigurationException(
+            $"The converted value of type '{actualType.FullName}' is not compatible with the expected dictionary " +
+            $"value type '{expectedType.FullName}' " +
+            $"for the '{option}' option. " +
+            $"Verify that the custom converter produces values that match the expected type.");
+    }
+
+    public static CliConfigurationException NotSupportedOptionDictionaryType(string option, Type optionType)
+    {
+        return new CliConfigurationException(
+            $"The option '{option}' specifies an unsupported dictionary type '{optionType.FullName}'. " +
+            "The dictionary key type must be 'string', and the dictionary must implement a supported interface. " +
+            "Ensure the dictionary type is correctly configured.");
+
+    }
+
 }
 

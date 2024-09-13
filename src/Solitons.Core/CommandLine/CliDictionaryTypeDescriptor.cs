@@ -1,12 +1,17 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
 
-internal sealed record CliDictionaryTypeDescriptor(Type ConcreteType, Type ValueType, bool AcceptsCustomStringComparer) : CliOptionTypeDescriptor
+internal sealed record CliDictionaryTypeDescriptor(Type ConcreteType, Type ValueType) : CliOptionTypeDescriptor
 {
     private static readonly Regex MapKeyValueRegex;
+
+    private static readonly CliDictionaryTypeDescriptor Default = new(
+        typeof(IDictionary), typeof(object));
 
     static CliDictionaryTypeDescriptor()
     {
@@ -27,6 +32,31 @@ internal sealed record CliDictionaryTypeDescriptor(Type ConcreteType, Type Value
         key = match.Groups["key"];
         value = match.Groups["value"];
         return match.Success;
+    }
+
+    public static bool IsMatch(Type optionType, out CliDictionaryTypeDescriptor descriptor)
+    {
+        descriptor = Default;
+        if (optionType.IsGenericType == false)
+        {
+            return false;
+        }
+
+        var args = optionType.GetGenericArguments();
+        if (args.Length != 2)
+        {
+            return false;
+        }
+
+        var concreteType = typeof(Dictionary<,>).MakeGenericType([typeof(string), args[1]]);
+
+        if (optionType.IsAssignableFrom(concreteType))
+        {
+            descriptor = new CliDictionaryTypeDescriptor(concreteType, args[1]);
+            return true;
+        }
+
+        return false;
     }
 
     public override TypeConverter GetDefaultTypeConverter() => TypeDescriptor.GetConverter(ValueType);
