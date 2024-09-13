@@ -5,12 +5,12 @@ using System;
 using System.ComponentModel;
 using System.Linq;
 using Solitons.Collections;
-using Solitons.Caching;
 namespace Solitons.CommandLine;
 
 internal sealed record CliOptionInfo
 {
     delegate object? GroupBinder(Group group, CliTokenDecoder decoder);
+    delegate bool TypeCompatibilityCheck(Type type);
 
     private readonly object? _defaultValue;
     private readonly TypeConverter _converter;
@@ -39,7 +39,7 @@ internal sealed record CliOptionInfo
             .Join(",");
 
 
-        Func<Type, bool> checkTypeCompatibility = (type) => true;
+        TypeCompatibilityCheck checkTypeCompatibility = (_) => true;
         if (metadata.HasCustomTypeConverter(
                 out var customConverter, 
                 out var inputSample))
@@ -127,17 +127,12 @@ internal sealed record CliOptionInfo
         if (defaultValue is not null &&
             optionType.IsInstanceOfType(defaultValue) == false)
         {
-            throw new CliConfigurationException(
-                $"The provided default value is not of type {optionType}. Actual type is {defaultValue.GetType()}");
+            throw CliConfigurationException.DefaultValueTypeMismatch(AliasPipeExpression, OptionType, defaultValue);
         }
 
         if (_converter.CanConvertFrom(typeof(string)) == false)
         {
-            throw new CliConfigurationException(
-                $"The '{AliasPipeExpression}' option value tokens cannot be converted from a string to the specified option type '{OptionType}' using the default type converter. " +
-                $"To resolve this, correct the option type if it's incorrect, or specify a custom type converter " +
-                $"either by inheriting from '{typeof(CliOptionAttribute).FullName}' and overriding '{nameof(CliOptionAttribute.HasCustomTypeConverter)}()', " +
-                $"or by applying the '{typeof(TypeConverterAttribute).FullName}' directly on the parameter or property.");
+            throw CliConfigurationException.OptionTypeConversionFailure(AliasPipeExpression, OptionType);
         }
 
 
@@ -204,8 +199,7 @@ internal sealed record CliOptionInfo
                 .Distinct(StringComparer.Ordinal)
                 .Count() > 1)
         {
-            CliExit.With(
-                $"The option '{AliasPipeExpression}' has multiple conflicting values. Please provide a single value.");
+            throw CliExitException.ConflictingOptionValues(AliasPipeExpression);
         }
 
         var input = decoder(group.Captures[0].Value);
@@ -215,17 +209,12 @@ internal sealed record CliOptionInfo
         }
         catch (Exception e) when (e is InvalidOperationException)
         {
-            throw new CliConfigurationException(
-                $"The option '{AliasPipeExpression}' is misconfigured. " +
-                $"The input '{input}' could not be converted to '{descriptor.ValueType}'. " +
-                "Ensure that a valid type converter is provided.");
+            throw CliConfigurationException.InvalidOptionInputConversion(AliasPipeExpression, input, descriptor.ValueType);
         }
         catch (Exception e) when (e is FormatException or ArgumentException)
         {
             // Means the user supplied a wrong input text
-            CliExit.With(
-                $"Invalid input for option '{AliasPipeExpression}': given token could not be parsed to '{descriptor.ValueType}'");
-            return null;
+            throw CliExitException.InvalidOptionInputParsing(AliasPipeExpression, descriptor.ValueType);
         }
     }
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Diagnostics;
 
 namespace Solitons.CommandLine;
@@ -105,5 +106,27 @@ public sealed class CliConfigurationException : Exception
 
     }
 
+    public static CliConfigurationException OptionTypeConversionFailure(string option, Type optionType)
+    {
+        return new CliConfigurationException(
+            $"The '{optionType}' option value tokens cannot be converted from a string to the specified option type '{optionType}' using the default type converter. " +
+            $"To resolve this, correct the option type if it's incorrect, or specify a custom type converter " +
+            $"either by inheriting from '{typeof(CliOptionAttribute).FullName}' and overriding '{nameof(CliOptionAttribute.HasCustomTypeConverter)}()', " +
+            $"or by applying the '{typeof(TypeConverterAttribute).FullName}' directly on the parameter or property.");
+    }
+
+    public static CliConfigurationException DefaultValueTypeMismatch(string option, Type optionType, object defaultValue)
+    {
+        return new CliConfigurationException(
+            $"The provided default value is not of type {optionType}. Actual type is {defaultValue.GetType()}");
+    }
+
+    public static CliConfigurationException InvalidOptionInputConversion(string option, string input, Type valueType)
+    {
+        return new CliConfigurationException(
+            $"The option '{option}' is not configured correctly. " +
+            $"The input '{input}' could not be converted to the expected type '{valueType.FullName}'. " +
+            "Ensure that the correct type converter is provided.");
+    }
 }
 
