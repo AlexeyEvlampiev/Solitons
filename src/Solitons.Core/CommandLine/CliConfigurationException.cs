@@ -58,5 +58,12 @@ public sealed class CliConfigurationException : Exception
     }
 
 
+    public static CliConfigurationException OptionValueConversionFailure(string option, string key, Type valueType)
+    {
+        return new CliConfigurationException(
+            $"The option '{option}' is misconfigured. " +
+            $"The input value for key '{key}' could not be converted to '{valueType}'. " +
+            "Ensure that a valid type converter is provided.");
+    }
 }
 

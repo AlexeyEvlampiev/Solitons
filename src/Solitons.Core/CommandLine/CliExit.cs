@@ -83,4 +83,5 @@ public static class CliExit
     /// </remarks>
     [DebuggerNonUserCode]
     public static bool IsTerminationRequest(Exception e) => e is CliExitException;
+
 }

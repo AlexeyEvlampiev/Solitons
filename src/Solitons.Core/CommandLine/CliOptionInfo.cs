@@ -13,8 +13,6 @@ namespace Solitons.CommandLine;
 
 internal sealed record CliOptionInfo
 {
-    private static readonly Regex MapKeyValueRegex;
-
     delegate object? GroupBinder(Group group, CliTokenDecoder decoder);
 
     private readonly object? _defaultValue;
@@ -27,20 +25,6 @@ internal sealed record CliOptionInfo
 
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private readonly TypeConverter _customTypeConverter;
-
-
-    static CliOptionInfo()
-    {
-        var pattern = @"(?:\[$key\]\s+$value)|(?:$key\s+$value)"
-            .Replace("$key", @"(?<key>\S+)?")
-            .Replace("$value", @"(?<value>[^-\s]\S*)?");
-        MapKeyValueRegex = new Regex(pattern,
-            RegexOptions.Singleline
-#if DEBUG
-            | RegexOptions.Compiled
-#endif
-        );
-    }
 
 
     public CliOptionInfo(
@@ -294,10 +278,7 @@ internal sealed record CliOptionInfo
         Debug.WriteLine(dictionary.GetType().FullName);
         foreach (Capture capture in group.Captures)
         {
-            var match = MapKeyValueRegex.Match(capture.Value);
-
-            var keyGroup = match.Groups["key"];
-            var valueGroup = match.Groups["value"];
+            CliDictionaryTypeDescriptor.IsMatch(capture.Value, out var keyGroup, out var valueGroup);
             if (keyGroup.Success && valueGroup.Success)
             {
                 var key = decoder(keyGroup.Value);
@@ -310,24 +291,19 @@ internal sealed record CliOptionInfo
                 }
                 catch (Exception e) when (e is InvalidOperationException)
                 {
-                    throw new CliConfigurationException(
-                        $"The option '{AliasPipeExpression}' is misconfigured. " +
-                        $"The input value for key '{key}' could not be converted to '{descriptor.ValueType}'. " +
-                        "Ensure that a valid type converter is provided.");
+                    throw CliConfigurationException
+                        .OptionValueConversionFailure(AliasPipeExpression, key, descriptor.ValueType);
                 }
                 catch (Exception e) when (e is FormatException or ArgumentException)
                 {
-                    CliExit.With(
-                        $"Invalid input for option '{AliasPipeExpression}': '{valueGroup.Value}' could not be parsed to '{descriptor.ValueType}'.");
-                    return null;
+                    throw CliExitException
+                        .DictionaryOptionValueParseFailure(AliasPipeExpression, key, descriptor.ValueType);
                 }
             }
             else if (keyGroup.Success == valueGroup.Success)
             {
                 Debug.Assert(false == keyGroup.Success && false == valueGroup.Success);
-                CliExit.With(
-                    $"Invalid input for option '{AliasPipeExpression}'. " +
-                    $"Expected a key-value pair but received '{capture.Value}'. Please provide both a key and a value.");
+                throw CliExitException.InvalidDictionaryOptionKeyValueInput(AliasPipeExpression, capture.Value);
             }
             else if (keyGroup.Success)
             {
