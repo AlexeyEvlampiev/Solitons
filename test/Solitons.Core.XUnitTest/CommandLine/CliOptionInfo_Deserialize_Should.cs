@@ -41,7 +41,7 @@ public sealed class CliOptionInfo_Deserialize_Should
         {
             var (comparer, dictionaryType) = (scenario.Comparer, Type: scenario.DictionaryType);
             metadata.Setup(m => m.GetValueComparer()).Returns(scenario.Comparer);
-            var target = new CliOptionInfo(metadata.Object,"test", null, "Test dictionary", dictionaryType, cache)
+            var target = new CliOptionInfo(metadata.Object,"test", null, "Test dictionary", dictionaryType)
             {
                 IsRequired = true
             };
@@ -86,9 +86,7 @@ public sealed class CliOptionInfo_Deserialize_Should
         var metadata = new Mock<ICliOptionMetadata>();
         metadata.SetupGet(m => m.Aliases).Returns(new[] { "--test" });
         metadata.SetupGet(m => m.AllowsCsv).Returns(true);
-
-        var cache = IInMemoryCache.Create();
-        var target = new CliOptionInfo(metadata.Object,"test", null, "Test collection", collectionType, cache)
+        var target = new CliOptionInfo(metadata.Object,"test", null, "Test collection", collectionType)
         {
             IsRequired = true
         };
@@ -138,8 +136,7 @@ public sealed class CliOptionInfo_Deserialize_Should
         metadata.SetupGet(m => m.Aliases).Returns(new[] { "--test" });
         metadata.SetupGet(m => m.AllowsCsv).Returns(true);
 
-        var cache = IInMemoryCache.Create();
-        var target = new CliOptionInfo(metadata.Object,"test", null, "Test collection", collectionType, cache)
+        var target = new CliOptionInfo(metadata.Object,"test", null, "Test collection", collectionType)
         {
             IsRequired = true
         };
@@ -190,7 +187,7 @@ public sealed class CliOptionInfo_Deserialize_Should
             metadata.SetupGet(m => m.AllowsCsv).Returns(true);
             metadata.Setup(m => m.GetValueComparer()).Returns(comparer);
 
-            var target = new CliOptionInfo(metadata.Object,"test", null, "Test collection", collectionType, cache)
+            var target = new CliOptionInfo(metadata.Object,"test", null, "Test collection", collectionType)
             {
                 IsRequired = true
             };
@@ -230,14 +227,12 @@ public sealed class CliOptionInfo_Deserialize_Should
     {
         var metadata = new Mock<ICliOptionMetadata>();
         metadata.SetupGet(m => m.Aliases).Returns(new[] { "--map" });
-        var cache = IInMemoryCache.Create();
         var target = new CliOptionInfo(
             metadata.Object,
             "test",
             null, 
             "Test dictionary", 
-            typeof(Dictionary<string, string>), 
-            cache)
+            typeof(Dictionary<string, string>))
         {
             IsRequired = true
         };

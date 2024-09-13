@@ -212,8 +212,7 @@ internal sealed class CliAction : IComparable<CliAction>
                     ThrowIf.NullOrWhiteSpace(parameter.Name),
                     parameter.HasDefaultValue ? parameter.DefaultValue : null,
                     description,
-                    parameter.ParameterType,
-                    cache)
+                    parameter.ParameterType)
                 {
                     IsRequired = (parameter.HasDefaultValue == false) ||
                                  parameterAttributes.OfType<RequiredAttribute>().Any()

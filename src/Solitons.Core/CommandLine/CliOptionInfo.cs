@@ -13,7 +13,6 @@ internal sealed record CliOptionInfo
     delegate object? GroupBinder(Group group, CliTokenDecoder decoder);
 
     private readonly object? _defaultValue;
-    private readonly IInMemoryCache _cache;
     private readonly TypeConverter _converter;
 
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -24,13 +23,11 @@ internal sealed record CliOptionInfo
         string name,
         object? defaultValue,
         string description,
-        Type optionType,
-        IInMemoryCache cache)
+        Type optionType)
     {
         OptionMetadata = ThrowIf.ArgumentNull(metadata);
         OptionType = optionType = Nullable.GetUnderlyingType(optionType) ?? optionType;
         _defaultValue = defaultValue;
-        _cache = cache;
         Aliases = metadata.Aliases;
         Description = description;
         OptionType = optionType;
