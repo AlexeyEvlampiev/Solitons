@@ -41,9 +41,8 @@ sealed class MediaTypeSerializerProxy : IMediaTypeSerializer
     [DebuggerStepThrough]
     public object Deserialize(string content, Type targetType)
     {
-        return _innerSerializer
-            .Deserialize(content, targetType)
-            .ThrowIfNull($"{_innerSerializer.GetType()}.{nameof(Serialize)} returned null.");
+        return ThrowIf.NullReference(_innerSerializer
+                .Deserialize(content, targetType), $"{_innerSerializer.GetType()}.{nameof(Serialize)} returned null.");
     }
 
     [DebuggerStepThrough]

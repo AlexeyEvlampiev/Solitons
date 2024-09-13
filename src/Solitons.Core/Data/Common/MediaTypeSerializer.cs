@@ -55,10 +55,10 @@ public abstract class MediaTypeSerializer : IMediaTypeSerializer
     {
         var obj = Deserialize(
                 ThrowIf.ArgumentNull(content, nameof(content)),
-                ThrowIf.ArgumentNull(targetType, nameof(targetType)))
-            .ThrowIfNull(
-                $"Could not deserialize from the '{TargetContentType}' content." +
-                $" Target type: {targetType}");
+                ThrowIf.ArgumentNull(targetType, nameof(targetType)));
+        obj = ThrowIf.NullReference(obj,
+            $"Could not deserialize from the '{TargetContentType}' content." +
+            $" Target type: {targetType}");
         if (obj is IDeserializationCallback callback)
             callback.OnDeserialization(this);
         return obj;

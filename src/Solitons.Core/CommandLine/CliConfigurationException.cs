@@ -34,5 +34,29 @@ public sealed class CliConfigurationException : Exception
     public CliConfigurationException(string message, Exception innerException) : base(message, innerException)
     {
     }
+
+    internal static CliConfigurationException UnsupportedOptionCollectionType(
+        string option, 
+        Type optionType)
+    {
+        return new CliConfigurationException(
+            $"The option '{option}' specifies a collection type '{optionType.FullName}', " +
+            "which cannot be instantiated dynamically due to its type constraints or configuration. " +
+            "Ensure that the collection type has a parameterless constructor or is a supported collection type.");
+    }
+
+    public static CliConfigurationException OptionCollectionItemTypeMismatch(
+        string option,
+        Type customSampleType, 
+        Type expectedItemType)
+    {
+        return new CliConfigurationException(
+            $"The converted value of type '{customSampleType.FullName}' is not compatible with the expected collection " +
+            $"item type '{expectedItemType.FullName}' " +
+            $"for the '{option}' option. " +
+            $"Verify that the custom converter produces values that match the expected type.");
+    }
+
+
 }
 

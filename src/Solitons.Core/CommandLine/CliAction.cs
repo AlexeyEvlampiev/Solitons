@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Solitons.Caching;
 
 namespace Solitons.CommandLine;
 
@@ -80,7 +81,8 @@ internal sealed class CliAction : IComparable<CliAction>
         object? instance,
         MethodInfo method,
         CliMasterOptionBundle[] masterOptionBundles,
-        CliRouteAttribute[] baseRoutes)
+        CliRouteAttribute[] baseRoutes,
+        IInMemoryCache cache)
     {
         ThrowIf.ArgumentNull(method);
         ThrowIf.ArgumentNull(masterOptionBundles);
@@ -192,7 +194,10 @@ internal sealed class CliAction : IComparable<CliAction>
                         $"The parameter '{parameter.Name}' in the '{method.Name}' method is an option bundle of type '{parameter.ParameterType}'. " +
                         $"Option bundles cannot be marked as individual options. Review the method signature and ensure that bundles are handled correctly.");
                 }
-                parameterDeserializers[i] = CliOptionBundle.CreateDeserializerFor(parameter.ParameterType, out var bundleOptions);
+                parameterDeserializers[i] = CliOptionBundle.CreateDeserializerFor(
+                    parameter.ParameterType, 
+                    cache,
+                    out var bundleOptions);
                 options.AddRange(bundleOptions);
             }
             else
@@ -207,7 +212,8 @@ internal sealed class CliAction : IComparable<CliAction>
                     ThrowIf.NullOrWhiteSpace(parameter.Name),
                     parameter.HasDefaultValue ? parameter.DefaultValue : null,
                     description,
-                    parameter.ParameterType)
+                    parameter.ParameterType,
+                    cache)
                 {
                     IsRequired = (parameter.HasDefaultValue == false) ||
                                  parameterAttributes.OfType<RequiredAttribute>().Any()
@@ -220,7 +226,7 @@ internal sealed class CliAction : IComparable<CliAction>
 
         foreach (var bundle in masterOptionBundles)
         {
-            options.AddRange(bundle.GetOptions().Keys);
+            options.AddRange(bundle.GetOptions(cache).Keys);
         }
 
         var examples = methodAttributes.OfType<ICliExampleMetadata>().ToList();
@@ -268,7 +274,7 @@ internal sealed class CliAction : IComparable<CliAction>
 
     public string Help => _help.Value;
 
-    public int Execute(string commandLine, CliTokenDecoder decoder)
+    public int Execute(string commandLine, CliTokenDecoder decoder, IInMemoryCache cache)
     {
         commandLine = ThrowIf.ArgumentNullOrWhiteSpace(commandLine);
         var match = _regex.Match(commandLine);
@@ -303,7 +309,7 @@ internal sealed class CliAction : IComparable<CliAction>
         var masterBundles = _masterOptionBundles.Select(bundle => bundle.Clone()).ToList();
         foreach (var bundle in masterBundles)
         {
-            bundle.PopulateOptions(match, decoder);
+            bundle.PopulateOptions(match, decoder, cache);
         }
 
         masterBundles.ForEach(bundle => bundle.OnExecutingAction(commandLine));

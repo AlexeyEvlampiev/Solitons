@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using Solitons.Caching;
 
 namespace Solitons.CommandLine;
 
@@ -18,17 +19,17 @@ public abstract class CliOptionBundle
     public static bool IsAssignableFrom(Type type) => typeof(CliOptionBundle).IsAssignableFrom(type);
 
     // [DebuggerStepThrough]
-    internal static Dictionary<CliOptionInfo, PropertyInfo> GetOptions(Type type)
+    internal static Dictionary<CliOptionInfo, PropertyInfo> GetOptions(Type type, IInMemoryCache cache)
     {
-        return OptionsByBundleType.GetOrAdd(type, () => LoadOptions(type));
+        return OptionsByBundleType.GetOrAdd(type, () => LoadOptions(type, cache));
     }
 
-    internal Dictionary<CliOptionInfo, PropertyInfo> GetOptions()
+    internal Dictionary<CliOptionInfo, PropertyInfo> GetOptions(IInMemoryCache cache)
     {
-        return OptionsByBundleType.GetOrAdd(GetType(), () => LoadOptions(GetType()));
+        return OptionsByBundleType.GetOrAdd(GetType(), () => LoadOptions(GetType(), cache));
     }
 
-    private static Dictionary<CliOptionInfo, PropertyInfo> LoadOptions(Type bundleType)
+    private static Dictionary<CliOptionInfo, PropertyInfo> LoadOptions(Type bundleType, IInMemoryCache cache)
     {
         if (false == IsAssignableFrom(bundleType))
         {
@@ -74,7 +75,7 @@ public abstract class CliOptionBundle
                 .Union([$"'{bundleType.Name}' options bundle property."])
                 .First();
             var defaultValue = property.GetValue(bundle);
-            var info = new CliOptionInfo(optionAtt, property.Name, defaultValue, description, property.PropertyType)
+            var info = new CliOptionInfo(optionAtt, property.Name, defaultValue, description, property.PropertyType, cache)
             {
                 IsRequired = attributes.OfType<RequiredAttribute>().Any()
             };
@@ -84,9 +85,9 @@ public abstract class CliOptionBundle
         return result;
     }
 
-    public void PopulateOptions(Match commandLineMatch, CliTokenDecoder decoder)
+    public void PopulateOptions(Match commandLineMatch, CliTokenDecoder decoder, IInMemoryCache cache)
     {
-        var options = GetOptions();
+        var options = GetOptions(cache);
         foreach (var pair in options)
         {
             var (option, property) = (pair.Key, pair.Value);
@@ -102,7 +103,10 @@ public abstract class CliOptionBundle
 
 
 
-    internal static CliDeserializer CreateDeserializerFor(Type bundleType, out IEnumerable<CliOptionInfo> options)
+    internal static CliDeserializer CreateDeserializerFor(
+        Type bundleType, 
+        IInMemoryCache cache,
+        out IEnumerable<CliOptionInfo> options)
     {
         ThrowIf.False(IsAssignableFrom(bundleType));
         var ctor = bundleType.GetConstructor([]);
@@ -111,7 +115,7 @@ public abstract class CliOptionBundle
             throw new CliConfigurationException("Oops...");
         }
 
-        var map = GetOptions(bundleType);
+        var map = GetOptions(bundleType, cache);
 
         options = map.Keys;
         return Deserialize;

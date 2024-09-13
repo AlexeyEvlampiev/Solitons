@@ -128,17 +128,18 @@ public class CliOptionAttribute : Attribute, ICliOptionMetadata
     public virtual bool AllowsCsv => true;
 
 
-    public virtual TypeConverter? GetCustomTypeConverter(out string inputSample)
-    {
-        inputSample = String.Empty;
-        return null;
-    }
-
     /// <summary>
     /// Returns a string representation of the option specification.
     /// </summary>
     /// <returns>A string that represents the option specification.</returns>
     public override string ToString() => OptionPipeAliases;
+
+    public virtual bool HasCustomTypeConverter(out TypeConverter converter, out string inputSample)
+    {
+        converter = new StringConverter();
+        inputSample = String.Empty;
+        return false;
+    }
 
     public virtual StringComparer GetValueComparer() => StringComparer.OrdinalIgnoreCase;
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using Solitons.Caching;
 using Xunit;
 
 namespace Solitons.CommandLine;
@@ -21,13 +22,14 @@ public sealed class CliAction_Match_Should
     public void HandleScenario001(string commandLine, bool expectedMatchResult)
     {
         Debug.WriteLine(commandLine);
-        var action = CliAction.Create(null, GetType().GetMethod(nameof(ProgramRun))!, [], [] );
+        var cache = IInMemoryCache.Create();
+        var action = CliAction.Create(null, GetType().GetMethod(nameof(ProgramRun))!, [], [], cache );
 
         Assert.Equal(expectedMatchResult, action.IsMatch(commandLine));
 
         if (false == expectedMatchResult)
         {
-            Assert.Throws<InvalidOperationException>(() => action.Execute(commandLine, key => key));
+            Assert.Throws<InvalidOperationException>(() => action.Execute(commandLine, key => key, cache));
         }
     }
 

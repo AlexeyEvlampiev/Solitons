@@ -1040,29 +1040,6 @@ public static partial class Extensions
                value == 308;
     }
 
-    /// <summary>
-    /// Throws a <see cref="NullReferenceException"/> with the specified <paramref name="message"/> if the specified object is null.
-    /// </summary>
-    /// <typeparam name="T">The type of the object to check for null.</typeparam>
-    /// <param name="self">The object to check for null.</param>
-    /// <param name="message">The exception message to use if the object is null. If not specified, a default message is used.</param>
-    /// <param name="paramName">The name of the parameter being checked. This parameter is automatically provided by the compiler and does not need to be specified explicitly.</param>
-    /// <returns>The non-null object if it is not null.</returns>
-    /// <exception cref="NullReferenceException">Thrown when the object is null.</exception>
-    /// <remarks>The <paramref name="paramName"/> parameter is automatically provided by the compiler and represents the name of the parameter being checked.</remarks>
-    [DebuggerStepThrough]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [return: NotNull]
-    public static T ThrowIfNull<T>(this T self, string? message = null, [CallerArgumentExpression("self")] string paramName = "") where T : class?
-    {
-        if (self is null)
-        {
-            throw new NullReferenceException(message.DefaultIfNullOrWhiteSpace($"{paramName} is null."));
-        }
-        return self;
-    }
-
-
 
     /// <summary>
     /// Throws an exception if the specified <paramref name="predicate"/> is true for any item in the sequence.

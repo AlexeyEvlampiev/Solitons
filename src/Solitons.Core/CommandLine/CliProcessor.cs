@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using Solitons.Caching;
 
 namespace Solitons.CommandLine;
 
@@ -22,6 +23,7 @@ public sealed class CliProcessor : ICliProcessorCallback
     private CliRouteAttribute[] _baseRouteMetadata = [];
     private string _logo = string.Empty;
     private string _description = string.Empty;
+    private readonly IInMemoryCache _cache = IInMemoryCache.Create();
 
 
     private CliProcessor(
@@ -61,7 +63,12 @@ public sealed class CliProcessor : ICliProcessorCallback
                 }
 
                 Debug.WriteLine($"Action: {mi.Name}");
-                actions.Add(CliAction.Create(source.Instance, mi, masterOptionBundles, _baseRouteMetadata));
+                actions.Add(CliAction.Create(
+                    source.Instance, 
+                    mi, 
+                    masterOptionBundles, 
+                    _baseRouteMetadata,
+                    _cache));
             }
         }
 
@@ -213,7 +220,7 @@ public sealed class CliProcessor : ICliProcessorCallback
 
             Trace.TraceInformation($"Found an actions that matches the given command line.");
 
-            var result = action.Execute(commandLine, decoder);
+            var result = action.Execute(commandLine, decoder, _cache);
             Trace.TraceInformation($"The action returned {result}");
 
             return result;

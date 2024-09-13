@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text.RegularExpressions;
 using Moq;
+using Solitons.Caching;
 using Xunit;
 
 namespace Solitons.CommandLine;
@@ -20,7 +21,8 @@ public sealed class CliOptionInfo_ctor_Should
     {
         var metadata = new Mock<ICliOptionMetadata>();
         metadata.SetupGet(m => m.Aliases).Returns(new[] { "--alias1", "--alias2", "-short1", "-short2" });
-        var target = new CliOptionInfo(metadata.Object,"test", defaultValue, description, typeof(int))
+        var cache = IInMemoryCache.Create();
+        var target = new CliOptionInfo(metadata.Object,"test", defaultValue, description, typeof(int), cache)
         {
             IsRequired = isRequired
         };
