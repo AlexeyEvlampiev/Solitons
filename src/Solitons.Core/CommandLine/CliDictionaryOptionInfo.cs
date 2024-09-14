@@ -92,18 +92,18 @@ internal sealed record CliDictionaryOptionInfo : CliOptionInfo
 
                 try
                 {
-                    var value = _valueTypeConverter.ConvertFromInvariantString(input, _dictionaryType);
+                    var value = _valueTypeConverter.ConvertFromInvariantString(input, ValueType);
                     dictionary[key] = value;
                 }
                 catch (Exception e) when (e is InvalidOperationException)
                 {
                     throw CliConfigurationException
-                        .OptionValueConversionFailure(AliasPipeExpression, key, _dictionaryType);
+                        .OptionValueConversionFailure(AliasPipeExpression, key, ValueType);
                 }
                 catch (Exception e) when (e is FormatException or ArgumentException)
                 {
                     throw CliExitException
-                        .DictionaryOptionValueParseFailure(AliasPipeExpression, key, _dictionaryType);
+                        .DictionaryOptionValueParseFailure(AliasPipeExpression, key, ValueType);
                 }
             }
             else if (keyGroup.Success == valueGroup.Success)

@@ -35,6 +35,12 @@ public sealed class CliOptionInfo_Deserialize_Should
 
         var metadata = new Mock<ICliOptionMetadata>();
         metadata.SetupGet(m => m.Aliases).Returns(new[] { "--test" });
+        metadata.Setup(m => m.CanAccept(typeof(Guid), out It.Ref<TypeConverter>.IsAny))
+            .Returns((Type _, out TypeConverter converter) =>
+            {
+                converter = new GuidConverter(); // Set the out parameter
+                return true; // Assuming CanAccept returns true
+            });
 
         var cache = IInMemoryCache.Create();
         foreach (var scenario in scenarios)
@@ -88,6 +94,12 @@ public sealed class CliOptionInfo_Deserialize_Should
         var metadata = new Mock<ICliOptionMetadata>();
         metadata.SetupGet(m => m.Aliases).Returns(new[] { "--test" });
         metadata.SetupGet(m => m.AllowsCsv).Returns(true);
+        metadata.Setup(m => m.CanAccept(It.IsAny<Type>(), out It.Ref<TypeConverter>.IsAny))
+            .Returns((Type type, out TypeConverter converter) =>
+            {
+                converter = TypeDescriptor.GetConverter(type);
+                return true;
+            });
         var collection = CliOptionInfo
             .Create(
                 metadata.Object, 

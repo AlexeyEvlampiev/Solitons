@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Text.RegularExpressions;
 using Moq;
 using Xunit;
@@ -19,6 +20,12 @@ public sealed class CliOptionInfo_ctor_Should
     public void HandleIntValueProperty(int? defaultValue, string description, bool isRequired, int? value)
     {
         var metadata = new Mock<ICliOptionMetadata>();
+        metadata.Setup(m => m.CanAccept(It.IsAny<Type>(), out It.Ref<TypeConverter>.IsAny))
+            .Returns((Type type, out TypeConverter converter) =>
+            {
+                converter = TypeDescriptor.GetConverter(type);
+                return true; 
+            });
         metadata.SetupGet(m => m.Aliases).Returns(new[] { "--alias1", "--alias2", "-short1", "-short2" });
         var target = CliOptionInfo
             .Create(
