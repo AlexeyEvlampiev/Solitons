@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace Solitons.CommandLine;
 
@@ -137,6 +138,16 @@ public class CliOptionAttribute : Attribute, ICliOptionMetadata
     public virtual bool CanAccept(Type optionType, out TypeConverter converter)
     {
         converter = TypeDescriptor.GetConverter(optionType);
+        if (optionType == typeof(TimeSpan))
+        {
+            converter = new MultiFormatTimeSpanConverter();
+            ThrowIf.False(converter.CanConvertFrom(typeof(string)));
+        }
+        else if(optionType == typeof(CancellationToken))
+        {
+            converter = new CliCancellationTokenTypeConverter();
+            ThrowIf.False(converter.CanConvertFrom(typeof(string)));
+        }
         return converter.CanConvertFrom(typeof(string));
     }
 
