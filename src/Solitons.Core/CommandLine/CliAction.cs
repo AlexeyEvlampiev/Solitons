@@ -207,16 +207,16 @@ internal sealed class CliAction : IComparable<CliAction>
                     description);
 
 
-                var option = new CliOptionInfo(
-                    ThrowIf.NullReference(optionAttribute),
-                    ThrowIf.NullOrWhiteSpace(parameter.Name),
-                    parameter.HasDefaultValue ? parameter.DefaultValue : null,
-                    description,
-                    parameter.ParameterType)
-                {
-                    IsRequired = (parameter.HasDefaultValue == false) ||
-                                 parameterAttributes.OfType<RequiredAttribute>().Any()
-                };
+                var option = CliOptionInfo
+                    .Create(
+                        ThrowIf.NullReference(optionAttribute),
+                        ThrowIf.NullOrWhiteSpace(parameter.Name),
+                        parameter.HasDefaultValue ? parameter.DefaultValue : null,
+                        description,
+                        parameter.ParameterType,
+                        (parameter.HasDefaultValue == false) ||
+                        parameterAttributes.OfType<RequiredAttribute>().Any());
+
                 options.Add(option);
                 parameterDeserializers[i] = option.Deserialize;
             }

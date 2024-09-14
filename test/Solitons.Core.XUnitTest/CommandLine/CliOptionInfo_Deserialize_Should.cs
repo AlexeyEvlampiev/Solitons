@@ -41,15 +41,17 @@ public sealed class CliOptionInfo_Deserialize_Should
         {
             var (comparer, dictionaryType) = (scenario.Comparer, Type: scenario.DictionaryType);
             metadata.Setup(m => m.GetValueComparer()).Returns(scenario.Comparer);
-            var target = new CliOptionInfo(metadata.Object,"test", null, "Test dictionary", dictionaryType)
-            {
-                IsRequired = true
-            };
+            var dictionary = CliOptionInfo.Create(
+                metadata.Object, 
+                "test", 
+                null, 
+                "Test dictionary", 
+                dictionaryType, 
+                true) as CliDictionaryOptionInfo;
 
-            var descriptor = target.TypeDescriptor as CliDictionaryTypeDescriptor;
-            Assert.NotNull(descriptor);
-            Assert.Equal(typeof(Guid), descriptor.ValueType);
-            Assert.Equal("Test dictionary", target.Description);
+            Assert.NotNull(dictionary);
+            Assert.Equal(typeof(Guid), dictionary.ValueType);
+            Assert.Equal("Test dictionary", dictionary.Description);
 
             var expected = Enumerable
             .Range(0, 5)
@@ -60,8 +62,8 @@ public sealed class CliOptionInfo_Deserialize_Should
                 .Join(",");
             Debug.WriteLine($"Input: {input}");
 
-            var match = Regex.Match(input, $@"(?xis-m)(?: (?<{target.RegexMatchGroupName}>\w+\s+[^\s,]+) | .?)*");
-            var actual = (Dictionary<string, Guid>)target.Deserialize(match, key => key)!;
+            var match = Regex.Match(input, $@"(?xis-m)(?: (?<{dictionary.RegexMatchGroupName}>\w+\s+[^\s,]+) | .?)*");
+            var actual = (Dictionary<string, Guid>)dictionary.Deserialize(match, key => key)!;
 
             Assert.Equal(expected.Comparer, actual.Comparer);
             Assert.Equal(expected, actual);
@@ -86,15 +88,18 @@ public sealed class CliOptionInfo_Deserialize_Should
         var metadata = new Mock<ICliOptionMetadata>();
         metadata.SetupGet(m => m.Aliases).Returns(new[] { "--test" });
         metadata.SetupGet(m => m.AllowsCsv).Returns(true);
-        var target = new CliOptionInfo(metadata.Object,"test", null, "Test collection", collectionType)
-        {
-            IsRequired = true
-        };
+        var collection = CliOptionInfo
+            .Create(
+                metadata.Object, 
+                "test", 
+                null, 
+                "Test collection", 
+                collectionType, 
+                true) as CliCollectionOptionInfo;
 
-        var descriptor = target.TypeDescriptor as CliCollectionOptionTypeDescriptor;
-        Assert.NotNull(descriptor);
-        Assert.Equal(expectedItemType, descriptor.ItemType);
-        Assert.Equal("Test collection", target.Description);
+        Assert.NotNull(collection);
+        Assert.Equal(expectedItemType, collection.ElementType);
+        Assert.Equal("Test collection", collection.Description);
 
         var converter = TypeDescriptor.GetConverter(expectedItemType);
         var expected = Regex
@@ -105,8 +110,8 @@ public sealed class CliOptionInfo_Deserialize_Should
         var input = itemsCsv;
         Debug.WriteLine($"Input: {input}");
 
-        var match = Regex.Match(input, $@"(?xis-m)(?<{target.RegexMatchGroupName}>\S+)");
-        var actual = target.Deserialize(match, key => key);
+        var match = Regex.Match(input, $@"(?xis-m)(?<{collection.RegexMatchGroupName}>\S+)");
+        var actual = collection.Deserialize(match, key => key);
 
         Assert.True(collectionType.IsInstanceOfType(actual));
         var expectedEnumerator = expected.GetEnumerator();
@@ -136,15 +141,12 @@ public sealed class CliOptionInfo_Deserialize_Should
         metadata.SetupGet(m => m.Aliases).Returns(new[] { "--test" });
         metadata.SetupGet(m => m.AllowsCsv).Returns(true);
 
-        var target = new CliOptionInfo(metadata.Object,"test", null, "Test collection", collectionType)
-        {
-            IsRequired = true
-        };
+        var collection = CliOptionInfo
+            .Create(metadata.Object, "test", null, "Test collection", collectionType, true) as CliCollectionOptionInfo;
 
-        var descriptor = target.TypeDescriptor as CliCollectionOptionTypeDescriptor;
-        Assert.NotNull(descriptor);
-        Assert.Equal(expectedItemType, descriptor.ItemType);
-        Assert.Equal("Test collection", target.Description);
+        Assert.NotNull(collection);
+        Assert.Equal(expectedItemType, collection.ElementType);
+        Assert.Equal("Test collection", collection.Description);
 
         var converter = TypeDescriptor.GetConverter(expectedItemType);
         var expected = Regex
@@ -156,8 +158,8 @@ public sealed class CliOptionInfo_Deserialize_Should
         var input = itemsCsv;
         Debug.WriteLine($"Input: {input}");
 
-        var match = Regex.Match(input, $@"(?xis-m)(?<{target.RegexMatchGroupName}>\S+)");
-        var actual = target.Deserialize(match, key => key);
+        var match = Regex.Match(input, $@"(?xis-m)(?<{collection.RegexMatchGroupName}>\S+)");
+        var actual = collection.Deserialize(match, key => key);
 
         Assert.True(collectionType.IsInstanceOfType(actual));
 
@@ -187,15 +189,11 @@ public sealed class CliOptionInfo_Deserialize_Should
             metadata.SetupGet(m => m.AllowsCsv).Returns(true);
             metadata.Setup(m => m.GetValueComparer()).Returns(comparer);
 
-            var target = new CliOptionInfo(metadata.Object,"test", null, "Test collection", collectionType)
-            {
-                IsRequired = true
-            };
+            var collection = CliOptionInfo.Create(metadata.Object, "test", null, "Test collection", collectionType, true) as CliCollectionOptionInfo;
 
-            var descriptor = target.TypeDescriptor as CliCollectionOptionTypeDescriptor;
-            Assert.NotNull(descriptor);
-            Assert.Equal(expectedItemType, descriptor.ItemType);
-            Assert.Equal("Test collection", target.Description);
+            Assert.NotNull(collection);
+            Assert.Equal(expectedItemType, collection.ElementType);
+            Assert.Equal("Test collection", collection.Description);
 
             var expected = Regex
                 .Split(itemsCsv, @"[\s,]+")
@@ -204,8 +202,8 @@ public sealed class CliOptionInfo_Deserialize_Should
             var input = itemsCsv;
             Debug.WriteLine($"Input: {input}");
 
-            var match = Regex.Match(input, $@"(?xis-m)(?<{target.RegexMatchGroupName}>\S+)");
-            var actual = target.Deserialize(match, key => key);
+            var match = Regex.Match(input, $@"(?xis-m)(?<{collection.RegexMatchGroupName}>\S+)");
+            var actual = collection.Deserialize(match, key => key);
 
             Assert.True(collectionType.IsInstanceOfType(actual));
 
@@ -226,27 +224,25 @@ public sealed class CliOptionInfo_Deserialize_Should
     {
         var metadata = new Mock<ICliOptionMetadata>();
         metadata.SetupGet(m => m.Aliases).Returns(new[] { "--map" });
-        var target = new CliOptionInfo(
+        var dictionary = CliOptionInfo
+            .Create(
             metadata.Object,
             "test",
-            null, 
-            "Test dictionary", 
-            typeof(Dictionary<string, string>))
-        {
-            IsRequired = true
-        };
+            null,
+            "Test dictionary",
+            typeof(Dictionary<string, string>),
+            true) as CliDictionaryOptionInfo;
 
-        var descriptor = target.TypeDescriptor as CliDictionaryTypeDescriptor;
-        Assert.NotNull(descriptor);
-        Assert.Equal(typeof(string), descriptor.ValueType);
-        Assert.Equal("Test dictionary", target.Description);
+        Assert.NotNull(dictionary);
+        Assert.Equal(typeof(string), dictionary.ValueType);
+        Assert.Equal("Test dictionary", dictionary.Description);
 
         //var inputs = FluentArray.Create("", "key ", "[key] ");
         Debug.WriteLine($"Input: {input}");
         Debug.WriteLine($"Expected message: {input}");
 
-        var match = Regex.Match(input, $@"(?xis-m)(?<{target.RegexMatchGroupName}>.*)");
-        var exception = Assert.Throws<CliExitException>(() => target.Deserialize(match, key => key));
+        var match = Regex.Match(input, $@"(?xis-m)(?<{dictionary.RegexMatchGroupName}>.*)");
+        var exception = Assert.Throws<CliExitException>(() => dictionary.Deserialize(match, key => key));
         Debug.WriteLine($"Actual message: {exception.Message}");
     }
 }

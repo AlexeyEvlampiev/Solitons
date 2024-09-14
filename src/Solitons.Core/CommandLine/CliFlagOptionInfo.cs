@@ -41,4 +41,6 @@ internal sealed record CliFlagOptionInfo : CliOptionInfo
             _converter.ConvertFromInvariantString(optionGroup.Value)
             ?? throw new InvalidOperationException();
     }
+
+    protected override string BuildOptionRegularExpression(string pipeExp) => $@"(?<{RegexMatchGroupName}>{pipeExp})";
 }

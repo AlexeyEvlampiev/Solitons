@@ -13,7 +13,6 @@ namespace Solitons.CommandLine;
 internal sealed record CliCollectionOptionInfo : CliOptionInfo
 {
     private readonly Type _collectionType;
-    private readonly Type _elementType;
     private readonly TypeConverter _elementTypeConverter;
 
     private static readonly IReadOnlyList<Type> SupportedGenericTypes = new[]
@@ -31,7 +30,7 @@ internal sealed record CliCollectionOptionInfo : CliOptionInfo
         : base(config)
     {
         _collectionType = collectionType;
-        _elementType = elementType;
+        ElementType = elementType;
         if (config.Metadata.CanAccept(elementType, out var elementTypeConverter) &&
             elementTypeConverter.CanConvertFrom(typeof(string)))
         {
@@ -42,6 +41,8 @@ internal sealed record CliCollectionOptionInfo : CliOptionInfo
             throw CliConfigurationException.CollectionElementParsingNotSupported();
         }
     }
+
+    public Type ElementType { get; }
 
     public static bool IsMatch(Config config, out CliOptionInfo? result)
     {
@@ -107,16 +108,16 @@ internal sealed record CliCollectionOptionInfo : CliOptionInfo
             {
                 try
                 {
-                    var item = _elementTypeConverter.ConvertFromInvariantString(text, _elementType);
+                    var item = _elementTypeConverter.ConvertFromInvariantString(text, ElementType);
                     return item;
                 }
                 catch (Exception e) when (e is InvalidOperationException)
                 {
-                    throw CliConfigurationException.InvalidCollectionOptionConversion(AliasPipeExpression, _elementType);
+                    throw CliConfigurationException.InvalidCollectionOptionConversion(AliasPipeExpression, ElementType);
                 }
                 catch (Exception e) when (e is FormatException or ArgumentException)
                 {
-                    throw CliExitException.CollectionOptionParsingFailure(AliasPipeExpression, _elementType);
+                    throw CliExitException.CollectionOptionParsingFailure(AliasPipeExpression, ElementType);
                 }
             })
             .ToList();
@@ -125,4 +126,5 @@ internal sealed record CliCollectionOptionInfo : CliOptionInfo
         return CollectionBuilder.BuildCollection(_collectionType, items, comparer);
     }
 
+    protected override string BuildOptionRegularExpression(string pipeExp) => $@"(?:{pipeExp})\s*(?<{RegexMatchGroupName}>(?:[^\s-]\S*)?)";
 }

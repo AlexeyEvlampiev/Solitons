@@ -141,5 +141,10 @@ public sealed class CliConfigurationException : Exception
     {
         throw new NotImplementedException();
     }
+
+    public static CliConfigurationException NotSupportedOptionType()
+    {
+        throw new NotImplementedException();
+    }
 }
 
