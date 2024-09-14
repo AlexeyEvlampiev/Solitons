@@ -84,7 +84,7 @@ internal sealed record CliDictionaryOptionInfo : CliOptionInfo
         Debug.WriteLine(dictionary.GetType().FullName);
         foreach (Capture capture in optionGroup.Captures)
         {
-            CliDictionaryTypeDescriptor.IsMatch(capture.Value, out var keyGroup, out var valueGroup);
+            IsMatch(capture.Value, out var keyGroup, out var valueGroup);
             if (keyGroup.Success && valueGroup.Success)
             {
                 var key = decoder(keyGroup.Value);
