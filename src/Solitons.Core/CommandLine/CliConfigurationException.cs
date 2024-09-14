@@ -111,7 +111,7 @@ public sealed class CliConfigurationException : Exception
         return new CliConfigurationException(
             $"The '{optionType}' option value tokens cannot be converted from a string to the specified option type '{optionType}' using the default type converter. " +
             $"To resolve this, correct the option type if it's incorrect, or specify a custom type converter " +
-            $"either by inheriting from '{typeof(CliOptionAttribute).FullName}' and overriding '{nameof(CliOptionAttribute.HasCustomTypeConverter)}()', " +
+            $"either by inheriting from '{typeof(CliOptionAttribute).FullName}' and overriding '{nameof(CliOptionAttribute.CanAccept)}()', " +
             $"or by applying the '{typeof(TypeConverterAttribute).FullName}' directly on the parameter or property.");
     }
 

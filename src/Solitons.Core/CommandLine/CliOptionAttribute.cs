@@ -134,11 +134,10 @@ public class CliOptionAttribute : Attribute, ICliOptionMetadata
     /// <returns>A string that represents the option specification.</returns>
     public override string ToString() => OptionPipeAliases;
 
-    public virtual bool HasCustomTypeConverter(out TypeConverter converter, out string inputSample)
+    public virtual bool CanAccept(Type optionType, out TypeConverter converter)
     {
-        converter = new StringConverter();
-        inputSample = String.Empty;
-        return false;
+        converter = TypeDescriptor.GetConverter(optionType);
+        return converter.CanConvertFrom(typeof(string));
     }
 
     public virtual StringComparer GetValueComparer() => StringComparer.OrdinalIgnoreCase;

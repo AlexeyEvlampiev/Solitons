@@ -34,7 +34,7 @@ public interface ICliOptionMetadata
     IReadOnlyList<string> LongOptionNames { get; }
 
     bool AllowsCsv { get; }
-    bool HasCustomTypeConverter(out TypeConverter converter, out string inputSample);
+    bool CanAccept(Type optionType, out TypeConverter converter);
     StringComparer GetValueComparer();
 
 }
