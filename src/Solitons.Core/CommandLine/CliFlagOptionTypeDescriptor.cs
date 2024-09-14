@@ -20,7 +20,7 @@ internal sealed record CliFlagOptionTypeDescriptor(Type FlagType) : CliOptionTyp
         if (optionType == typeof(CliFlag))
         {
             flag = new CliFlagOptionTypeDescriptor(typeof(CliFlag));
-            return true;
+            return true;    
         }
         if (optionType == typeof(Unit))
         {

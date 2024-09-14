@@ -136,5 +136,10 @@ public sealed class CliConfigurationException : Exception
             $"The input tokens could not be converted to the expected item type '{itemType.FullName}'. " +
             "Ensure that a valid type converter is available for the target type.");
     }
+
+    public static CliConfigurationException CollectionElementParsingNotSupported()
+    {
+        throw new NotImplementedException();
+    }
 }
 

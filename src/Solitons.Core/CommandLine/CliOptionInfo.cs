@@ -7,10 +7,24 @@ using System.Linq;
 using Solitons.Collections;
 namespace Solitons.CommandLine;
 
-internal sealed record CliOptionInfo
+internal abstract record CliOptionInfo
 {
     delegate object? GroupBinder(Group group, CliTokenDecoder decoder);
-    delegate bool TypeCompatibilityCheck(Type type);
+
+    internal sealed record Config
+    {
+        public required ICliOptionMetadata Metadata { get; init; }
+
+        public required object? DefaultValue { get; init; }
+
+        public required string Name { get; init; }
+
+        public required string Description { get; init; }
+
+        public required Type OptionType { get; init; }
+
+        public required bool IsRequired { get; init; }
+    };
 
     private readonly object? _defaultValue;
     private readonly TypeConverter _converter;
@@ -18,28 +32,24 @@ internal sealed record CliOptionInfo
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private readonly GroupBinder _groupBinder;
 
-    public CliOptionInfo(
-        ICliOptionMetadata metadata,
-        string name,
-        object? defaultValue,
-        string description,
-        Type optionType)
+    protected CliOptionInfo(
+        Config config)
     {
-        OptionMetadata = ThrowIf.ArgumentNull(metadata);
-        OptionType = optionType = Nullable.GetUnderlyingType(optionType) ?? optionType;
-        _defaultValue = defaultValue;
-        Aliases = metadata.Aliases;
-        Description = description;
-        OptionType = optionType;
-        RegexMatchGroupName = $"option_{name}_{Guid.NewGuid():N}";
+        OptionMetadata = ThrowIf.ArgumentNull(config.Metadata);
+        OptionType = Nullable.GetUnderlyingType(config.OptionType) ?? config.OptionType;
+        _defaultValue = config.DefaultValue;
+        Aliases = config.Metadata.Aliases;
+        Description = config.Description;
+        RegexMatchGroupName = $"option_{config.Name}_{Guid.NewGuid():N}";
         AliasPipeExpression = Aliases.Join("|");
         AliasCsvExpression = Aliases
             .OrderBy(alias => alias.StartsWith("--") ? 1 : 0)
             .ThenBy(alias => alias.Length)
             .Join(",");
 
+        IsRequired = config.IsRequired;
 
-        TypeCompatibilityCheck checkTypeCompatibility = (_) => true;
+
         if (metadata.HasCustomTypeConverter(
                 out var customConverter, 
                 out var inputSample))
@@ -49,7 +59,6 @@ internal sealed record CliOptionInfo
             {
                 var sampleValue = ThrowIf.NullReference(customConverter
                     .ConvertFromInvariantString(inputSample));
-                checkTypeCompatibility = (type) => type.IsInstanceOfType(sampleValue);
             }
             catch (Exception e)
             {
@@ -105,7 +114,6 @@ internal sealed record CliOptionInfo
         }
         else
         {
-            TypeDescriptor = new CliValueOptionTypeDescriptor(OptionType);
             _groupBinder = ToValue;
             _converter ??= System.ComponentModel.TypeDescriptor.GetConverter(OptionType);
             if (checkTypeCompatibility(OptionType) == false)
@@ -142,14 +150,59 @@ internal sealed record CliOptionInfo
         RegularExpression = TypeDescriptor.CreateRegularExpression(RegexMatchGroupName, pipeExp);
     }
 
+
+    public static CliOptionInfo Create(
+        ICliOptionMetadata metadata,
+        string name,
+        object? defaultValue,
+        string description,
+        Type optionType,
+        bool isRequired)
+    {
+        var config = new Config
+        {
+            Name = name,
+            Description = description,
+            Metadata = metadata,
+            IsRequired = isRequired,
+            OptionType = optionType,
+            DefaultValue = defaultValue
+        };
+
+        CliOptionInfo result;
+
+        if (CliFlagOptionInfo.IsMatch(config, out result))
+        {
+            Debug.Assert(result is CliFlagOptionInfo);
+        }
+        else if (CliDictionaryOptionInfo.IsMatch(config, out result))
+        {
+            Debug.Assert(result is CliDictionaryOptionInfo);
+        }
+        else if (CliCollectionOptionInfo.IsMatch(config, out result))
+        {
+            Debug.Assert(result is CliCollectionOptionInfo);
+        }
+        else if (CliValueOptionInfo.IsMatch(config, out result))
+        {
+            Debug.Assert(result is CliValueOptionInfo);
+        }
+        else
+        {
+            throw new InvalidOperationException();
+        }
+
+        return ThrowIf.NullReference(result);
+    }
+
+    public abstract object Deserialize(Group optionGroup, CliTokenDecoder decoder);
+
     public ICliOptionMetadata OptionMetadata { get; }
 
     public string RegularExpression { get; }
 
-    public CliOptionTypeDescriptor TypeDescriptor { get; }
 
-
-    public required bool IsRequired { get; init; }
+    public bool IsRequired { get; }
 
     internal string RegexMatchGroupName { get; }
 

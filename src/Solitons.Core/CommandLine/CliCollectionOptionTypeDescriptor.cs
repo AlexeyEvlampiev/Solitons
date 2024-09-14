@@ -17,8 +17,7 @@ internal sealed record CliCollectionOptionTypeDescriptor(Type ConcreteType, Type
         typeof(HashSet<>)
     }.AsReadOnly();
 
-    private static readonly CliCollectionOptionTypeDescriptor DefaultDescriptor =
-        new CliCollectionOptionTypeDescriptor(typeof(object[]), typeof(object));
+    private static readonly CliCollectionOptionTypeDescriptor DefaultDescriptor = new(typeof(object[]), typeof(object));
 
     public static bool IsMatch(
         Type optionType, 
