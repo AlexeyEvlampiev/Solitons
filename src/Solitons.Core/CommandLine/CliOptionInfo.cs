@@ -61,7 +61,7 @@ internal abstract record CliOptionInfo
             Description = description,
             Metadata = metadata,
             IsRequired = isRequired,
-            OptionType = optionType,
+            OptionType = Nullable.GetUnderlyingType(optionType) ?? optionType,
             DefaultValue = defaultValue
         };
 

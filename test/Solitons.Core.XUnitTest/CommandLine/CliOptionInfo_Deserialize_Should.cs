@@ -152,6 +152,12 @@ public sealed class CliOptionInfo_Deserialize_Should
         var metadata = new Mock<ICliOptionMetadata>();
         metadata.SetupGet(m => m.Aliases).Returns(new[] { "--test" });
         metadata.SetupGet(m => m.AllowsCsv).Returns(true);
+        metadata.Setup(m => m.CanAccept(It.IsAny<Type>(), out It.Ref<TypeConverter>.IsAny))
+            .Returns((Type type, out TypeConverter converter) =>
+            {
+                converter = TypeDescriptor.GetConverter(type);
+                return true;
+            });
 
         var collection = CliOptionInfo
             .Create(metadata.Object, "test", null, "Test collection", collectionType, true) as CliCollectionOptionInfo;
@@ -200,6 +206,12 @@ public sealed class CliOptionInfo_Deserialize_Should
             metadata.SetupGet(m => m.Aliases).Returns(new[] { "--test" });
             metadata.SetupGet(m => m.AllowsCsv).Returns(true);
             metadata.Setup(m => m.GetValueComparer()).Returns(comparer);
+            metadata.Setup(m => m.CanAccept(It.IsAny<Type>(), out It.Ref<TypeConverter>.IsAny))
+                .Returns((Type type, out TypeConverter converter) =>
+                {
+                    converter = TypeDescriptor.GetConverter(type);
+                    return true;
+                });
 
             var collection = CliOptionInfo.Create(metadata.Object, "test", null, "Test collection", collectionType, true) as CliCollectionOptionInfo;
 
@@ -236,6 +248,12 @@ public sealed class CliOptionInfo_Deserialize_Should
     {
         var metadata = new Mock<ICliOptionMetadata>();
         metadata.SetupGet(m => m.Aliases).Returns(new[] { "--map" });
+        metadata.Setup(m => m.CanAccept(It.IsAny<Type>(), out It.Ref<TypeConverter>.IsAny))
+            .Returns((Type type, out TypeConverter converter) =>
+            {
+                converter = TypeDescriptor.GetConverter(type);
+                return true;
+            });
         var dictionary = CliOptionInfo
             .Create(
             metadata.Object,
