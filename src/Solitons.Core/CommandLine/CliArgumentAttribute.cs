@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Reflection;
+using System.Threading;
 
 namespace Solitons.CommandLine;
 
@@ -64,10 +65,21 @@ public class CliRouteArgumentAttribute : Attribute, ICliRouteArgumentMetadata
     /// <returns>True if this attribute's parameter name matches the provided ParameterInfo's name; otherwise, false.</returns>
     public bool References(ParameterInfo pi) => ParameterName.Equals(pi.Name);
 
-    public virtual TypeConverter? GetCustomTypeConverter(out string inputSample)
+    public virtual bool CanAccept(Type argumentType, out TypeConverter converter)
     {
-        inputSample = String.Empty;
-        return null;
+        converter = TypeDescriptor.GetConverter(argumentType);
+
+        if (argumentType == typeof(TimeSpan))
+        {
+            converter = new MultiFormatTimeSpanConverter();
+            ThrowIf.False(converter.CanConvertFrom(typeof(string)));
+        }
+        else if (argumentType == typeof(CancellationToken))
+        {
+            converter = new CliCancellationTokenTypeConverter();
+            ThrowIf.False(converter.CanConvertFrom(typeof(string)));
+        }
+        return converter.SupportsCliOperandConversion();
     }
 
     /// <summary>

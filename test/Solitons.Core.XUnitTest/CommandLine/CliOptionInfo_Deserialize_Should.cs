@@ -69,7 +69,7 @@ public sealed class CliOptionInfo_Deserialize_Should
             Debug.WriteLine($"Input: {input}");
 
             var match = Regex.Match(input, $@"(?xis-m)(?: (?<{dictionary.RegexMatchGroupName}>\w+\s+[^\s,]+) | .?)*");
-            var actual = (Dictionary<string, Guid>)dictionary.Deserialize(match, key => key)!;
+            var actual = (Dictionary<string, Guid>)dictionary.Materialize(match, key => key)!;
 
             Assert.Equal(expected.Comparer, actual.Comparer);
             Assert.Equal(expected, actual);
@@ -123,7 +123,7 @@ public sealed class CliOptionInfo_Deserialize_Should
         Debug.WriteLine($"Input: {input}");
 
         var match = Regex.Match(input, $@"(?xis-m)(?<{collection.RegexMatchGroupName}>\S+)");
-        var actual = collection.Deserialize(match, key => key);
+        var actual = collection.Materialize(match, key => key);
 
         Assert.True(collectionType.IsInstanceOfType(actual));
         var expectedEnumerator = expected.GetEnumerator();
@@ -177,7 +177,7 @@ public sealed class CliOptionInfo_Deserialize_Should
         Debug.WriteLine($"Input: {input}");
 
         var match = Regex.Match(input, $@"(?xis-m)(?<{collection.RegexMatchGroupName}>\S+)");
-        var actual = collection.Deserialize(match, key => key);
+        var actual = collection.Materialize(match, key => key);
 
         Assert.True(collectionType.IsInstanceOfType(actual));
 
@@ -227,7 +227,7 @@ public sealed class CliOptionInfo_Deserialize_Should
             Debug.WriteLine($"Input: {input}");
 
             var match = Regex.Match(input, $@"(?xis-m)(?<{collection.RegexMatchGroupName}>\S+)");
-            var actual = collection.Deserialize(match, key => key);
+            var actual = collection.Materialize(match, key => key);
 
             Assert.True(collectionType.IsInstanceOfType(actual));
 
@@ -272,7 +272,7 @@ public sealed class CliOptionInfo_Deserialize_Should
         Debug.WriteLine($"Expected message: {input}");
 
         var match = Regex.Match(input, $@"(?xis-m)(?<{dictionary.RegexMatchGroupName}>.*)");
-        var exception = Assert.Throws<CliExitException>(() => dictionary.Deserialize(match, key => key));
+        var exception = Assert.Throws<CliExitException>(() => dictionary.Materialize(match, key => key));
         Debug.WriteLine($"Actual message: {exception.Message}");
     }
 }

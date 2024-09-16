@@ -97,7 +97,7 @@ public abstract class CliOptionBundle
         foreach (var pair in options)
         {
             var (option, property) = (pair.Key, pair.Value);
-            var value = option.Deserialize(commandLineMatch, decoder);
+            var value = option.Materialize(commandLineMatch, decoder);
             property.SetValue(this, value);
         }
     }
@@ -131,7 +131,7 @@ public abstract class CliOptionBundle
             foreach (var option in map)
             {
                 var (info, property) = (option.Key, option.Value);
-                var value = info.Deserialize(commandLineMatch, decoder);
+                var value = info.Materialize(commandLineMatch, decoder);
                 property.SetValue(bundle, value);
             }
 

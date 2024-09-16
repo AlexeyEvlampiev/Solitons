@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace Solitons.CommandLine;
 
@@ -143,6 +144,11 @@ public sealed class CliConfigurationException : Exception
     }
 
     public static CliConfigurationException NotSupportedOptionType()
+    {
+        throw new NotImplementedException();
+    }
+
+    public static Exception ArgumentTypeNotSupported(MethodInfo methodInfo, ParameterInfo parameter, Type type, CliRouteArgumentAttribute metadata)
     {
         throw new NotImplementedException();
     }

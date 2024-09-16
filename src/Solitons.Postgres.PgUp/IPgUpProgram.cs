@@ -100,10 +100,16 @@ sealed class PgUpProjectDirectoryArgumentAttribute : CliRouteArgumentAttribute
         ArgumentRole = "PROJECTDIR";
     }
 
-    public override TypeConverter? GetCustomTypeConverter(out string inputSample)
+    public override bool CanAccept(Type argumentType, out TypeConverter converter)
     {
-        inputSample = ".";
-        return new StringConverter();
+        if (argumentType == typeof(string))
+        {
+            converter = new StringConverter();
+            return true;
+        }
+
+        converter = TypeDescriptor.GetConverter(argumentType);
+        return false;
     }
 }
 

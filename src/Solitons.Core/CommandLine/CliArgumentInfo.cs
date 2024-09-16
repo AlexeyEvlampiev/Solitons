@@ -13,47 +13,66 @@ internal sealed class CliArgumentInfo : ICliRouteSegment
     private static long _sequenceNumber = 0;
     private readonly IReadOnlyList<ICliRouteSegment> _routeSegments;
     private readonly TypeConverter _converter;
-    private readonly Type _parameterUnderlyingType;
+    private readonly Type _argumentType;
 
-    public CliArgumentInfo(
+    private CliArgumentInfo(
         CliRouteArgumentAttribute metadata, 
+        string name, 
+        string description,
+        Type argumentType,
+        TypeConverter converter,
+        IReadOnlyList<ICliRouteSegment> routeSegments)
+    {
+        Metadata = ThrowIf.ArgumentNull(metadata);
+        Name = ThrowIf.ArgumentNullOrWhiteSpace(name);
+        Description = ThrowIf.ArgumentNullOrWhiteSpace(description);
+        _routeSegments = ThrowIf.ArgumentNull(routeSegments);
+        _argumentType = Nullable.GetUnderlyingType(argumentType) ?? argumentType;
+
+        _converter = converter;
+        ThrowIf.False(_converter.CanConvertFrom(typeof(string)));
+
+        RegexMatchGroupName = $"argument_{name}_{Interlocked.Increment(ref _sequenceNumber):0000}";
+    }
+
+    public static CliArgumentInfo Create(
+        CliRouteArgumentAttribute metadata,
         ParameterInfo parameter,
         IReadOnlyList<ICliRouteSegment> routeSegments)
     {
-        ThrowIf.ArgumentNull(parameter);
-        _routeSegments = ThrowIf.ArgumentNull(routeSegments);
-        ThrowIf.False(metadata.ParameterName.Equals(parameter.Name, StringComparison.Ordinal));
+        var type = Nullable.GetUnderlyingType(parameter.ParameterType) ?? parameter.ParameterType;
+        var methodInfo = ThrowIf.NullReference(parameter.Member as MethodInfo);
+        var name = ThrowIf.NullOrWhiteSpace(parameter.Name);
 
         var attributes = parameter.GetCustomAttributes().ToList();
-        Metadata = metadata;
 
-        _parameterUnderlyingType = Nullable.GetUnderlyingType(parameter.ParameterType) ?? parameter.ParameterType;
-
-        _converter = attributes
-            .OfType<TypeConverterAttribute>()
-            .Select(att => att.CreateInstance())
-            .FirstOrDefault(TypeDescriptor.GetConverter(_parameterUnderlyingType));
-        if (false == _converter.CanConvertFrom(typeof(string)))
-        {
-            throw new CliConfigurationException(
-                $"The argument for parameter '{metadata.ParameterName}' of type '{_parameterUnderlyingType.FullName}' cannot be converted from a string. " +
-                "Ensure that the correct type converter is provided for this CLI argument.");
-        }
-
-        Description = attributes
+        var description = attributes
             .OfType<DescriptionAttribute>()
             .Select(att => att.Description)
-            .Union([metadata.Description, metadata.ParameterName])
+            .Union([metadata.Description, name])
             .First(desc => desc.IsPrintable());
+        if (metadata.CanAccept(type, out var converter) == false || 
+            converter.SupportsCliOperandConversion() == false)
+        {
+            throw CliConfigurationException.ArgumentTypeNotSupported(methodInfo, parameter, type, metadata);
+        }
 
-        RegexMatchGroupName = $"argument_{Interlocked.Increment(ref _sequenceNumber):0000}";
+        return new CliArgumentInfo(
+            metadata, 
+            name, 
+            description, 
+            type, 
+            converter, 
+            routeSegments);
     }
+
+    public string Name { get; }
+
+    public string Description { get; }
 
     public string RegexMatchGroupName { get; }
 
     public ICliRouteArgumentMetadata Metadata { get; }
-
-    public string Description { get; }
 
     public string ArgumentRole => Metadata.ArgumentRole;
 
@@ -70,25 +89,25 @@ internal sealed class CliArgumentInfo : ICliRouteSegment
             var input = decoder(group.Value);
             try
             {
-                return _converter.ConvertFromInvariantString(input, _parameterUnderlyingType);
+                return _converter.ConvertFromInvariantString(input, _argumentType);
             }
             catch (InvalidOperationException)
             {
                 throw new CliConfigurationException(
                     $"The conversion for parameter '{Metadata.ParameterName}' using the specified converter failed. " +
-                    $"Ensure the converter and target type '{_parameterUnderlyingType.FullName}' are correct.");
+                    $"Ensure the converter and target type '{_argumentType.FullName}' are correct.");
             }
             catch (Exception e) when (e is FormatException or ArgumentException)
             {
                 CliExit.With(
                     $"Failed to convert the input token for parameter '{Metadata.ParameterName}' " +
-                    $"to the expected type '{_parameterUnderlyingType.FullName}'. Reason: {e.Message}");
+                    $"to the expected type '{_argumentType.FullName}'. Reason: {e.Message}");
                 return null;
             }
         }
 
         CliExit.With(
-            $"{Metadata.ParameterName} parameter received an invalid token which could not be converted to {_parameterUnderlyingType.FullName}."
+            $"{Metadata.ParameterName} parameter received an invalid token which could not be converted to {_argumentType.FullName}."
         );
         return null;
     }

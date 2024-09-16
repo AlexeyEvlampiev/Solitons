@@ -44,16 +44,16 @@ public sealed class CliOptionInfo_ctor_Should
         var group = match.Groups[target.RegexMatchGroupName];
         if (group.Success && value.HasValue)
         {
-            Assert.Equal(value, target.Deserialize(match, key => key)); 
+            Assert.Equal(value, target.Materialize(match, key => key)); 
         }
         else if (!group.Success && isRequired)
         {
-            Assert.Throws<CliExitException>(() => target.Deserialize(match, key => key));
+            Assert.Throws<CliExitException>(() => target.Materialize(match, key => key));
         }
         else
         {
             // If no match and not required, should return the default value
-            Assert.Equal(defaultValue, target.Deserialize(match, key => key));
+            Assert.Equal(defaultValue, target.Materialize(match, key => key));
         }
     }
 }

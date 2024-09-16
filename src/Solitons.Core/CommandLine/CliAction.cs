@@ -130,7 +130,7 @@ internal sealed class CliAction : IComparable<CliAction>
                         );
                     }
 
-                    var argumentInfo = new CliArgumentInfo(argument, parameter, routeSegments);
+                    var argumentInfo = CliArgumentInfo.Create(argument, parameter, routeSegments);
                     routeSegments.Add(argumentInfo);
                     arguments.Add(parameter, argumentInfo);
 
@@ -218,7 +218,7 @@ internal sealed class CliAction : IComparable<CliAction>
                         parameterAttributes.OfType<RequiredAttribute>().Any());
 
                 options.Add(option);
-                parameterDeserializers[i] = option.Deserialize;
+                parameterDeserializers[i] = option.Materialize;
             }
 
         }

@@ -91,7 +91,7 @@ internal sealed record CliCollectionOptionInfo : CliOptionInfo
         return false;
     }
 
-    public override object Deserialize(Group optionGroup, CliTokenDecoder decoder)
+    public override object Materialize(Group optionGroup, CliTokenDecoder decoder)
     {
         ThrowIf.ArgumentNull(optionGroup);
         ThrowIf.ArgumentNull(decoder);

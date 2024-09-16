@@ -97,7 +97,7 @@ internal abstract record CliOptionInfo
         return ThrowIf.NullReference(result);
     }
 
-    public abstract object Deserialize(Group optionGroup, CliTokenDecoder decoder);
+    public abstract object Materialize(Group optionGroup, CliTokenDecoder decoder);
 
     protected abstract string BuildOptionRegularExpression(string pipeExp);
 
@@ -119,13 +119,13 @@ internal abstract record CliOptionInfo
     public string AliasPipeExpression { get; }
     public string AliasCsvExpression { get; }
 
-    public object? Deserialize(Match commandLineMatch, CliTokenDecoder decoder)
+    public object? Materialize(Match commandLineMatch, CliTokenDecoder decoder)
     {
         Debug.Assert(commandLineMatch.Success);
         var group = commandLineMatch.Groups[RegexMatchGroupName];
         if (group.Success)
         {
-            return this.Deserialize(group, decoder);
+            return this.Materialize(group, decoder);
         }
 
         if (IsRequired)

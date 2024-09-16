@@ -148,7 +148,7 @@ public class CliOptionAttribute : Attribute, ICliOptionMetadata
             converter = new CliCancellationTokenTypeConverter();
             ThrowIf.False(converter.CanConvertFrom(typeof(string)));
         }
-        return converter.CanConvertFrom(typeof(string));
+        return converter.SupportsCliOperandConversion();
     }
 
     public virtual StringComparer GetValueComparer() => StringComparer.OrdinalIgnoreCase;

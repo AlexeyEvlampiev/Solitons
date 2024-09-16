@@ -34,7 +34,7 @@ internal sealed record CliFlagOptionInfo : CliOptionInfo
     }
 
 
-    public override object Deserialize(Group optionGroup, CliTokenDecoder decoder)
+    public override object Materialize(Group optionGroup, CliTokenDecoder decoder)
     {
         Debug.Assert(optionGroup.Success);
         return

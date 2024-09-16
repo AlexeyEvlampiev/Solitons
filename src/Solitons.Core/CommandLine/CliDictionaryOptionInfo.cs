@@ -75,7 +75,7 @@ internal sealed record CliDictionaryOptionInfo : CliOptionInfo
         return match.Success;
     }
 
-    public override object Deserialize(Group optionGroup, CliTokenDecoder decoder)
+    public override object Materialize(Group optionGroup, CliTokenDecoder decoder)
     {
         ThrowIf.ArgumentNull(optionGroup);
         ThrowIf.ArgumentNull(decoder);
