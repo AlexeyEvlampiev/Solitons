@@ -5,13 +5,17 @@ using Solitons.CommandLine;
 
 namespace Solitons.Postgres.PgUp;
 
-public interface IPgUpProgram
+public interface IPgUpCli
 {
     const string DeployCommandDescription = "Deploys a PostgreSQL database according to the pgup.json deployment plan, ensuring all configurations and resources are correctly applied.";
     const string InitializeProjectCommand = "init|initialize";
     const string ProjectDirectoryArgumentDescription = "File directory where to initialize the new pgup project.";
     const string InitializeProjectCommandDescription = "Initializes a new PgUp project structure in the specified directory, setting up the necessary files and folders for PostgreSQL deployment.";
     const string TemplateParameterDescription = "Specifies the project template to be applied during initialization.";
+
+    [CliRoute("version")]
+    [CliCommandExample("version")]
+    void Version();
 
     [CliRoute(InitializeProjectCommand)]
     [PgUpProjectDirectoryArgument(nameof(projectDir))]

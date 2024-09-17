@@ -5,7 +5,7 @@ using Solitons.CommandLine;
 namespace Solitons.Postgres.PgUp;
 
 
-public class Program : IPgUpProgram
+public class Program : IPgUpCli
 {
     private static readonly TimeSpan DefaultActionTimeout = TimeSpan.FromMinutes(10);
 
@@ -17,6 +17,11 @@ public class Program : IPgUpProgram
                 .UseLogo(PgUpResource.AsciiLogo)
                 .UseDescription("CLI for managing PostgreSQL deployments and tasks using a structured, user-defined sequence of database transactions."))
             .Process();
+    }
+
+    public void Version()
+    {
+        throw new NotImplementedException();
     }
 
     [DebuggerStepThrough]

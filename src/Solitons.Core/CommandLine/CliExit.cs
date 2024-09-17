@@ -10,6 +10,24 @@ namespace Solitons.CommandLine;
 public static class CliExit
 {
     /// <summary>
+    /// Creates a <see cref="CliExitException"/> with the specified exit code and message.
+    /// </summary>
+    /// <param name="exitCode">The exit code to return to the operating system.</param>
+    /// <param name="message">The error message to include in the exception.</param>
+    /// <returns>A <see cref="CliExitException"/> containing the exit code and message.</returns>
+    public static Exception GenerateExitException(int exitCode, string message) =>
+        new CliExitException(message) { ExitCode = exitCode };
+
+    /// <summary>
+    /// Creates a <see cref="CliExitException"/> with the specified message and a default exit code.
+    /// </summary>
+    /// <param name="message">The error message to include in the exception.</param>
+    /// <returns>A <see cref="CliExitException"/> containing the message and a default exit code.</returns>
+    public static Exception GenerateExitException(string message) =>
+        new CliExitException(message);
+
+
+    /// <summary>
     /// Terminates the application by throwing a <see cref="CliExitException"/> with the specified exit code and error message.
     /// </summary>
     /// <param name="exitCode">The exit code to return to the operating system.</param>

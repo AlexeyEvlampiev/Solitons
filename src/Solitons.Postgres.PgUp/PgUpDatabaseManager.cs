@@ -130,13 +130,11 @@ public sealed class PgUpDatabaseManager
         }
         catch (OperationCanceledException)
         {
-            CliExit.With("PgUp deployment timeout");
-            throw;
+            throw PgUpExitException.DeploymentTimeout();
         }
         catch (NpgsqlException e)
         {
-            CliExit.With(e.Message);
-            throw;
+            throw PgUpExitException.FromNpgsqlException(e);
         }
     }
 
