@@ -201,13 +201,13 @@ public sealed class CliProcessor : ICliProcessorCallback
             }
 
             var selectedActions = _actions
-            .Where(a => a.IsMatch(commandLine))
-            .GroupBy(a => a.Rank(commandLine))
-            .OrderByDescending(group => group.Key)
-            .Do(group => Trace.WriteLine(group.Count()))
-            .Take(1)
-            .SelectMany(similarMatchedActions => similarMatchedActions)
-            .ToList();
+                .Where(a => a.IsMatch(commandLine))
+                .GroupBy(a => a.Rank(commandLine))
+                .OrderByDescending(group => group.Key)
+                .Do(group => Trace.WriteLine(group.Count()))
+                .Take(1)
+                .SelectMany(similarMatchedActions => similarMatchedActions)
+                .ToList();
 
             if (selectedActions.Count != 1)
             {
@@ -220,15 +220,17 @@ public sealed class CliProcessor : ICliProcessorCallback
 
             Trace.TraceInformation($"Found an actions that matches the given command line.");
 
-            var result = action.Execute(commandLine, decoder, _cache);
+            var result = CliExit
+                .WithCode(() => action.Execute(commandLine, decoder, _cache));
+
             Trace.TraceInformation($"The action returned {result}");
 
             return result;
         }
-        catch (CliExitException e)
+        catch (Exception e) when (CliExit.IsMatch(e, out var exitCode, out var message))
         {
-            Console.Error.WriteLine(e.Message);
-            return e.ExitCode;
+            Console.Error.WriteLine(message);
+            return exitCode;
         }
         catch (Exception e)
         {

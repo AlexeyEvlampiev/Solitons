@@ -44,7 +44,7 @@ public sealed class PgUpBatch
         _batchWorkingDirectory = new DirectoryInfo(Path.Combine(pgUpWorkingDirectory.FullName, batch.GetWorkingDirectory()));
         if (false == _batchWorkingDirectory.Exists)
         {
-            throw new PgUpExitException(
+            throw PgUpExit.With(
                 $"The pgup batch working directory '{_batchWorkingDirectory.FullName}' was not found. " +
                 $"Please ensure the directory exists and try again.");
         }
@@ -78,7 +78,7 @@ public sealed class PgUpBatch
                 }
                 catch (ArgumentException ex)
                 {
-                    throw new PgUpExitException(
+                    throw PgUpExit.With(
                         $"The file pattern '{pattern}' in the directory '{_batchWorkingDirectory.FullName}' is invalid. " +
                         $"{ex.Message} Please correct the pattern and try again.");
                     throw;
@@ -106,7 +106,7 @@ public sealed class PgUpBatch
         {
             if (false == File.Exists(scriptFullName))
             {
-                throw new PgUpExitException(
+                throw PgUpExit.With(
                     $"The SQL script '{scriptFullName}' could not be found. " +
                     $"Verify the file path and name, then try again.");
 
@@ -169,7 +169,7 @@ public sealed class PgUpBatch
                 if (matches.Any() == false)
                 {
                     var pattern = _fileOrderPatterns[index];
-                    throw new PgUpExitException(
+                    throw PgUpExit.With(
                         $"No files matching the pattern '{pattern}' were found in the '{_batchWorkingDirectory}' working directory. " +
                         $"Please check the pattern and the directory contents, then try again.");
 

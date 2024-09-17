@@ -99,14 +99,14 @@ internal sealed class CliArgumentInfo : ICliRouteSegment
             }
             catch (Exception e) when (e is FormatException or ArgumentException)
             {
-                throw new CliExitException(
+                throw CliExit.With(
                     $"Failed to convert the input token for parameter '{Metadata.ParameterName}' " +
                     $"to the expected type '{_argumentType.FullName}'. Reason: {e.Message}");
                 return null;
             }
         }
 
-        throw new CliExitException(
+        throw CliExit.With(
             $"{Metadata.ParameterName} parameter received an invalid token which could not be converted to {_argumentType.FullName}."
         );
     }

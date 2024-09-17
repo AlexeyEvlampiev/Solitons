@@ -102,24 +102,24 @@ internal sealed record CliDictionaryOptionInfo : CliOptionInfo
                 }
                 catch (Exception e) when (e is FormatException or ArgumentException)
                 {
-                    throw CliExitException
+                    throw CliExit
                         .DictionaryOptionValueParseFailure(AliasPipeExpression, key, ValueType);
                 }
             }
             else if (keyGroup.Success == valueGroup.Success)
             {
                 Debug.Assert(false == keyGroup.Success && false == valueGroup.Success);
-                throw CliExitException.InvalidDictionaryOptionKeyValueInput(AliasPipeExpression, capture.Value);
+                throw CliExit.InvalidDictionaryOptionKeyValueInput(AliasPipeExpression, capture.Value);
             }
             else if (keyGroup.Success)
             {
                 Debug.Assert(valueGroup.Success == false);
-                throw CliExitException.DictionaryKeyMissingValue(AliasPipeExpression, keyGroup);
+                throw CliExit.DictionaryKeyMissingValue(AliasPipeExpression, keyGroup);
             }
             else if (valueGroup.Success)
             {
                 Debug.Assert(keyGroup.Success == false);
-                throw CliExitException.DictionaryValueMissingKey(AliasPipeExpression, valueGroup);
+                throw CliExit.DictionaryValueMissingKey(AliasPipeExpression, valueGroup);
             }
         }
 

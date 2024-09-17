@@ -48,7 +48,8 @@ public sealed class CliOptionInfo_ctor_Should
         }
         else if (!group.Success && isRequired)
         {
-            Assert.Throws<CliExitException>(() => target.Materialize(match, key => key));
+            var exception = Assert.Throws<Exception>(() => target.Materialize(match, key => key));
+            Assert.True(CliExit.IsMatch(exception, out var exitCode, out var message));
         }
         else
         {

@@ -43,7 +43,7 @@ internal sealed record CliValueOptionInfo : CliOptionInfo
                 .Distinct(StringComparer.Ordinal)
                 .Count() > 1)
         {
-            throw CliExitException.ConflictingOptionValues(AliasPipeExpression);
+            throw CliExit.ConflictingOptionValues(AliasPipeExpression);
         }
 
         var input = decoder(optionGroup.Captures[0].Value);
@@ -58,7 +58,7 @@ internal sealed record CliValueOptionInfo : CliOptionInfo
         catch (Exception e) when (e is FormatException or ArgumentException)
         {
             // Means the user supplied a wrong input text
-            throw CliExitException.InvalidOptionInputParsing(AliasPipeExpression, _type);
+            throw CliExit.InvalidOptionInputParsing(AliasPipeExpression, _type);
         }
     }
 

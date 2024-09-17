@@ -24,14 +24,14 @@ public sealed class PgUpCommandBuilder
             }
             else if (matches.Count == 0)
             {
-                throw new PgUpExitException(
+                throw PgUpExit.With(
                     "Custom script execution command must have a single parameter " +
                     "that is JSON containing the script content to be executed and script metadata " +
                     "such as file path and script checksum.");
             }
             else
             {
-                throw new PgUpExitException(
+                throw PgUpExit.With(
                     "Custom script execution command must have a single parameter " +
                     "that is JSON containing the script content to be executed and script metadata " +
                     $"such as file path and script checksum. Actual: {matches.Count}");
