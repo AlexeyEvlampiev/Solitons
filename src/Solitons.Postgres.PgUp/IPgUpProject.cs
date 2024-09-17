@@ -23,7 +23,7 @@ public interface IPgUpProject
         cancellation.ThrowIfCancellationRequested();
         if (false == File.Exists(projectFilePath))
         {
-            CliExit.With("Specified PgUp project file does not exist.");
+            throw PgUpExitException.ProjectFileNotFound(projectFilePath);
         }
 
         try
@@ -34,14 +34,13 @@ public interface IPgUpProject
             var project = PgUpSerializer.Deserialize(pgUpJson, parameters);
             return project;
         }
-        catch (Exception e) when(CliExit.IsTerminationRequest(e))
+        catch (CliExitException e)
         {
             throw;
         }
         catch (Exception e)
         {
-            CliExit.With($"Failed to load project file. {e.Message}");
-            throw;
+            throw new PgUpExitException($"Failed to load project file. {e.Message}");
         }
     }
 }

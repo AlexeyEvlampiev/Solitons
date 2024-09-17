@@ -130,7 +130,7 @@ internal abstract record CliOptionInfo
 
         if (IsRequired)
         {
-            CliExit.With($"{AliasPipeExpression} option is required.");
+            throw new CliExitException($"{AliasPipeExpression} option is required.");
         }
 
         return _defaultValue;

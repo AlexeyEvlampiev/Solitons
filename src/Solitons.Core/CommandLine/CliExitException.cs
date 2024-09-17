@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Reactive.Linq;
 using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
@@ -9,7 +11,44 @@ public class CliExitException : Exception
     {
     }
 
+
     public int ExitCode { get; init; } = 1;
+
+
+
+
+    /// <summary>
+    /// Returns an observable that throws a <see cref="CliExitException"/> with the specified exit code and error message when subscribed to.
+    /// </summary>
+    /// <typeparam name="T">The type of the observable sequence.</typeparam>
+    /// <param name="exitCode">The exit code to return to the operating system.</param>
+    /// <param name="message">The error message to include in the exception.</param>
+    /// <returns>An observable that throws a <see cref="CliExitException"/>.</returns>
+    [DebuggerNonUserCode]
+    public static IObservable<T> Observable<T>(int exitCode, string message)
+    {
+        return System.Reactive.Linq.Observable.Throw<T>(new CliExitException(message)
+        {
+            ExitCode = exitCode
+        });
+    }
+
+    /// <summary>
+    /// Returns an observable that throws a <see cref="CliExitException"/> with a default exit code of 1 and the specified error message when subscribed to.
+    /// </summary>
+    /// <typeparam name="T">The type of the observable sequence.</typeparam>
+    /// <param name="message">The error message to include in the exception.</param>
+    /// <returns>An observable that throws a <see cref="CliExitException"/>.</returns>
+    [DebuggerNonUserCode]
+    public static IObservable<T> Observable<T>(string message)
+    {
+        return System.Reactive.Linq.Observable.Throw<T>(new CliExitException(message)
+        {
+            ExitCode = 1
+        });
+    }
+
+
 
     internal static CliExitException DictionaryOptionValueParseFailure(string option, string key, Type valueType)
     {

@@ -55,7 +55,7 @@ public sealed class PgUpDatabaseManager
                 builder.Timeout = Convert.ToInt32(timeout.TotalSeconds);
                 using var _ = new NpgsqlConnection(builder.ConnectionString);
             })
-            .Catch(CliExit.AsObservable<NpgsqlConnectionStringBuilder>(
+            .Catch(CliExitException.Observable<NpgsqlConnectionStringBuilder>(
                 "Invalid connection string."));
         
         Console.WriteLine(PgUpConnectionDisplayRtt.Build(builder));
@@ -77,7 +77,7 @@ public sealed class PgUpDatabaseManager
                         "Are you sure you want to proceed? (yes/no)");
                     if (!confirmed)
                     {
-                        CliExit.With(0,"Operation cancelled by user");
+                        throw new PgUpExitException(0,"Operation cancelled by user");
                     }
                 }
 
