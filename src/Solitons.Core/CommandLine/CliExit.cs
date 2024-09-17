@@ -17,7 +17,7 @@ namespace Solitons.CommandLine;
 public static partial class CliExit
 {
     [method: DebuggerNonUserCode]
-    sealed class ExitException(int exitCode, string message) : Exception(message)
+    internal sealed class ExitException(int exitCode, string message) : Exception(message)
     {
         public int ExitCode { get; } = exitCode;
     }
@@ -107,7 +107,7 @@ public static partial class CliExit
     internal static int WithCode(Func<int> callback)
     {
         // Ensure the ReplaySubject exists, or create a new one with a buffer size of 1
-        var subject = ExitSubject.Value ??= new ReplaySubject<int>(1);
+        var subject = ExitSubject.Value = new ReplaySubject<int>(1);
 
         // Return an observable that runs the callback and notifies subscribers
         return Observable
