@@ -3,7 +3,6 @@ using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Npgsql;
 using NpgsqlTypes;
-using Solitons.CommandLine;
 
 namespace Solitons.Postgres.PgUp;
 

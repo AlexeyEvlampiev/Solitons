@@ -1,7 +1,4 @@
-﻿using Solitons.CommandLine;
-
-
-namespace Solitons.Postgres.PgUp;
+﻿namespace Solitons.Postgres.PgUp;
 
 internal sealed class PgUpTemplateManager
 {

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Reactive.Linq;
 using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;

@@ -1,6 +1,5 @@
 ﻿using System.IO.Compression;
 using System.Text.RegularExpressions;
-using Solitons.CommandLine;
 using Solitons.Data;
 using Solitons.Postgres.PgUp.Models;
 
