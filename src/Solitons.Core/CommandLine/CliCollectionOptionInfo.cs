@@ -117,7 +117,7 @@ internal sealed record CliCollectionOptionInfo : CliOptionInfo
                 }
                 catch (Exception e) when (e is FormatException or ArgumentException)
                 {
-                    throw CliExit.CollectionOptionParsingFailure(AliasPipeExpression, ElementType);
+                    throw CliExitException.CollectionOptionParsingFailure(AliasPipeExpression, ElementType);
                 }
             })
             .ToList();

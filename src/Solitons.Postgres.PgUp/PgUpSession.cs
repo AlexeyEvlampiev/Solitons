@@ -101,8 +101,8 @@ public sealed class PgUpSession(string databaseOwner, TimeSpan timeout) : IPgUpS
         _cancellation.ThrowIfCancellationRequested();
         return Observable
             .FromAsync(() => this.TestConnectionAsync(connectionString))
-            .Catch((ArgumentException e) => Exit(e))
-            .Catch((FormatException e) => Exit(e))
+            .Catch((ArgumentException e) => PgUpExitException.InvalidConnectionString(e).AsObservable<Unit>())
+            .Catch((FormatException e) => PgUpExitException.InvalidConnectionString(e).AsObservable<Unit>())
             .WithRetryTrigger(trigger => trigger
                 .Where(trigger.Exception is DbException { IsTransient: true })
                 .Where(trigger.ElapsedTimeSinceFirstException < (timeout * 0.01).Min(TimeSpan.FromSeconds(5)))
@@ -112,10 +112,9 @@ public sealed class PgUpSession(string databaseOwner, TimeSpan timeout) : IPgUpS
                     .FromMilliseconds(100)
                     .ScaleByFactor(2.0, trigger.AttemptNumber))
                 .Do(() => Trace.TraceInformation($"Connection test retry. Attempt: {trigger.AttemptNumber}")))
-            .Catch(CliExit.AsObservable<Unit>("Connection failed"))
+            .Catch(CliExitException.AsObservable<Unit>("Connection failed"))
             .ToTask(_cancellation.JoinTimeout(timeout));
 
-        IObservable<Unit> Exit(Exception e) => CliExit.AsObservable<Unit>("Invalid connection string");
     }
 
     [DebuggerStepThrough]
@@ -152,7 +151,7 @@ public sealed class PgUpSession(string databaseOwner, TimeSpan timeout) : IPgUpS
                     .FromMicroseconds(100)
                     .ScaleByFactor(2, trigger.AttemptNumber)
                     .Max(TimeSpan.FromSeconds(30))))
-            .Catch(CliExit.AsObservable<Unit>(
+            .Catch(CliExitException.AsObservable<Unit>(
                 $"Failed to create database {databaseName}"))
             .ToTask(_cancellation.JoinTimeout(timeout * 0.1));
     }

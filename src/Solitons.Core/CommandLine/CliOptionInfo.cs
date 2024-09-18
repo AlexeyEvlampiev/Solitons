@@ -130,7 +130,7 @@ internal abstract record CliOptionInfo
 
         if (IsRequired)
         {
-            throw CliExit.MissingRequiredOption(this);
+            throw CliExitException.MissingRequiredOption(this);
         }
 
         return _defaultValue;

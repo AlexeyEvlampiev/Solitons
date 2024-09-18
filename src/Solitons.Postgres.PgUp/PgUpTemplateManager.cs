@@ -10,17 +10,17 @@ internal sealed class PgUpTemplateManager
             targetDir = new DirectoryInfo(projectDir);
             if (targetDir.Exists == false)
             {
-                throw PgUpExit.With($"'{targetDir.Name}' directory does not exist.");
+                throw new PgUpExitException($"'{targetDir.Name}' directory does not exist.");
             }
         }
         catch (Exception e)
         {
-            throw PgUpExit.With($"'{projectDir}' is not a valid directory path.");
+            throw new PgUpExitException($"'{projectDir}' is not a valid directory path.");
         }
 
         if (targetDir.EnumerateFileSystemInfos().Any())
         {
-            throw PgUpExit.With($"'{targetDir.Name}' directory is not empty..");
+            throw new PgUpExitException($"'{targetDir.Name}' directory is not empty..");
         }
 
         var root = new DirectoryInfo("templates");
@@ -36,7 +36,7 @@ internal sealed class PgUpTemplateManager
             .FirstOrDefault();
         if (sourceDir is null)
         {
-            throw PgUpExit.With($"The '{template}' template is not found.");
+            throw new PgUpExitException($"The '{template}' template is not found.");
         }
 
         sourceDir.CopyContentsTo(targetDir, includeSubdirectories: true);

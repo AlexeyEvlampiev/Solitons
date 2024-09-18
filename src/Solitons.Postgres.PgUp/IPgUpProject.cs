@@ -22,7 +22,7 @@ public interface IPgUpProject
         cancellation.ThrowIfCancellationRequested();
         if (false == File.Exists(projectFilePath))
         {
-            throw PgUpExit.ProjectFileNotFound(projectFilePath);
+            throw PgUpExitException.ProjectFileNotFound(projectFilePath);
         }
 
         try
@@ -35,7 +35,7 @@ public interface IPgUpProject
         }
         catch (Exception e)
         {
-            throw PgUpExit.FailedToLoadProjectFile(projectFilePath, e.Message);
+            throw PgUpExitException.FailedToLoadProjectFile(projectFilePath, e.Message);
         }
     }
 }
