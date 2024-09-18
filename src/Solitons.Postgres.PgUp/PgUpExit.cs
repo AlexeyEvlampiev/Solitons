@@ -18,7 +18,7 @@ internal static class PgUpExit
     }
 
     [DebuggerStepThrough]
-    public static Exception With(string message) => CliExit.With(message);
+    public static Exception With(string message) => CliExit.Raise(message);
 
     public static Exception OperationCancelled()
     {

@@ -221,7 +221,7 @@ public sealed class CliProcessor : ICliProcessorCallback
             Trace.TraceInformation($"Found an actions that matches the given command line.");
 
             var result = CliExit
-                .WithCode(() => action.Execute(commandLine, decoder, _cache));
+                .Using(() => action.Execute(commandLine, decoder, _cache));
 
             Trace.TraceInformation($"The action returned {result}");
 

@@ -272,7 +272,7 @@ public sealed class CliOptionInfo_Deserialize_Should
         Debug.WriteLine($"Expected message: {input}");
 
         var match = Regex.Match(input, $@"(?xis-m)(?<{dictionary.RegexMatchGroupName}>.*)");
-        var exception = Assert.Throws<CliExit.ExitException>(() => dictionary.Materialize(match, key => key));
+        var exception = Assert.Throws<CliExitException>(() => dictionary.Materialize(match, key => key));
         Debug.WriteLine($"Actual message: {exception.Message}");
     }
 }

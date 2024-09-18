@@ -290,7 +290,7 @@ internal sealed class CliAction : IComparable<CliAction>
                 .Captures
                 .Select(c => decoder(c.Value))
                 .Join(", ");
-            throw CliExit.With(
+            throw CliExit.Raise(
                 $"The following options are not recognized as valid for the command: {csv}. " +
                 $"Please check the command syntax.");
         }
