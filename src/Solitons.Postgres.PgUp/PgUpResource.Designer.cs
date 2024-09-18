@@ -74,5 +74,14 @@ namespace Solitons.Postgres.PgUp {
                 return ResourceManager.GetString("AsciiLogo", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to PgUp: Efficient PostgreSQL migrations. Focused on simple, transaction-safe schema changes using SQL. No additional languages or frameworks—just straightforward migrations built for PostgreSQL..
+        /// </summary>
+        internal static string CliDescription {
+            get {
+                return ResourceManager.GetString("CliDescription", resourceCulture);
+            }
+        }
     }
 }

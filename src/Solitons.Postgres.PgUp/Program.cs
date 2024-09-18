@@ -15,7 +15,7 @@ public class Program : IPgUpCli
             .Setup(config => config
                 .UseCommandsFrom(new Program())
                 .UseLogo(PgUpResource.AsciiLogo)
-                .UseDescription("CLI for managing PostgreSQL deployments and tasks using a structured, user-defined sequence of database transactions."))
+                .UseDescription(IPgUpCli.PgUpDescription))
             .Process();
     }
 
