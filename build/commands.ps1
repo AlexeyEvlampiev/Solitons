@@ -87,5 +87,5 @@ function Config-Packages {
 }
 
 # Example usage:
-Config-Packages -staging 'Alpha' -searchRoot "." 
+#Config-Packages -staging 'Alpha' -searchRoot "." 
 
