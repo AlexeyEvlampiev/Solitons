@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Moq;
 using Xunit;
@@ -49,7 +50,7 @@ public sealed class CliOptionInfo_ctor_Should
         else if (!group.Success && isRequired)
         {
             var exception = Assert.Throws<CliExitException>(() => target.Materialize(match, key => key));
-            Assert.True(CliExit.IsMatch(exception, out var exitCode, out var message));
+            Debug.WriteLine($"Exit: {exception.ExitCode}, Message: {exception.Message}");
         }
         else
         {

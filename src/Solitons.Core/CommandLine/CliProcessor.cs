@@ -227,10 +227,10 @@ public sealed class CliProcessor : ICliProcessorCallback
 
             return result;
         }
-        catch (Exception e) when (CliExit.IsMatch(e, out var exitCode, out var message))
+        catch (CliExitException e) 
         {
-            Console.Error.WriteLine(message);
-            return exitCode;
+            Console.Error.WriteLine(e.Message);
+            return e.ExitCode;
         }
         catch (Exception e)
         {
