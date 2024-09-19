@@ -7,16 +7,19 @@ namespace Solitons.Postgres.PgUp;
 
 public interface IPgUpCli
 {
-    internal const string PgUpDescription = "PgUp: Efficient PostgreSQL migrations. Focused on simple, transaction-safe schema changes using SQL. No additional languages or frameworks—just straightforward migrations built for PostgreSQL.";
+    internal const string PgUpDescription = "A PostgreSQL migration tool focused on simplicity and safety. PgUp uses plain SQL to handle transaction-safe schema changes without additional complexity.";
     const string DeployCommandDescription = "Deploys a PostgreSQL database according to the pgup.json deployment plan, ensuring all configurations and resources are correctly applied.";
     const string InitializeProjectCommand = "init|initialize";
     const string ProjectDirectoryArgumentDescription = "File directory where to initialize the new pgup project.";
     const string InitializeProjectCommandDescription = "Initializes a new PgUp project structure in the specified directory, setting up the necessary files and folders for PostgreSQL deployment.";
     const string TemplateParameterDescription = "Specifies the project template to be applied during initialization.";
 
-    [CliRoute("version")]
-    [CliCommandExample("version")]
-    void Version();
+    [CliRoute("")]
+    [CliCommandExample("", description: PgUpDescription)]
+    [Description("Displays the version of PgUp installed on this system.")]
+    void DisplayInfo(
+        [CliOption("--version|-v")]CliFlag version);
+
 
     [CliRoute(InitializeProjectCommand)]
     [PgUpProjectDirectoryArgument(nameof(projectDir))]

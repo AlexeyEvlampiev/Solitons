@@ -5,7 +5,7 @@
 <#@ import namespace="System.Collections.Generic" #>
 ^\s*\S+
 # --- command segments --- <# foreach(var segmentExp in CommandSegmentRegularExpressions){ #> 
-\s+ <#= segmentExp #> <# }/* Loop over command segments */ #> 
+(?:\s+(?![-]))? <#= segmentExp #> <# }/* Loop over command segments */ #> 
 # --- command segments ---
 # --- options ---
 (?:

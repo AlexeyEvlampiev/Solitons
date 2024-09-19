@@ -196,7 +196,7 @@ public sealed class CliProcessor : ICliProcessorCallback
 
             if (CliHelpOptionAttribute.IsMatch(commandLine))
             {
-                _callback.ShowHelp(commandLine);
+                _callback.ShowHelp(commandLine, decoder);
                 return 0;
             }
 
@@ -212,7 +212,7 @@ public sealed class CliProcessor : ICliProcessorCallback
             if (selectedActions.Count != 1)
             {
                 Console.WriteLine("No matching commands found. See closest commands description below. ");
-                _callback.ShowHelp(commandLine);
+                _callback.ShowHelp(commandLine, decoder);
                 return 1;
             }
 
@@ -241,14 +241,23 @@ public sealed class CliProcessor : ICliProcessorCallback
     }
 
     void ICliProcessorCallback.ShowHelp(
-        string commandLine)
+        string commandLine,
+        CliTokenDecoder decoder)
     {
+        var programName = Regex
+            .Match(commandLine, @"^\s*\S+")
+            .Convert(m => decoder(m.Value))
+            .DefaultIfNullOrWhiteSpace("program")
+            .Convert(Path.GetFileName)
+            .DefaultIfNullOrWhiteSpace("program");
+
         var anyMatchesFound = _actions.Any(a => a.IsMatch(commandLine));
         if (false == anyMatchesFound &&
             CliHelpOptionAttribute.IsRootHelpCommand(commandLine))
         {
             var help = CliHelpRtt.Build(
-                _logo, 
+                _logo,
+                programName,
                 _description, 
                 _actions);
             Console.WriteLine(help);

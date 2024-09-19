@@ -7,10 +7,8 @@ internal partial class CliHelpRtt
 {
     sealed record Command(string Path, string Description);
 
-    private CliHelpRtt(string logo, string description, CliAction[] actions)
+    private CliHelpRtt(CliAction[] actions)
     {
-        Logo = logo;
-        Description = description;
         Commands = actions
             .OrderBy(cmd => cmd)
             .Select(a => new Command(
@@ -21,15 +19,22 @@ internal partial class CliHelpRtt
     }
 
     private IEnumerable<Command> Commands { get; }
-    public string Logo { get; }
-    public string Description { get; }
+    public required string Logo { get; init; }
+    public required string Description { get; init; }
+    public required string ProgramName { get; init; }
 
     public static string Build(
         string logo, 
+        string programName,
         string description, 
         CliAction[] actions)
     {
-        var rtt = new CliHelpRtt(logo, description, actions);
+        var rtt = new CliHelpRtt(actions)
+        {
+            Logo = logo,
+            ProgramName = programName,
+            Description = description
+        };
         return rtt.ToString();
     }
 }

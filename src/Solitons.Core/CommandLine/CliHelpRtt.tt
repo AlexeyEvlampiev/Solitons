@@ -4,10 +4,10 @@
 <#@ import namespace="System.Text" #>
 <#@ import namespace="System.Collections.Generic" #>
 <#= Logo #>
-Usage: COMMAND [ARGS] [OPTIONS]
+Usage: <#= ProgramName #> COMMAND [ARGS] [OPTIONS]
 
-Description:
-  <#= Description #>
+Description:<# PushIndent("  "); #>
+  <#= Description #><# ClearIndent(); #> 
 
 Options:
   -h, --help  Show this message and exit.

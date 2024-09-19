@@ -19,9 +19,13 @@ public class Program : IPgUpCli
             .Process();
     }
 
-    public void Version()
+    public void DisplayInfo(CliFlag showVersion)
     {
-        throw new NotImplementedException();
+        var version = GetType()
+            .Assembly
+            .GetName()
+            .Version ?? Version.Parse("1.0");
+        Console.WriteLine(@$"PgUp version {version.ToString(3)}");
     }
 
     [DebuggerStepThrough]

@@ -32,8 +32,8 @@ public class CliProcessor_Process_Should
         };
 
         int exitCode = processor.Process(commandLine);
-        callback.Verify(m => m.ShowHelp(It.IsAny<string>()), showHelpCalled);
-        callback.Verify(m => m.ShowHelp(commandLine), showHelpCalled);
+        callback.Verify(m => m.ShowHelp(It.IsAny<string>(), It.IsAny<CliTokenDecoder>()), showHelpCalled);
+        callback.Verify(m => m.ShowHelp(commandLine, It.IsAny<CliTokenDecoder>()), showHelpCalled);
         Assert.Equal(expectedExitCode, exitCode);
     }
 

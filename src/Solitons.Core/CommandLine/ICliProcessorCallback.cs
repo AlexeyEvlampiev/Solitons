@@ -3,5 +3,6 @@
 internal interface ICliProcessorCallback
 {
     void ShowHelp(
-        string commandLine);
+        string commandLine,
+        CliTokenDecoder decoder);
 }
