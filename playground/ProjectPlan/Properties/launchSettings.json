@@ -32,6 +32,10 @@
       "commandName": "Project",
       "commandLineArgs": "--version"
     },
+    "--version -?": {
+      "commandName": "Project",
+      "commandLineArgs": "--version -?"
+    },
     "WSL": {
       "commandName": "WSL2",
       "distributionName": "Ubuntu-20.04",

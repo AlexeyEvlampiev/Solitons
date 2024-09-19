@@ -9,37 +9,32 @@ using Solitons.Caching;
 
 namespace Solitons.CommandLine;
 
-public sealed class CliProcessor : ICliProcessorCallback
+internal sealed class CliProcessor : 
+    ICliProcessor.Options, 
+    ICliProcessor
 {
     private sealed record Source(
         Type DeclaringType,
         object? Instance,
-        CliRouteAttribute[] RootCommands,
+        string BaseRoute,
         BindingFlags BindingFlags);
 
     private readonly List<Source> _sources = new();
     private readonly CliAction[] _actions;
-    private ICliProcessorCallback _callback;
-    private CliRouteAttribute[] _baseRouteMetadata = [];
+    private readonly CliRouteAttribute[] _baseRouteMetadata = [];
     private string _logo = string.Empty;
     private string _description = string.Empty;
     private readonly IInMemoryCache _cache = IInMemoryCache.Create();
 
 
-    private CliProcessor(
-        Action<IOptions> config,
-        ICliProcessorCallback? callback = null)
+    public CliProcessor()
     {
-        _callback = callback ?? this;
         var masterOptionBundles = new CliMasterOptionBundle[]
         {
             new CliHelpMasterOptionBundle(),
             new CliTraceMasterOptionsBundle()
         };
 
-
-        var options = new Options(this);
-        config.Invoke(options);
         var actions = new List<CliAction>();
 
         foreach (var source in _sources)
@@ -75,174 +70,23 @@ public sealed class CliProcessor : ICliProcessorCallback
         _actions = actions.ToArray();
     }
 
-    public interface IOptions
+
+    public void OnMultipleMatchesFound()
     {
-        [DebuggerStepThrough]
-        public sealed IOptions UseCommandsFrom<T>(BindingFlags binding = BindingFlags.Static | BindingFlags.Public) => 
-            UseCommandsFrom(typeof(T), binding);
-
-        [DebuggerStepThrough]
-        public sealed IOptions UseCommandsFrom(Type declaringType,
-            BindingFlags binding = BindingFlags.Static | BindingFlags.Public) =>
-            UseCommandsFrom(declaringType, [], binding);
-
-        [DebuggerStepThrough]
-        public sealed IOptions UseCommandsFrom(object target,
-            BindingFlags binding = BindingFlags.Instance | BindingFlags.Public) =>
-            UseCommandsFrom(target, [], binding);
-
-
-        IOptions UseCommandsFrom(Type declaringType, CliRouteAttribute[] rootCommands, BindingFlags binding = BindingFlags.Static | BindingFlags.Public);
-        IOptions UseCommandsFrom(object target, CliRouteAttribute[] rootCommands, BindingFlags binding = BindingFlags.Instance | BindingFlags.Public);
-        IOptions UseLogo(string logo);
-        IOptions UseDescription(string description);
-        internal IOptions UseCallback(ICliProcessorCallback callback);
+        throw new NotImplementedException();
     }
 
-
-    sealed class Options : IOptions
+    public void OnNoMatch()
     {
-        private readonly CliProcessor _processor;
-
-        public Options(CliProcessor processor)
-        {
-            _processor = processor;
-        }
-
-        [DebuggerStepThrough]
-        public IOptions UseCommandsFrom(
-            object target,
-            CliRouteAttribute[] rootCommands,
-            BindingFlags binding)
-        {
-            return UseCommands(target, target.GetType(), rootCommands, binding);
-        }
-
-        [DebuggerStepThrough]
-        public IOptions UseCommandsFrom(
-            Type declaringType,
-            CliRouteAttribute[] rootCommands,
-            BindingFlags binding)
-        {
-            return UseCommands(null, declaringType, rootCommands, binding);
-        }
-
-        [DebuggerStepThrough]
-        private IOptions UseCommands(
-            object? instance,
-            Type declaringType, 
-            CliRouteAttribute[] rootCommands, 
-            BindingFlags binding)
-        {
-            if (binding.HasFlag(BindingFlags.Instance))
-            {
-                instance ??= Activator.CreateInstance(declaringType);
-                if (instance == null)
-                {
-                    throw new NotImplementedException();
-                }
-            }
-            _processor._sources.Add(new Source(declaringType, instance, rootCommands, binding));
-            return this;
-        }
-
-        public IOptions UseLogo(string logo)
-        {
-            _processor._logo = logo;
-            return this;
-        }
-
-        public IOptions UseDescription(string description)
-        {
-            _processor._description = description
-                .DefaultIfNullOrWhiteSpace(String.Empty)
-                .Trim();
-            return this;
-        }
-
-        public IOptions UseCallback(ICliProcessorCallback callback)
-        {
-            _processor._callback = callback;
-            return this;
-        }
+        throw new NotImplementedException();
     }
 
-    [DebuggerStepThrough]
-    public static CliProcessor Setup(Action<IOptions> config) => new(config);
-
-    [DebuggerStepThrough]
-    public int Process() => Process(Environment.CommandLine);
-
-    public int Process(string commandLine)
+    ICliAction[] ICliProcessor.GetActions()
     {
-        try
-        {
-            commandLine = CliTokenEncoder
-                .Encode(commandLine, out var decoder)
-                .Trim()
-                .Convert(encoded => Regex.Replace(encoded, @"(?xis-m)^\S+", match =>
-                {
-                    try
-                    {
-                        return Path.GetFileName(match.Value);
-                    }
-                    catch (Exception e)
-                    {
-                        return match.Value;
-                    }
-                }))
-                .Trim();
-
-
-            if (CliHelpOptionAttribute.IsMatch(commandLine))
-            {
-                _callback.ShowHelp(commandLine, decoder);
-                return 0;
-            }
-
-            var selectedActions = _actions
-                .Where(a => a.IsMatch(commandLine))
-                .GroupBy(a => a.Rank(commandLine))
-                .OrderByDescending(group => group.Key)
-                .Do(group => Trace.WriteLine(group.Count()))
-                .Take(1)
-                .SelectMany(similarMatchedActions => similarMatchedActions)
-                .ToList();
-
-            if (selectedActions.Count != 1)
-            {
-                Console.WriteLine("No matching commands found. See closest commands description below. ");
-                _callback.ShowHelp(commandLine, decoder);
-                return 1;
-            }
-
-            var action = selectedActions[0];
-
-            Trace.TraceInformation($"Found an actions that matches the given command line.");
-
-            var result = action.Execute(commandLine, decoder, _cache);
-
-            Trace.TraceInformation($"The action returned {result}");
-
-            return result;
-        }
-        catch (CliExitException e) 
-        {
-            Console.Error.WriteLine(e.Message);
-            return e.ExitCode;
-        }
-        catch (Exception e)
-        {
-            Trace.TraceError(e.ToString());
-            Console.WriteLine("Internal error");
-            return 1;
-        }
-
+        throw new NotImplementedException();
     }
 
-    void ICliProcessorCallback.ShowHelp(
-        string commandLine,
-        CliTokenDecoder decoder)
+    public void ShowHelpFor(string commandLine, CliTokenDecoder decoder)
     {
         var programName = Regex
             .Match(commandLine, @"^\s*\S+")
@@ -251,26 +95,21 @@ public sealed class CliProcessor : ICliProcessorCallback
             .Convert(Path.GetFileName)
             .DefaultIfNullOrWhiteSpace("program");
 
-        var anyMatchesFound = _actions.Any(a => a.IsMatch(commandLine));
-        if (false == anyMatchesFound &&
-            CliHelpOptionAttribute.IsRootHelpCommand(commandLine))
+
+        if (CliHelpOptionAttribute.IsGeneralHelpRequest(commandLine))
         {
             var help = CliHelpRtt.Build(
                 _logo,
                 programName,
-                _description, 
+                _description,
                 _actions);
             Console.WriteLine(help);
             return;
         }
 
-        var similarGroups = _actions
-            .Where(a => false == anyMatchesFound || a.IsMatch(commandLine))
-            .GroupBy(a => a.Rank(commandLine))
-            .ToList();
-
+        var noMatchedActions = (false == _actions.Any(a => a.IsMatch(commandLine)));
         var text = _actions
-            .Where(a => false == anyMatchesFound || a.IsMatch(commandLine))
+            .Where(a => noMatchedActions || a.IsMatch(commandLine))
             .GroupBy(a => a.Rank(commandLine))
             .OrderByDescending(similarActions => similarActions.Key)
             .Take(1)
@@ -279,4 +118,79 @@ public sealed class CliProcessor : ICliProcessorCallback
         Console.WriteLine(text);
     }
 
+    public void ShowGeneralHelp(string programName)
+    {
+        var help = CliHelpRtt.Build(
+            _logo,
+            programName,
+            _description,
+            _actions);
+        Console.WriteLine(help);
+    }
+
+    public bool IsGeneralHelpRequest(string commandLine)
+    {
+        throw new NotImplementedException();
+    }
+
+    public bool IsSpecificHelpRequest(string commandLine)
+    {
+        throw new NotImplementedException();
+    }
+
+    public string GetFileName(string filePath)
+    {
+        throw new NotImplementedException();
+    }
+
+
+    [DebuggerStepThrough]
+    public override ICliProcessor.Options UseCommandsFrom(
+        object program, 
+        string baseRoute = "", 
+        BindingFlags binding = BindingFlags.Default | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+    {
+        return UseCommands(program, program.GetType(), baseRoute, binding);
+    }
+
+    [DebuggerStepThrough]
+    public override ICliProcessor.Options UseCommandsFrom(
+        Type declaringType, 
+        string baseRoute = "",
+        BindingFlags binding = BindingFlags.Default | BindingFlags.Static | BindingFlags.Public)
+    {
+        return UseCommands(null, declaringType, baseRoute, binding);
+    }
+
+    public override ICliProcessor.Options UseLogo(string logo)
+    {
+        _logo = logo;
+        return this;
+    }
+
+    public override ICliProcessor.Options UseDescription(string description)
+    {
+        _description = description;
+        return this;
+    }
+
+
+    [DebuggerStepThrough]
+    private CliProcessor UseCommands(
+        object? instance,
+        Type declaringType,
+        string baseRoute,
+        BindingFlags binding)
+    {
+        if (binding.HasFlag(BindingFlags.Instance))
+        {
+            instance ??= Activator.CreateInstance(declaringType);
+            if (instance == null)
+            {
+                throw new NotImplementedException();
+            }
+        }
+        _sources.Add(new Source(declaringType, instance, baseRoute, binding));
+        return this;
+    }
 }

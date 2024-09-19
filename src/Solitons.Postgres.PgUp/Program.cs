@@ -11,7 +11,7 @@ public class Program : IPgUpCli
 
     public static int Main()
     {
-        return CliProcessor
+        return ICliProcessor
             .Setup(config => config
                 .UseCommandsFrom(new Program())
                 .UseLogo(PgUpResource.AsciiLogo)

@@ -1,4 +1,7 @@
-﻿using System.Text.RegularExpressions;
+﻿using System;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
 internal sealed class CliHelpOptionAttribute() : CliOptionAttribute(HelpFlagExpression, HelpFlagDescription)
@@ -20,8 +23,11 @@ internal sealed class CliHelpOptionAttribute() : CliOptionAttribute(HelpFlagExpr
         return Regex.IsMatch(commandLine, Pattern);
     }
 
-    public static bool IsRootHelpCommand(string commandLine)
+    public static bool IsGeneralHelpRequest(string commandLine)
     {
         return Regex.IsMatch(commandLine, @$"^\S+\s+{Pattern}\s*$");
     }
+
+    [DebuggerStepThrough]
+    public override bool CanAccept(Type optionType, out TypeConverter converter) => CanAcceptIfIsFlags(optionType, out converter);
 }

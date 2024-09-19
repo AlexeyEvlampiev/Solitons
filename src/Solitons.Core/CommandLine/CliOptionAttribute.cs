@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Reactive;
 using System.Text.RegularExpressions;
 using System.Threading;
 
@@ -152,4 +153,22 @@ public class CliOptionAttribute : Attribute, ICliOptionMetadata
     }
 
     public virtual StringComparer GetValueComparer() => StringComparer.OrdinalIgnoreCase;
+
+    protected bool CanAcceptIfIsFlags(Type optionType, out TypeConverter converter)
+    {
+        if (optionType == typeof(Unit))
+        {
+            converter = new UnitConverter();
+            return true;
+        }
+
+        if (optionType == typeof(CliFlag))
+        {
+            converter = new CliFlagConverter();
+            return true;
+        }
+
+        converter = TypeDescriptor.GetConverter(optionType);
+        return false;
+    }
 }

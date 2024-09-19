@@ -14,6 +14,7 @@ public interface IPgUpCli
     const string InitializeProjectCommandDescription = "Initializes a new PgUp project structure in the specified directory, setting up the necessary files and folders for PostgreSQL deployment.";
     const string TemplateParameterDescription = "Specifies the project template to be applied during initialization.";
 
+
     [CliRoute("")]
     [CliCommandExample("", "Displays the current version of pgup.")]
     [Description("Displays information about pgup")]
