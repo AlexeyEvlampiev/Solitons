@@ -25,17 +25,16 @@ public class CliProcessor_Process_Should
 
     [Theory]
     [InlineData("test-cli run --help", 0)]
-    [InlineData("test-cli run", 0)]
+    [InlineData("test-cli run", 1)]
     public void ShowTargetedHelp(string commandLine, int expectedExitCode)
     {
         var processor = new Mock<ICliProcessor>();
 
         int exitCode = processor.Object.Process(commandLine);
         processor.Verify(m => m
-            .ShowGeneralHelp(It.IsAny<string>()), Times.Never());
-        processor.Verify(m => m
             .ShowHelpFor(commandLine, It.IsAny<CliTokenDecoder>()), Times.Once());
-        Assert.Equal(expectedExitCode, exitCode);
+        processor.Verify(m => m
+            .ShowGeneralHelp(It.IsAny<string>()), Times.Never());
         Assert.Equal(expectedExitCode, exitCode);
     }
 

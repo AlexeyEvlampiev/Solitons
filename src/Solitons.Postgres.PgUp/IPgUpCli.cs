@@ -16,7 +16,7 @@ public interface IPgUpCli
 
 
     [CliRoute("")]
-    [CliCommandExample("", "Displays the current version of pgup.")]
+    [CliCommandExample("--version", "Displays the current version of pgup.")]
     [Description("Displays information about pgup")]
     void ShowVersion(
         [CliOption("--version|-v", "Displays the current version of PgUp.")]CliFlag version);

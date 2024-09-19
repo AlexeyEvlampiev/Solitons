@@ -128,7 +128,7 @@ public interface ICliProcessor
 
     private bool IsGeneralHelpRequest(string commandLine) => CliHelpOptionAttribute.IsGeneralHelpRequest(commandLine);
 
-    protected bool IsSpecificHelpRequest(string commandLine);
+    protected sealed bool IsSpecificHelpRequest(string commandLine) => CliHelpOptionAttribute.IsMatch(commandLine);
 
 
     internal sealed string Encode(string commandLine, out CliTokenDecoder decoder)
