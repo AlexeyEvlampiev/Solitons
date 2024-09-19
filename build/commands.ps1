@@ -38,7 +38,7 @@ function Ensure-XmlNode {
 function Config-Packages {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Alpha', 'PreView', 'Life')]
+        [ValidateSet('Alpha', 'PreView', 'Live')]
         [string]$staging,
         [string]$searchRoot = "."
     )
@@ -47,7 +47,7 @@ function Config-Packages {
     $versionSuffix = switch ($staging) {
         'Alpha'   { "-alpha.$ticks" }
         'PreView' { "-beta.$ticks" }
-        'Life'    { "" }
+        'Live'    { "" }
     }
 
     # Find all csproj files starting with 'Solitons'
