@@ -78,6 +78,14 @@ function Config-Packages {
             $licenseAcceptanceNode = Ensure-XmlNode -XmlDocument $csproj -ParentXPath '/Project/PropertyGroup' -NodeName 'PackageRequireLicenseAcceptance' -InitialValue "True"
             $licenseAcceptanceNode.InnerText = "True"
 
+  
+            $assemblyVersionNode = Ensure-XmlNode -XmlDocument $csproj -ParentXPath '/Project/PropertyGroup' -NodeName 'AssemblyVersion'
+            $assemblyVersionNode.InnerText = $version.ToString()
+
+            $fileVersionNode = Ensure-XmlNode -XmlDocument $csproj -ParentXPath '/Project/PropertyGroup' -NodeName 'FileVersion'
+            $fileVersionNode.InnerText = $version.ToString()
+
+
 
             if ([string]::IsNullOrWhiteSpace($versionSuffix)) {
                 # Remove the node if suffix is empty
