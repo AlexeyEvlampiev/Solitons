@@ -91,7 +91,7 @@ public abstract class CliOptionBundle
         return result;
     }
 
-    public void PopulateOptions(Match commandLineMatch, CliTokenDecoder decoder, IInMemoryCache cache)
+    internal void PopulateOptions(Match commandLineMatch, CliTokenDecoder decoder, IInMemoryCache cache)
     {
         var options = GetOptions(cache);
         foreach (var pair in options)

@@ -15,10 +15,11 @@ public interface IPgUpCli
     const string TemplateParameterDescription = "Specifies the project template to be applied during initialization.";
 
     [CliRoute("")]
-    [CliCommandExample("", description: PgUpDescription)]
-    [Description("Displays the version of PgUp installed on this system.")]
-    void DisplayInfo(
-        [CliOption("--version|-v")]CliFlag version);
+    [CliCommandExample("", "Displays the current version of pgup.")]
+    [Description("Displays information about pgup")]
+    void ShowVersion(
+        [CliOption("--version|-v", "Displays the current version of PgUp.")]CliFlag version);
+
 
 
     [CliRoute(InitializeProjectCommand)]

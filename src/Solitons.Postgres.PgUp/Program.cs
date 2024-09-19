@@ -19,7 +19,7 @@ public class Program : IPgUpCli
             .Process();
     }
 
-    public void DisplayInfo(CliFlag showVersion)
+    public void ShowVersion(CliFlag showVersion)
     {
         var version = GetType()
             .Assembly

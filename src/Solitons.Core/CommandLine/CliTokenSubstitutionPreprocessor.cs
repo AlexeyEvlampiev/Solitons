@@ -5,13 +5,13 @@ using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
 
-public delegate string CliTokenDecoder(string token);
+internal delegate string CliTokenDecoder(string token);
 internal interface ICliTokenEncoder
 {
     string Encode(string text, out CliTokenDecoder decoder);
 }
 
-public sealed class CliTokenEncoder : ICliTokenEncoder
+internal sealed class CliTokenEncoder : ICliTokenEncoder
 {
     [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
     private readonly Dictionary<string, string> _substitutions;

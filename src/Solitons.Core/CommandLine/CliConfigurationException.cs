@@ -15,7 +15,7 @@ namespace Solitons.CommandLine;
 /// must be corrected by the developer. For errors caused by invalid user input, the framework should throw a 
 /// <see cref="CliExitException"/> instead.
 /// </remarks>
-public sealed class CliConfigurationException : Exception
+internal sealed class CliConfigurationException : Exception
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="CliConfigurationException"/> class with a specified error message.
