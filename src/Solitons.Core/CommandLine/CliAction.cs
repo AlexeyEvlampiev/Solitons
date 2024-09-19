@@ -11,7 +11,7 @@ using Solitons.Caching;
 
 namespace Solitons.CommandLine;
 
-internal sealed class CliAction : IComparable<CliAction>
+internal sealed class CliAction : IComparable<CliAction>, ICliAction
 {
     internal const int OptimalMatchRankIncrement = 1;
     internal delegate Task<int> ActionHandler(object?[] args);

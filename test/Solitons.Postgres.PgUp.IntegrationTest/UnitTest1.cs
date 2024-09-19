@@ -7,7 +7,7 @@ public class UnitTest1
     [Fact]
     public void Test1()
     {
-        var processor = CliProcessor
+        var processor = ICliProcessor
             .Setup(options => options
                 .UseCommandsFrom(new Program()));
         var templates = PgUpTemplateManager

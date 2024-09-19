@@ -12,7 +12,7 @@ public class Program_Initialize_Should
     public void BeInvokedByCliProcessor(string commandLine, string template)
     {
         var program = new Mock<IPgUpCli>();
-        var processor = CliProcessor
+        var processor = ICliProcessor
             .Setup(config => config
                 .UseCommandsFrom(program.Object));
 
@@ -29,7 +29,7 @@ public class Program_Initialize_Should
                 .OfType<CliCommandExampleAttribute>())
             .ToArray();
         var program = new Mock<IPgUpCli>();
-        var processor = CliProcessor
+        var processor = ICliProcessor
             .Setup(config => config
                 .UseCommandsFrom(program.Object));
         foreach (var attribute in examples)

@@ -9,31 +9,33 @@ namespace Solitons.CommandLine;
 public class CliProcessor_Process_Should
 {
     [Theory]
-    [InlineData("test-cli", 1, 1)]
-    [InlineData("test-cli -?", 0, 1)]
-    [InlineData("test-cli -h", 0, 1)]
-    [InlineData("test-cli --help", 0, 1)]
-    [InlineData("test-cli run --help", 0, 1)]
-    [InlineData("test-cli run", 0, 0)]
-    public void RespondToHelpFlag(string commandLine, int expectedExitCode, int showHelpCalledCount)
+    [InlineData("test-cli -?", 0)]
+    [InlineData("test-cli -h", 0)]
+    [InlineData("test-cli --help", 0)]
+    public void ShowGeneralHelp(string commandLine, int expectedExitCode)
     {
-        var callback = new Mock<ICliProcessorCallback>();
-        
-        var processor = CliProcessor
-            .Setup(options => options
-                .UseCommandsFrom(this)
-                .UseCallback(callback.Object));
-        
-        var showHelpCalled = showHelpCalledCount switch
-        {
-            0 => Times.Never(),
-            1 => Times.Once(),
-            _ => throw new NotSupportedException()
-        };
+        var processor = new Mock<ICliProcessor>();
+        int exitCode = processor.Object.Process(commandLine);
+        processor.Verify(m => m
+            .ShowGeneralHelp("test-cli"), Times.Once());
+        processor.Verify(m => m
+            .ShowHelpFor(It.IsAny<string>(), It.IsAny<CliTokenDecoder>()), Times.Never());
+        Assert.Equal(expectedExitCode, exitCode);
+    }
 
-        int exitCode = processor.Process(commandLine);
-        callback.Verify(m => m.ShowHelp(It.IsAny<string>(), It.IsAny<CliTokenDecoder>()), showHelpCalled);
-        callback.Verify(m => m.ShowHelp(commandLine, It.IsAny<CliTokenDecoder>()), showHelpCalled);
+    [Theory]
+    [InlineData("test-cli run --help", 0)]
+    [InlineData("test-cli run", 0)]
+    public void ShowTargetedHelp(string commandLine, int expectedExitCode)
+    {
+        var processor = new Mock<ICliProcessor>();
+
+        int exitCode = processor.Object.Process(commandLine);
+        processor.Verify(m => m
+            .ShowGeneralHelp(It.IsAny<string>()), Times.Never());
+        processor.Verify(m => m
+            .ShowHelpFor(commandLine, It.IsAny<CliTokenDecoder>()), Times.Once());
+        Assert.Equal(expectedExitCode, exitCode);
         Assert.Equal(expectedExitCode, exitCode);
     }
 
@@ -42,7 +44,7 @@ public class CliProcessor_Process_Should
     [InlineData(1, 100, 101)]
     public void ReturnActionExitCode(int a, int b, int expectedSum)
     {
-        var processor = CliProcessor
+        var processor = ICliProcessor
             .Setup(options => options
                 .UseCommandsFrom(this));
         var sum = processor.Process($"tool sum {a} {b}");
@@ -55,7 +57,7 @@ public class CliProcessor_Process_Should
     [Fact]
     public void HandleMapOptions()
     {
-        var exitCode = CliProcessor
+        var exitCode = ICliProcessor
             .Setup(options => options
                 .UseCommandsFrom(this))
             .Process("tool use maps -cs.a 1 -ci[b] 2");

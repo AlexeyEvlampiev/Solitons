@@ -27,8 +27,10 @@ internal sealed class CliProcessor :
     private readonly IInMemoryCache _cache = IInMemoryCache.Create();
 
 
-    public CliProcessor()
+    public CliProcessor(Action<ICliProcessor.Options> config)
     {
+        config.Invoke(this);
+
         var masterOptionBundles = new CliMasterOptionBundle[]
         {
             new CliHelpMasterOptionBundle(),
@@ -73,18 +75,16 @@ internal sealed class CliProcessor :
 
     public void OnMultipleMatchesFound()
     {
-        throw new NotImplementedException();
+        Console.WriteLine("Multiple matching commands found. Please refine your input to specify a single command.");
     }
 
     public void OnNoMatch()
     {
-        throw new NotImplementedException();
+        Console.WriteLine("Command not recognized. Use '--help' to view available commands.");
     }
 
-    ICliAction[] ICliProcessor.GetActions()
-    {
-        throw new NotImplementedException();
-    }
+
+    ICliAction[] ICliProcessor.GetActions() => _actions.ToArray();
 
     public void ShowHelpFor(string commandLine, CliTokenDecoder decoder)
     {
@@ -128,20 +128,10 @@ internal sealed class CliProcessor :
         Console.WriteLine(help);
     }
 
-    public bool IsGeneralHelpRequest(string commandLine)
-    {
-        throw new NotImplementedException();
-    }
 
-    public bool IsSpecificHelpRequest(string commandLine)
-    {
-        throw new NotImplementedException();
-    }
+    public bool IsSpecificHelpRequest(string commandLine) => CliHelpOptionAttribute.IsMatch(commandLine);
 
-    public string GetFileName(string filePath)
-    {
-        throw new NotImplementedException();
-    }
+    public string GetFileName(string filePath) => Path.GetFileName(filePath);
 
 
     [DebuggerStepThrough]
