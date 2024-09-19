@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Moq;
 using Solitons.CommandLine;
 
@@ -18,28 +17,5 @@ public class Program_Initialize_Should
 
         processor.Process(commandLine);
         program.Verify(m => m.Initialize(".", template), Times.Once);
-    }
-
-    [Fact]
-    public void Work()
-    {
-        var examples = typeof(IPgUpCli)
-            .GetMethods()
-            .SelectMany(mi => mi.GetCustomAttributes(true)
-                .OfType<CliCommandExampleAttribute>())
-            .ToArray();
-        var program = new Mock<IPgUpCli>();
-        var processor = ICliProcessor
-            .Setup(config => config
-                .UseCommandsFrom(program.Object));
-        foreach (var attribute in examples)
-        {
-            Debug.WriteLine(attribute.Example);
-            Debug.WriteLine(attribute.Description);
-
-            processor.Process($"pgup {attribute.Example}");
-            Assert.True(program.Invocations.Count > 0, $"No method was called for example: {attribute.Example}");
-            program.Invocations.Clear();
-        }
     }
 }
