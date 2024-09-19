@@ -1,9 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <PackageId>Solitons.Core</PackageId>
-    <VersionPrefix>1.0.7</VersionPrefix>
-    <VersionSuffix>$(VersionSuffix)</VersionSuffix>
+    <VersionPrefix>1.1.0</VersionPrefix>
     <TargetFrameworks>net8.0</TargetFrameworks>
     <RootNamespace>Solitons</RootNamespace>
     <Authors>Alexey Evlampiev</Authors>
@@ -15,7 +13,7 @@
 
       The broad spectrum of features provided by Solitons.Core is aimed at reducing development time and resource consumption, enabling developers to focus on delivering high-quality, modern cloud computing solutions. With its comprehensive set of utilities and its emphasis on efficiency, Solitons.Core is a highly valuable tool for the open source community.
     </Description>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageLicenseExpression>MPL</PackageLicenseExpression>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
     <RunAnalyzersDuringLiveAnalysis>false</RunAnalyzersDuringLiveAnalysis>
@@ -30,13 +28,12 @@
     <PackageTags>
       .NET;.NETCore;C#;CloudIntegration;DataTransfer;ObjectSerialization;ErrorLogging;Authentication;Authorization;DataPipeline;MiddlewareDevelopment;SystemConfiguration;RESTfulAPI;CodingStandards;OperationalExcellence;SoftwareArchitecture;CloudComputing;DataEngineering;SecurityManagement;SolitonsCore;Solitons;Microservices;DevSecOps;AgileDevelopment;ContinuousIntegration;ContinuousDeployment;Cloud;UtilityLibrary;CoreExtensions;DevelopmentTools;OpenSource;CommunityProject;Collaboration;LearningResources;Documentation;SoftwareDevelopment;Programming;CodeLibrary
     </PackageTags>
-
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile></DocumentationFile>
+    <DocumentationFile>
+    </DocumentationFile>
   </PropertyGroup>
-
   <ItemGroup>
     <Compile Remove="CommandLine\Common\**" />
     <Compile Remove="Data\Web\**" />
@@ -48,29 +45,24 @@
     <None Remove="Data\Web\**" />
     <None Remove="Net\Http\Common\**" />
   </ItemGroup>
-
   <!-- Dependencies for .NET 6 -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
     <!-- Latest stable release for .NET 6 -->
     <PackageReference Include="System.Reactive" Version="6.0.0" />
   </ItemGroup>
-
   <!-- Dependencies for .NET 7 -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net7.0'">
     <!-- Assuming a similar versioning pattern, use the same version for .NET 7 -->
     <PackageReference Include="System.Reactive" Version="[6,)" />
   </ItemGroup>
-
   <!-- Dependencies for .NET 8 -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
     <!-- Placeholder for future .NET 8 compatible version -->
     <PackageReference Include="System.Reactive" Version="6.0.1" />
   </ItemGroup>
-
   <ItemGroup>
     <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
   </ItemGroup>
-
   <ItemGroup>
     <None Include="Data\Common\Postgres\SolitonsPgScriptRttOptions.generated.cs">
       <DesignTime>True</DesignTime>
@@ -83,7 +75,6 @@
       <DependentUpon>Extensions.Numbers.tt</DependentUpon>
     </None>
   </ItemGroup>
-
   <ItemGroup>
     <Compile Update="CommandLine\CliActionHelpRtt.cs">
       <DesignTime>True</DesignTime>
@@ -141,7 +132,6 @@
       <DependentUpon>HttpRequestHeaders.tt</DependentUpon>
     </Compile>
   </ItemGroup>
-
   <ItemGroup>
     <None Update="CommandLine\CliActionHelpRtt.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>
@@ -188,5 +178,4 @@
       <LastGenOutput>HttpRequestHeaders.generated.cs</LastGenOutput>
     </None>
   </ItemGroup>
-
 </Project>

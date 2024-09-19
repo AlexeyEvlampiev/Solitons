@@ -1,4 +1,4 @@
-﻿$version = [Version]::Parse("1.1")
+﻿$version = [Version]::Parse("1.1.0")
 $authors = "Alexey Evlampiev"
 $company = "Solitons"
 $licenseExp = "MPL"
@@ -45,8 +45,8 @@ function Config-Packages {
 
    
     $versionSuffix = switch ($staging) {
-        'Alpha'   { "-alpha.$ticks" }
-        'PreView' { "-beta.$ticks" }
+        'Alpha'   { "alpha.$ticks" }
+        'PreView' { "beta.$ticks" }
         'Live'    { "" }
     }
 
@@ -62,6 +62,7 @@ function Config-Packages {
             $versionPrefixNode = Ensure-XmlNode -XmlDocument $csproj -ParentXPath '/Project/PropertyGroup' -NodeName 'VersionPrefix'
             $versionPrefixNode.InnerText = $version.ToString()
 
+
             $versionSuffixNode = Ensure-XmlNode -XmlDocument $csproj -ParentXPath '/Project/PropertyGroup' -NodeName 'VersionSuffix'
             $versionSuffixNode.InnerText = $versionSuffix
 
@@ -76,6 +77,17 @@ function Config-Packages {
 
             $licenseAcceptanceNode = Ensure-XmlNode -XmlDocument $csproj -ParentXPath '/Project/PropertyGroup' -NodeName 'PackageRequireLicenseAcceptance' -InitialValue "True"
             $licenseAcceptanceNode.InnerText = "True"
+
+
+            if ([string]::IsNullOrWhiteSpace($versionSuffix)) {
+                # Remove the node if suffix is empty
+                if ($versionSuffixNode -ne $null) {
+                    $versionSuffixNode.ParentNode.RemoveChild($versionSuffixNode)
+                }
+            } else {
+                $versionSuffixNode.InnerText = $versionSuffix
+            }
+
 
             # Save the changes back to the csproj file
             $csproj.Save($_.FullName)
