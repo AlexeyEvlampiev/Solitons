@@ -27,7 +27,7 @@ namespace Solitons.CommandLine
         {
             this.Write("^\\s*\\S+\r\n# --- command segments --- ");
  foreach(var segmentExp in CommandSegmentRegularExpressions){ 
-            this.Write(" \r\n(?:\\s+(?![-]))? ");
+            this.Write(" \r\n\\s+ ");
             this.Write(this.ToStringHelper.ToStringWithCulture(segmentExp));
             this.Write(" ");
  }/* Loop over command segments */ 

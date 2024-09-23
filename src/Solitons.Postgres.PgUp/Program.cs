@@ -5,7 +5,7 @@ using Solitons.CommandLine;
 namespace Solitons.Postgres.PgUp;
 
 
-public class Program : IPgUpCli
+public class Program : IPgUpCliContract
 {
     private static readonly TimeSpan DefaultActionTimeout = TimeSpan.FromMinutes(10);
 
@@ -14,8 +14,9 @@ public class Program : IPgUpCli
         return ICliProcessor
             .Setup(config => config
                 .UseCommandsFrom(new Program())
+                .AddHelpCommand("")
                 .UseLogo(PgUpResource.AsciiLogo)
-                .UseDescription(IPgUpCli.PgUpDescription))
+                .UseDescription(IPgUpCliContract.PgUpDescription))
             .Process();
     }
 

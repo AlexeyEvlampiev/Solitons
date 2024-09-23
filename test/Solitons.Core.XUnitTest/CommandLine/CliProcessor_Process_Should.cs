@@ -19,7 +19,7 @@ public class CliProcessor_Process_Should
         processor.Verify(m => m
             .ShowGeneralHelp("test-cli"), Times.Once());
         processor.Verify(m => m
-            .ShowHelpFor(It.IsAny<string>(), It.IsAny<CliTokenDecoder>()), Times.Never());
+            .ShowCommandHelp(It.IsAny<string>(), It.IsAny<CliTokenDecoder>()), Times.Never());
         Assert.Equal(expectedExitCode, exitCode);
     }
 
@@ -32,7 +32,7 @@ public class CliProcessor_Process_Should
 
         int exitCode = processor.Object.Process(commandLine);
         processor.Verify(m => m
-            .ShowHelpFor(commandLine, It.IsAny<CliTokenDecoder>()), Times.Once());
+            .ShowCommandHelp(commandLine, It.IsAny<CliTokenDecoder>()), Times.Once());
         processor.Verify(m => m
             .ShowGeneralHelp(It.IsAny<string>()), Times.Never());
         Assert.Equal(expectedExitCode, exitCode);

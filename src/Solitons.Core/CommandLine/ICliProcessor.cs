@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using Solitons.Caching;
 
@@ -15,8 +14,10 @@ public interface ICliProcessor
     {
         try
         {
-            commandLine = Encode(commandLine, out var decoder);
-            string programName = ExtractProgramName(commandLine, decoder);
+            var context = new CliContext(commandLine);
+            commandLine = context.EncodedCommandLine;
+            var decoder = context.Decoder;
+            string programName = context.ProgramName;
 
             if (IsGeneralHelpRequest(commandLine))
             {
@@ -24,9 +25,9 @@ public interface ICliProcessor
                 return 0;
             }
 
-            if (IsSpecificHelpRequest(commandLine))
+            if (IsCommandHelpRequest(commandLine))
             {
-                ShowHelpFor(commandLine, decoder);
+                ShowCommandHelp(commandLine, decoder);
                 return 0;
             }
 
@@ -40,13 +41,20 @@ public interface ICliProcessor
             if (actions.Count > 0)
             {
                 OnMultipleMatchesFound();
-                ShowHelpFor(commandLine, decoder);
+                ShowCommandHelp(commandLine, decoder);
+                return 1;
             }
-            else
+
+            Debug.Assert(actions.Count == 0);
+
+            if (context.IsEmpty)
             {
-                OnNoMatch();
-                ShowHelpFor(commandLine, decoder);
+                ShowGeneralHelp(programName);
+                return 1;
             }
+
+            OnNoMatch();
+            ShowCommandHelp(commandLine, decoder);
 
             return 1;
         }
@@ -66,20 +74,12 @@ public interface ICliProcessor
     public sealed int Process() => Process(Environment.CommandLine);
 
     [DebuggerStepThrough]
-    public static ICliProcessor Setup(Action<Options> config) => new CliProcessor(config);
+    public static ICliProcessor Setup(Action<ICliConfigOptions> config) => new CliProcessor(config);
 
-    private string ExtractProgramName(string commandLine, CliTokenDecoder decoder)
-    {
-        var match = Regex.Match(commandLine, @"^\s*(\S+)");
-        Debug.Assert(match.Success);
-        Debug.Assert(match.Groups[1].Success);
-        var programName = match.Groups[1].Value;
-        return decoder(programName);
-    }
 
     internal int Invoke(ICliAction action, string commandLine, CliTokenDecoder decoder)
     {
-        var cache = IInMemoryCache.Create();
+        var cache = IMemoryCache.Create();
         var result = action.Execute(commandLine, decoder, cache);
         return result;
     }
@@ -122,62 +122,12 @@ public interface ICliProcessor
             .ToList();
     }
 
-    internal void ShowHelpFor(string commandLine, CliTokenDecoder decoder);
+    internal void ShowCommandHelp(string commandLine, CliTokenDecoder decoder);
 
     void ShowGeneralHelp(string programName);
 
     private bool IsGeneralHelpRequest(string commandLine) => CliHelpOptionAttribute.IsGeneralHelpRequest(commandLine);
 
-    protected sealed bool IsSpecificHelpRequest(string commandLine) => CliHelpOptionAttribute.IsMatch(commandLine);
+    protected sealed bool IsCommandHelpRequest(string commandLine) => CliHelpOptionAttribute.IsMatch(commandLine);
 
-
-    internal sealed string Encode(string commandLine, out CliTokenDecoder decoder)
-    {
-        commandLine = CliTokenEncoder
-            .Encode(commandLine, out decoder)
-            .Trim();
-        var normalized = NormalizeProgramName(commandLine, decoder)
-            .Trim();
-        return normalized;
-    }
-
-    private string NormalizeProgramName(string commandLine, CliTokenDecoder decoder)
-    {
-        return Regex.Replace(
-            commandLine,
-            @"(?xis-m)^\S+",
-            match =>
-            {
-                var filePath = decoder(match.Value);
-                var fileName = GetFileName(filePath);
-                return fileName;
-            });
-    }
-
-    protected sealed string GetFileName(string filePath) => Path
-        .GetFileName(filePath)
-        .DefaultIfNullOrWhiteSpace(filePath);
-
-    public abstract class Options
-    {
-        public abstract Options UseCommandsFrom(
-            object program, 
-            string baseRoute = "", 
-            BindingFlags binding = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-
-        public abstract Options UseCommandsFrom(
-            Type declaringType,
-            string baseRoute = "",
-            BindingFlags binding = BindingFlags.Static | BindingFlags.Public);
-
-        public abstract Options UseLogo(string logo);
-
-        public abstract Options UseDescription(string description);
-
-        [DebuggerStepThrough]
-        public Options UseCommandsFrom<T>(
-            string baseRoute = "",
-            BindingFlags binding = BindingFlags.Static | BindingFlags.Public) =>
-            UseCommandsFrom(typeof(T), baseRoute, binding);
-    }
 }

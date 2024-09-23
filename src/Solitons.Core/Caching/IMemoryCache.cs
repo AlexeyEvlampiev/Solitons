@@ -6,9 +6,9 @@ using System.Reactive.Linq;
 
 namespace Solitons.Caching;
 
-public interface IInMemoryCache
+public interface IMemoryCache
 {
-    public static IInMemoryCache Create() => new InMemoryCache();
+    public static IMemoryCache Create() => new MemoryCache();
 
     [DebuggerStepThrough]
     public sealed T GetOrAdd<T>(object key, Func<T> factory) where T : class 
@@ -18,15 +18,15 @@ public interface IInMemoryCache
 }
 
 
-public interface IInMemoryCacheProxy : IInMemoryCache
+public interface IMemoryCacheProxy : IMemoryCache
 {
-    private new static IInMemoryCache Create() => new InMemoryCache();
+    private new static IMemoryCache Create() => new MemoryCache();
 
-    protected IInMemoryCache InternalCache { get; }
+    protected IMemoryCache InternalCache { get; }
 
 }
 
-sealed class InMemoryCache : IInMemoryCache
+sealed class MemoryCache : IMemoryCache
 {
     private readonly ConcurrentDictionary<object, object> _cache = new();
 

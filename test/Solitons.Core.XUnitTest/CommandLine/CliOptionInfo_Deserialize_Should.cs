@@ -42,7 +42,7 @@ public sealed class CliOptionInfo_Deserialize_Should
                 return true; // Assuming CanAccept returns true
             });
 
-        var cache = IInMemoryCache.Create();
+        var cache = IMemoryCache.Create();
         foreach (var scenario in scenarios)
         {
             var (comparer, dictionaryType) = (scenario.Comparer, Type: scenario.DictionaryType);
@@ -199,7 +199,7 @@ public sealed class CliOptionInfo_Deserialize_Should
             .Select(p => p.GetValue(null))
             .OfType<StringComparer>();
 
-        var cache = IInMemoryCache.Create();
+        var cache = IMemoryCache.Create();
         foreach (var comparer in comparers)
         {
             var metadata = new Mock<ICliOptionMetadata>();

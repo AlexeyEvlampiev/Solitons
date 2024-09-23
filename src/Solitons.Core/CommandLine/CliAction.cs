@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Solitons.Caching;
+using Solitons.Collections;
 
 namespace Solitons.CommandLine;
 
@@ -81,17 +82,21 @@ internal sealed class CliAction : IComparable<CliAction>, ICliAction
         object? instance,
         MethodInfo method,
         CliMasterOptionBundle[] masterOptionBundles,
-        CliRouteAttribute[] baseRoutes,
-        IInMemoryCache cache)
+        string baseRoute,
+        Attribute[] overwrites,
+        IMemoryCache cache)
     {
         ThrowIf.ArgumentNull(method);
         ThrowIf.ArgumentNull(masterOptionBundles);
-        ThrowIf.ArgumentNull(baseRoutes);
+        ThrowIf.ArgumentNull(baseRoute);
 
         var parameters = method.GetParameters();
         var parameterDeserializers = new CliDeserializer[parameters.Length];
 
-        var methodAttributes = method.GetCustomAttributes().ToList();
+        var methodAttributes = FluentList
+            .Create(overwrites)
+            .AddRange(method.GetCustomAttributes())
+            .ToArray();
         var actionDescription = methodAttributes
             .OfType<DescriptionAttribute>()
             .Select(a => a.Description)
@@ -102,7 +107,8 @@ internal sealed class CliAction : IComparable<CliAction>, ICliAction
         var arguments = new Dictionary<ParameterInfo, CliArgumentInfo>();
         foreach (var attribute in methodAttributes)
         {
-            if (attribute is CliRouteAttribute route)
+            if (attribute is CliRouteAttribute route &&
+                route.RouteExpression.IsPrintable())
             {
                 routeSegments.AddRange(route);
             }
@@ -273,7 +279,7 @@ internal sealed class CliAction : IComparable<CliAction>, ICliAction
 
     public string Help => _help.Value;
 
-    public int Execute(string commandLine, CliTokenDecoder decoder, IInMemoryCache cache)
+    public int Execute(string commandLine, CliTokenDecoder decoder, IMemoryCache cache)
     {
         commandLine = ThrowIf.ArgumentNullOrWhiteSpace(commandLine);
         var match = _regex.Match(commandLine);

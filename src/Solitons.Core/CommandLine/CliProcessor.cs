@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -9,9 +10,7 @@ using Solitons.Caching;
 
 namespace Solitons.CommandLine;
 
-internal sealed class CliProcessor : 
-    ICliProcessor.Options, 
-    ICliProcessor
+internal sealed class CliProcessor : ICliProcessor
 {
     private sealed record Source(
         Type DeclaringType,
@@ -19,17 +18,21 @@ internal sealed class CliProcessor :
         string BaseRoute,
         BindingFlags BindingFlags);
 
+    private sealed record HelpCommandData(string Aliases, string Description);
+
     private readonly List<Source> _sources = new();
     private readonly CliAction[] _actions;
-    private readonly CliRouteAttribute[] _baseRouteMetadata = [];
+    private readonly string _baseRoute;
     private string _logo = string.Empty;
     private string _description = string.Empty;
-    private readonly IInMemoryCache _cache = IInMemoryCache.Create();
+    private string _baseRoot = string.Empty;
+    private HelpCommandData? _helpCommandData = null;
+    private readonly IMemoryCache _cache = IMemoryCache.Create();
 
 
-    public CliProcessor(Action<ICliProcessor.Options> config)
+    public CliProcessor(Action<ICliConfigOptions> config)
     {
-        config.Invoke(this);
+        config.Invoke(new Options(this));
 
         var masterOptionBundles = new CliMasterOptionBundle[]
         {
@@ -63,12 +66,24 @@ internal sealed class CliProcessor :
                 actions.Add(CliAction.Create(
                     source.Instance, 
                     mi, 
-                    masterOptionBundles, 
-                    _baseRouteMetadata,
+                    masterOptionBundles,
+                    _baseRoot,
+                    [],
                     _cache));
             }
         }
 
+        if (_helpCommandData is not null)
+        {
+            var mi = GetType().GetMethod(nameof(CliProcessor.ShowGeneralHelp));
+            mi = ThrowIf.NullReference(mi);
+            var attributes = new Attribute[]
+            {
+                new DescriptionAttribute(_helpCommandData.Description)
+            };
+            var action = CliAction.Create(this, mi, masterOptionBundles, "", attributes, _cache);
+            actions.Add(action);
+        }
         _actions = actions.ToArray();
     }
 
@@ -86,7 +101,7 @@ internal sealed class CliProcessor :
 
     ICliAction[] ICliProcessor.GetActions() => _actions.ToArray();
 
-    public void ShowHelpFor(string commandLine, CliTokenDecoder decoder)
+    public void ShowCommandHelp(string commandLine, CliTokenDecoder decoder)
     {
         var programName = Regex
             .Match(commandLine, @"^\s*\S+")
@@ -129,58 +144,67 @@ internal sealed class CliProcessor :
     }
 
 
-    public bool IsSpecificHelpRequest(string commandLine) => CliHelpOptionAttribute.IsMatch(commandLine);
-
-    public string GetFileName(string filePath) => Path.GetFileName(filePath);
 
 
-    [DebuggerStepThrough]
-    public override ICliProcessor.Options UseCommandsFrom(
-        object program, 
-        string baseRoute = "", 
-        BindingFlags binding = BindingFlags.Default | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+    sealed class Options(CliProcessor processor) : ICliConfigOptions
     {
-        return UseCommands(program, program.GetType(), baseRoute, binding);
-    }
-
-    [DebuggerStepThrough]
-    public override ICliProcessor.Options UseCommandsFrom(
-        Type declaringType, 
-        string baseRoute = "",
-        BindingFlags binding = BindingFlags.Default | BindingFlags.Static | BindingFlags.Public)
-    {
-        return UseCommands(null, declaringType, baseRoute, binding);
-    }
-
-    public override ICliProcessor.Options UseLogo(string logo)
-    {
-        _logo = logo;
-        return this;
-    }
-
-    public override ICliProcessor.Options UseDescription(string description)
-    {
-        _description = description;
-        return this;
-    }
-
-
-    [DebuggerStepThrough]
-    private CliProcessor UseCommands(
-        object? instance,
-        Type declaringType,
-        string baseRoute,
-        BindingFlags binding)
-    {
-        if (binding.HasFlag(BindingFlags.Instance))
+        [DebuggerStepThrough]
+        public ICliConfigOptions UseCommandsFrom(
+            object program,
+            string baseRoute = "",
+            BindingFlags binding = BindingFlags.Default | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
         {
-            instance ??= Activator.CreateInstance(declaringType);
-            if (instance == null)
-            {
-                throw new NotImplementedException();
-            }
+            return UseCommands(program, program.GetType(), baseRoute, binding);
         }
-        _sources.Add(new Source(declaringType, instance, baseRoute, binding));
-        return this;
+
+        [DebuggerStepThrough]
+        public ICliConfigOptions UseCommandsFrom(
+            Type declaringType,
+            string baseRoute = "",
+            BindingFlags binding = BindingFlags.Default | BindingFlags.Static | BindingFlags.Public)
+        {
+            return UseCommands(null, declaringType, baseRoute, binding);
+        }
+
+        public ICliConfigOptions UseLogo(string logo)
+        {
+            processor._logo = logo;
+            return this;
+        }
+
+        public ICliConfigOptions UseDescription(string description)
+        {
+            processor._description = description;
+            return this;
+        }
+
+        public ICliConfigOptions AddHelpCommand(
+            CliRouteAttribute route, 
+            DescriptionAttribute description)
+        {
+            processor._helpCommandData = new HelpCommandData(route.RouteExpression, description.Description);
+            return this;
+        }
+
+
+        [DebuggerStepThrough]
+        private ICliConfigOptions UseCommands(
+            object? instance,
+            Type declaringType,
+            string baseRoute,
+            BindingFlags binding)
+        {
+            if (binding.HasFlag(BindingFlags.Instance))
+            {
+                instance ??= Activator.CreateInstance(declaringType);
+                if (instance == null)
+                {
+                    throw new NotImplementedException();
+                }
+            }
+            processor._sources.Add(new Source(declaringType, instance, baseRoute, binding));
+            return this;
+        }
     }
+
 }

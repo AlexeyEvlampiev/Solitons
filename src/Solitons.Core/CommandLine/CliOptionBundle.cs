@@ -19,17 +19,17 @@ public abstract class CliOptionBundle
     public static bool IsAssignableFrom(Type type) => typeof(CliOptionBundle).IsAssignableFrom(type);
 
     // [DebuggerStepThrough]
-    internal static Dictionary<CliOptionInfo, PropertyInfo> GetOptions(Type type, IInMemoryCache cache)
+    internal static Dictionary<CliOptionInfo, PropertyInfo> GetOptions(Type type, IMemoryCache cache)
     {
         return OptionsByBundleType.GetOrAdd(type, () => LoadOptions(type, cache));
     }
 
-    internal Dictionary<CliOptionInfo, PropertyInfo> GetOptions(IInMemoryCache cache)
+    internal Dictionary<CliOptionInfo, PropertyInfo> GetOptions(IMemoryCache cache)
     {
         return OptionsByBundleType.GetOrAdd(GetType(), () => LoadOptions(GetType(), cache));
     }
 
-    private static Dictionary<CliOptionInfo, PropertyInfo> LoadOptions(Type bundleType, IInMemoryCache cache)
+    private static Dictionary<CliOptionInfo, PropertyInfo> LoadOptions(Type bundleType, IMemoryCache cache)
     {
         if (false == IsAssignableFrom(bundleType))
         {
@@ -91,7 +91,7 @@ public abstract class CliOptionBundle
         return result;
     }
 
-    internal void PopulateOptions(Match commandLineMatch, CliTokenDecoder decoder, IInMemoryCache cache)
+    internal void PopulateOptions(Match commandLineMatch, CliTokenDecoder decoder, IMemoryCache cache)
     {
         var options = GetOptions(cache);
         foreach (var pair in options)
@@ -111,7 +111,7 @@ public abstract class CliOptionBundle
 
     internal static CliDeserializer CreateDeserializerFor(
         Type bundleType, 
-        IInMemoryCache cache,
+        IMemoryCache cache,
         out IEnumerable<CliOptionInfo> options)
     {
         ThrowIf.False(IsAssignableFrom(bundleType));

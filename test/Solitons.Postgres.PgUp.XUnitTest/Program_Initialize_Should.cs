@@ -10,7 +10,7 @@ public class Program_Initialize_Should
     [InlineData("pgup init . --template basic", "basic")]
     public void BeInvokedByCliProcessor(string commandLine, string template)
     {
-        var program = new Mock<IPgUpCli>();
+        var program = new Mock<IPgUpCliContract>();
         var processor = ICliProcessor
             .Setup(config => config
                 .UseCommandsFrom(program.Object));

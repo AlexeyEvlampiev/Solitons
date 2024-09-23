@@ -22,8 +22,15 @@ public sealed class CliAction_Match_Should
     public void HandleScenario001(string commandLine, bool expectedMatchResult)
     {
         Debug.WriteLine(commandLine);
-        var cache = IInMemoryCache.Create();
-        var action = CliAction.Create(null, GetType().GetMethod(nameof(ProgramRun))!, [], [], cache );
+        var cache = IMemoryCache.Create();
+        var action = CliAction.Create(
+            null, 
+            GetType()
+                .GetMethod(nameof(ProgramRun))!, 
+            [], 
+            "",
+            [],
+            cache );
 
         Assert.Equal(expectedMatchResult, action.IsMatch(commandLine));
 
