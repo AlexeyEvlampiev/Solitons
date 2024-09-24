@@ -29,9 +29,10 @@ internal sealed class CliContext : ICliContext
                 var fileName = Path.GetFileName(filePath);
                 return fileName;
             });
-        ProgramName = decoder(programNameMatch.Value);
+        ProgramName = Path.GetFileName(decoder(programNameMatch.Value));
 
         IsEmpty = Regex.IsMatch(EncodedCommandLine, @"^\S*$");
+        IsCommandListRequest = CliHelpOptionAttribute.IsGeneralHelpRequest(commandLine);
     }
 
     public string ProgramName { get; }
@@ -40,6 +41,7 @@ internal sealed class CliContext : ICliContext
 
     public string EncodedCommandLine { get; }
     public bool IsEmpty { get; }
+    public bool IsCommandListRequest { get; }
 
 
     public string GetCommandLine(bool encoded = false)
@@ -58,4 +60,5 @@ internal sealed class CliContext : ICliContext
     }
 
     public override string ToString() => _commandLine;
+
 }

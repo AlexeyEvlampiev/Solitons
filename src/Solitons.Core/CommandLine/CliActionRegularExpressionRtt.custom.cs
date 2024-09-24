@@ -9,13 +9,13 @@ internal partial class CliActionRegularExpressionRtt
     public static readonly string UnrecognizedToken = $"unrecognized_token_{typeof(CliActionRegularExpressionRtt).GUID:N}";
 
     private CliActionRegularExpressionRtt(
-        IReadOnlyList<ICliRouteSegment> routeSegments,
+        IReadOnlyList<ICliRouteSegmentMetadata> routeSegments,
         IReadOnlyList<CliOptionInfo> options)
     {
         CommandSegmentRegularExpressions = routeSegments
             .Select((segment, index) =>
             {
-                var expression = segment.BuildRegularExpression();
+                var expression = segment.BuildRegularExpression(routeSegments);
                 if (segment.IsArgument)
                 {
                     return expression;
@@ -36,7 +36,7 @@ internal partial class CliActionRegularExpressionRtt
 
     [DebuggerStepThrough]
     public static string ToString(
-        IReadOnlyList<ICliRouteSegment> routeSegments,
+        IReadOnlyList<ICliRouteSegmentMetadata> routeSegments,
         IReadOnlyList<CliOptionInfo> options)
     {
         string expression = new CliActionRegularExpressionRtt(

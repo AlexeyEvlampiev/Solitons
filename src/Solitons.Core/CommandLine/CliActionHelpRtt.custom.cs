@@ -16,7 +16,7 @@ internal partial class CliActionHelpRtt
 
     private CliActionHelpRtt(
         string description,
-        IReadOnlyList<ICliRouteSegment> routeSegments,
+        IReadOnlyList<ICliRouteSegmentMetadata> routeSegments,
         IReadOnlyList<CliOptionInfo> options,
         IReadOnlyList<ICliExampleMetadata> examples)
     {
@@ -32,7 +32,7 @@ internal partial class CliActionHelpRtt
             .Select(o =>
             {
                 return o
-                    .Metadata
+                    .SegmentMetadata
                     .Convert(argument => $"<{argument.ArgumentRole.ToUpper()}>{Tab}{o.Description}");
             })
             .ToList();
@@ -90,7 +90,7 @@ internal partial class CliActionHelpRtt
     [DebuggerStepThrough]
     public static string ToString(
         string description,
-        IReadOnlyList<ICliRouteSegment> routeSegments,
+        IReadOnlyList<ICliRouteSegmentMetadata> routeSegments,
         IReadOnlyList<CliOptionInfo> options,
         IReadOnlyList<ICliExampleMetadata> examples)
     {

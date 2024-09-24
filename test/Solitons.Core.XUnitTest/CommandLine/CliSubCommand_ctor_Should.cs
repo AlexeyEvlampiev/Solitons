@@ -9,12 +9,11 @@ namespace Solitons.CommandLine;
 public sealed class CliSubCommand_ctor_Should
 {
     [Theory]
-    [InlineData("init|initialize", "init", "init|initialize")]
-    [InlineData("start|begin|init", "begin", "begin|init|start")] // Test ordering of aliases
-    [InlineData("commit", "commit", "commit")] // Test trimming spaces
+    [InlineData("init|initialize", "init|initialize")]
+    [InlineData("start|begin|init", "begin|init|start")] // Test ordering of aliases
+    [InlineData("commit", "commit")] // Test trimming spaces
     public void HandleAliases(
         string pattern, 
-        string expectedPrimaryName, 
         string expectedSubCommandPattern)
     {
         var actualAliases = Regex
@@ -22,7 +21,6 @@ public sealed class CliSubCommand_ctor_Should
             .ToHashSet(StringComparer.Ordinal);
         
         var target = new CliSubCommandInfo(pattern);
-        Assert.Equal(expectedPrimaryName, target.PrimaryName);
         Assert.Equal(expectedSubCommandPattern, target.SubCommandPattern);
         Assert.True(actualAliases.All(o => target.Aliases.Contains(o)));
         Assert.True(target.Aliases.All(o => actualAliases.Contains(o)));
@@ -36,7 +34,7 @@ public sealed class CliSubCommand_ctor_Should
     {
         var target = new CliSubCommandInfo(pattern);
         Assert.True(target.Aliases.Count == 1);
-        Assert.Empty(target.PrimaryName);
+        Assert.Empty(target.SubCommandPattern);
         Assert.Equal("(?=.|$)", target.SubCommandPattern); // Default regex pattern
     }
 

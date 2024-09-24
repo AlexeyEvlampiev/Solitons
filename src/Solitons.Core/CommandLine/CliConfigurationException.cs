@@ -148,7 +148,7 @@ internal sealed class CliConfigurationException : Exception
         throw new NotImplementedException();
     }
 
-    public static Exception ArgumentTypeNotSupported(MethodInfo methodInfo, ParameterInfo parameter, Type type, CliRouteArgumentAttribute metadata)
+    public static Exception ArgumentTypeNotSupported(MethodInfo methodInfo, ParameterInfo parameter, Type type, CliRouteArgumentSegmentAttribute metadata)
     {
         throw new NotImplementedException();
     }

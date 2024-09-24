@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
 
@@ -21,13 +20,6 @@ public interface ICliConfigOptions
 
     ICliConfigOptions UseDescription(string description);
 
-    ICliConfigOptions AddHelpCommand(CliRouteAttribute route, DescriptionAttribute description);
-
-    [DebuggerStepThrough]
-    public sealed ICliConfigOptions AddHelpCommand(string description)
-    {
-        return AddHelpCommand(new CliRouteAttribute("help|?"), new DescriptionAttribute(description));
-    }
 
     [DebuggerStepThrough]
     public sealed ICliConfigOptions UseCommandsFrom<T>(

@@ -13,6 +13,71 @@ namespace Solitons;
 public static partial class Extensions
 {
     /// <summary>
+    /// Returns the index of the first occurrence of the specified item in the list.
+    /// </summary>
+    /// <typeparam name="T">The type of elements in the list.</typeparam>
+    /// <param name="list">The list to search.</param>
+    /// <param name="item">The item to locate in the list.</param>
+    /// <returns>
+    /// The zero-based index of the first occurrence of <paramref name="item"/> within the list; 
+    /// otherwise, -1 if the item is not found.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="list"/> is <see langword="null"/>.
+    /// </exception>
+    public static int IndexOf<T>(this IReadOnlyList<T> list, T item)
+    {
+        // Check if list is null
+        if (list is null)
+        {
+            throw new ArgumentNullException(nameof(list));
+        }
+
+        // Use EqualityComparer<T>.Default to handle equality
+        return IndexOf(list, item, EqualityComparer<T>.Default);
+    }
+
+    /// <summary>
+    /// Returns the index of the first occurrence of the specified item in the list, using a specified comparer.
+    /// </summary>
+    /// <typeparam name="T">The type of elements in the list.</typeparam>
+    /// <param name="list">The list to search.</param>
+    /// <param name="item">The item to locate in the list.</param>
+    /// <param name="comparer">
+    /// The comparer to use for comparing items; if <see langword="null"/>, <see cref="EqualityComparer{T}.Default"/> is used.
+    /// </param>
+    /// <returns>
+    /// The zero-based index of the first occurrence of <paramref name="item"/> within the list;
+    /// otherwise, -1 if the item is not found.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="list"/> is <see langword="null"/>.
+    /// </exception>
+    public static int IndexOf<T>(this IReadOnlyList<T> list, T item, IEqualityComparer<T> comparer)
+    {
+        // Check if list is null
+        if (list is null)
+        {
+            throw new ArgumentNullException(nameof(list));
+        }
+
+        // Ensure comparer is not null, default to EqualityComparer<T>.Default if it is
+        comparer ??= EqualityComparer<T>.Default;
+
+        for (int i = 0; i < list.Count; i++)
+        {
+            if (comparer.Equals(list[i], item))
+            {
+                return i;
+            }
+        }
+
+        return -1; // Return -1 if item not found
+    }
+
+
+
+    /// <summary>
     /// Returns a random element from the specified list.
     /// </summary>
     /// <typeparam name="T">The type of elements in the list.</typeparam>

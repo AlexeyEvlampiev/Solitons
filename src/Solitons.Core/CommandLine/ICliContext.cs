@@ -6,6 +6,5 @@ public interface ICliContext
 
     string GetProgramName();
 
-
     void DisplayHelp(bool useFullMode = false);
 }

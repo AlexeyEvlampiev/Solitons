@@ -75,7 +75,7 @@ internal sealed class CliProcessor : ICliProcessor
 
         if (_helpCommandData is not null)
         {
-            var mi = GetType().GetMethod(nameof(CliProcessor.ShowGeneralHelp));
+            var mi = GetType().GetMethod(nameof(CliProcessor.ShowCommandList));
             mi = ThrowIf.NullReference(mi);
             var attributes = new Attribute[]
             {
@@ -133,13 +133,10 @@ internal sealed class CliProcessor : ICliProcessor
         Console.WriteLine(text);
     }
 
-    public void ShowGeneralHelp(string programName)
+    public void ShowCommandList(string programName)
     {
-        var help = CliHelpRtt.Build(
-            _logo,
-            programName,
-            _description,
-            _actions);
+        var help = CliGeneralHelpRtt
+            .Build(_logo, programName, _description, _actions);
         Console.WriteLine(help);
     }
 

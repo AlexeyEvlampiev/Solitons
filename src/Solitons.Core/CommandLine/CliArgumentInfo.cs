@@ -8,22 +8,22 @@ using System.Threading;
 
 namespace Solitons.CommandLine;
 
-internal sealed class CliArgumentInfo : ICliRouteSegment
+internal sealed class CliArgumentInfo : ICliRouteSegmentMetadata
 {
     private static long _sequenceNumber = 0;
-    private readonly IReadOnlyList<ICliRouteSegment> _routeSegments;
+    private readonly IReadOnlyList<ICliRouteSegmentMetadata> _routeSegments;
     private readonly TypeConverter _converter;
     private readonly Type _argumentType;
 
     private CliArgumentInfo(
-        CliRouteArgumentAttribute metadata, 
+        CliRouteArgumentSegmentAttribute metadata, 
         string name, 
         string description,
         Type argumentType,
         TypeConverter converter,
-        IReadOnlyList<ICliRouteSegment> routeSegments)
+        IReadOnlyList<ICliRouteSegmentMetadata> routeSegments)
     {
-        Metadata = ThrowIf.ArgumentNull(metadata);
+        SegmentMetadata = ThrowIf.ArgumentNull(metadata);
         Name = ThrowIf.ArgumentNullOrWhiteSpace(name);
         Description = ThrowIf.ArgumentNullOrWhiteSpace(description);
         _routeSegments = ThrowIf.ArgumentNull(routeSegments);
@@ -36,9 +36,9 @@ internal sealed class CliArgumentInfo : ICliRouteSegment
     }
 
     public static CliArgumentInfo Create(
-        CliRouteArgumentAttribute metadata,
+        CliRouteArgumentSegmentAttribute metadata,
         ParameterInfo parameter,
-        IReadOnlyList<ICliRouteSegment> routeSegments)
+        IReadOnlyList<ICliRouteSegmentMetadata> routeSegments)
     {
         var type = Nullable.GetUnderlyingType(parameter.ParameterType) ?? parameter.ParameterType;
         var methodInfo = ThrowIf.NullReference(parameter.Member as MethodInfo);
@@ -72,9 +72,9 @@ internal sealed class CliArgumentInfo : ICliRouteSegment
 
     public string RegexMatchGroupName { get; }
 
-    public ICliRouteArgumentMetadata Metadata { get; }
+    public ICliRouteArgumentSegmentMetadata SegmentMetadata { get; }
 
-    public string ArgumentRole => Metadata.ArgumentRole;
+    public string ArgumentRole => SegmentMetadata.ArgumentRole;
 
     public object? Deserialize(Match commandlineMatch, CliTokenDecoder decoder)
     {
@@ -94,20 +94,20 @@ internal sealed class CliArgumentInfo : ICliRouteSegment
             catch (InvalidOperationException)
             {
                 throw new CliConfigurationException(
-                    $"The conversion for parameter '{Metadata.ParameterName}' using the specified converter failed. " +
+                    $"The conversion for parameter '{SegmentMetadata.ParameterName}' using the specified converter failed. " +
                     $"Ensure the converter and target type '{_argumentType.FullName}' are correct.");
             }
             catch (Exception e) when (e is FormatException or ArgumentException)
             {
                 throw new CliExitException(
-                    $"Failed to convert the input token for parameter '{Metadata.ParameterName}' " +
+                    $"Failed to convert the input token for parameter '{SegmentMetadata.ParameterName}' " +
                     $"to the expected type '{_argumentType.FullName}'. Reason: {e.Message}");
                 return null;
             }
         }
 
         throw new CliExitException(
-            $"{Metadata.ParameterName} parameter received an invalid token which could not be converted to {_argumentType.FullName}."
+            $"{SegmentMetadata.ParameterName} parameter received an invalid token which could not be converted to {_argumentType.FullName}."
         );
     }
 

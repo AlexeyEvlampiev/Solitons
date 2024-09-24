@@ -9,14 +9,14 @@ namespace Solitons.CommandLine;
 /// Attribute to reference a parameter of the target method, describing its purpose and usage in CLI commands.
 /// </summary>
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
-public class CliRouteArgumentAttribute : Attribute, ICliRouteArgumentMetadata
+public class CliRouteArgumentSegmentAttribute : Attribute, ICliRouteArgumentSegmentMetadata
 {
     /// <summary>
     /// Initializes a new instance of the CliArgumentAttribute class.
     /// </summary>
     /// <param name="parameterName">The name of the parameter this attribute is associated with.</param>
     /// <param name="description">A description of what the parameter is used for.</param>
-    public CliRouteArgumentAttribute(
+    public CliRouteArgumentSegmentAttribute(
         string parameterName, 
         string description)
     {
@@ -54,7 +54,7 @@ public class CliRouteArgumentAttribute : Attribute, ICliRouteArgumentMetadata
     /// </summary>
     /// <param name="other">Another CliArgumentAttribute to compare against.</param>
     /// <returns>True if both attributes refer to the same parameter name; otherwise, false.</returns>
-    public bool Conflicts(CliRouteArgumentAttribute other) => ParameterName
+    public bool Conflicts(CliRouteArgumentSegmentAttribute other) => ParameterName
         .Equals(other.ParameterName, StringComparison.Ordinal);
 
 

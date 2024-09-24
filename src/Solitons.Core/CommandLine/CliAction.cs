@@ -14,6 +14,7 @@ namespace Solitons.CommandLine;
 
 internal sealed class CliAction : IComparable<CliAction>, ICliAction
 {
+    private readonly IReadOnlyList<ICliRouteSegmentMetadata> _routeSegments;
     internal const int OptimalMatchRankIncrement = 1;
     internal delegate Task<int> ActionHandler(object?[] args);
 
@@ -42,13 +43,14 @@ internal sealed class CliAction : IComparable<CliAction>, ICliAction
         ActionHandler handler,
         CliDeserializer[] parameterDeserializers,
         CliMasterOptionBundle[] masterOptionBundles,
-        IReadOnlyList<ICliRouteSegment> routeSegments,
+        IReadOnlyList<ICliRouteSegmentMetadata> routeSegments,
         IReadOnlyList<CliOptionInfo> options,
         IReadOnlyList<ICliExampleMetadata> examples,
         string description)
     {
         _parameterDeserializers = ThrowIf.ArgumentNull(parameterDeserializers);
         _masterOptionBundles = ThrowIf.ArgumentNull(masterOptionBundles);
+        _routeSegments = ThrowIf.ArgumentNull(routeSegments);
         _handler = ThrowIf.ArgumentNull(handler);
         Description = ThrowIf.ArgumentNullOrWhiteSpace(description);
 
@@ -103,7 +105,7 @@ internal sealed class CliAction : IComparable<CliAction>, ICliAction
             .FirstOrDefault(method.Name);
        
 
-        var routeSegments = new List<ICliRouteSegment>(10);
+        var routeSegments = new List<ICliRouteSegmentMetadata>(10);
         var arguments = new Dictionary<ParameterInfo, CliArgumentInfo>();
         foreach (var attribute in methodAttributes)
         {
@@ -112,7 +114,7 @@ internal sealed class CliAction : IComparable<CliAction>, ICliAction
             {
                 routeSegments.AddRange(route);
             }
-            else if(attribute is CliRouteArgumentAttribute argument)
+            else if(attribute is CliRouteArgumentSegmentAttribute argument)
             {
                 try
                 {
@@ -342,6 +344,8 @@ internal sealed class CliAction : IComparable<CliAction>, ICliAction
 
 
     }
+
+    public IEnumerable<ICliRouteSegmentMetadata> GetRouteSegments() => _routeSegments;
 
     public double Rank(string commandLine)
     {

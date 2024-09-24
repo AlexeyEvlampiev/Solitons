@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using Solitons.Caching;
 
 namespace Solitons.CommandLine;
@@ -17,11 +15,10 @@ public interface ICliProcessor
             var context = new CliContext(commandLine);
             commandLine = context.EncodedCommandLine;
             var decoder = context.Decoder;
-            string programName = context.ProgramName;
 
-            if (IsGeneralHelpRequest(commandLine))
+            if (context.IsCommandListRequest)
             {
-                ShowGeneralHelp(programName);
+                ShowCommandList(context.ProgramName);
                 return 0;
             }
 
@@ -49,7 +46,7 @@ public interface ICliProcessor
 
             if (context.IsEmpty)
             {
-                ShowGeneralHelp(programName);
+                ShowCommandList(context.ProgramName);
                 return 1;
             }
 
@@ -69,6 +66,9 @@ public interface ICliProcessor
             return 1;
         }
     }
+
+    void ShowCommandList(string programName);
+
 
     [DebuggerStepThrough]
     public sealed int Process() => Process(Environment.CommandLine);
@@ -124,9 +124,6 @@ public interface ICliProcessor
 
     internal void ShowCommandHelp(string commandLine, CliTokenDecoder decoder);
 
-    void ShowGeneralHelp(string programName);
-
-    private bool IsGeneralHelpRequest(string commandLine) => CliHelpOptionAttribute.IsGeneralHelpRequest(commandLine);
 
     protected sealed bool IsCommandHelpRequest(string commandLine) => CliHelpOptionAttribute.IsMatch(commandLine);
 

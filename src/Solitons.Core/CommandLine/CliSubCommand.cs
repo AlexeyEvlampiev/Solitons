@@ -8,7 +8,7 @@ namespace Solitons.CommandLine;
 /// <summary>
 /// Represents a single CLI subcommand, encapsulating its aliases and providing pattern matching functionality.
 /// </summary>
-internal sealed class CliSubCommandInfo : ICliRouteSegment
+internal sealed class CliSubCommandInfo : ICliRouteCommandSegmentMetadata
 {
     private static readonly Regex ValidCommandOptionsRegex;
     private static readonly Regex ValidCommandSegmentRegex = new(@"^(?:\w+(?:-\w+)*)?$");
@@ -55,15 +55,10 @@ internal sealed class CliSubCommandInfo : ICliRouteSegment
 
         SubCommandPattern = Aliases
             .Join("|")
-            .DefaultIfNullOrEmpty("(?=.|$)");
-        PrimaryName = Aliases.FirstOrDefault(string.Empty);
+            .DefaultIfNullOrEmpty("");
     }
 
 
-    /// <summary>
-    /// Gets the primary name of the CLI subcommand, usually the first listed alias.
-    /// </summary>
-    public string PrimaryName { get; }
 
     /// <summary>
     /// Gets the regular expression pattern derived from all aliases, used to match the subcommand in a CLI context.
@@ -75,11 +70,7 @@ internal sealed class CliSubCommandInfo : ICliRouteSegment
     /// </summary>
     public IReadOnlyList<string> Aliases { get; }
 
-    /// <summary>
-    /// Returns a string representation of the primary name of the subcommand.
-    /// </summary>
-    /// <returns>A string that represents the primary name of the subcommand.</returns>
-    public override string ToString() => PrimaryName;
+    public override string ToString() => SubCommandPattern;
 
     public string BuildRegularExpression() => SubCommandPattern;
 }

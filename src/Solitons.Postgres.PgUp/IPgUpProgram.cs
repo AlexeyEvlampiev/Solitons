@@ -5,9 +5,9 @@ using Solitons.CommandLine;
 
 namespace Solitons.Postgres.PgUp;
 
-public interface IPgUpCliContract
+public interface IPgUpProgram
 {
-    internal const string PgUpDescription = "A PostgreSQL migration tool focused on simplicity and safety. PgUp uses plain SQL to handle transaction-safe schema changes without additional complexity.";
+    internal const string PgUpDescription = "PgUp is a simple, safe PostgreSQL migration tool using plain SQL for transaction-safe schema changes";
     const string DeployCommandDescription = "Deploys a PostgreSQL database according to the pgup.json deployment plan, ensuring all configurations and resources are correctly applied.";
     const string InitializeProjectCommand = "init|initialize";
     const string ProjectDirectoryArgumentDescription = "File directory where to initialize the new pgup project.";
@@ -25,7 +25,7 @@ public interface IPgUpCliContract
 
 
     [CliRoute(InitializeProjectCommand)]
-    [PgUpProjectDirectoryArgument(nameof(projectDir))]
+    [PgUpProjectDirectoryArgumentSegment(nameof(projectDir))]
     [Description(InitializeProjectCommandDescription)]
     void Initialize(
         string projectDir,
@@ -33,7 +33,7 @@ public interface IPgUpCliContract
 
 
     [CliRoute("deploy")]
-    [CliRouteArgument(nameof(projectFile), "PgUp configuration file.")]
+    [CliRouteArgumentSegment(nameof(projectFile), "PgUp configuration file.")]
     [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD%", description: "Deploys using the specified admin credentials.")]
     [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD% --timeout 00:30:00", description: "Deploys with a custom timeout of 30 minutes.")]
     [CliCommandExample("deploy pgup.json --host localhost --port 5432 --maintenance-database postgres --username %ADMIN_USR% --password %ADMIN_PWD% --timeout 00:30:00", description: "Specifies port, management database, and timeout.")]
@@ -47,7 +47,7 @@ public interface IPgUpCliContract
 
 
     [CliRoute("deploy")]
-    [CliRouteArgument(nameof(projectFile), "PgUp configuration file.")]
+    [CliRouteArgumentSegment(nameof(projectFile), "PgUp configuration file.")]
     [Description(DeployCommandDescription)]
     [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD%", description: "Deploys the database using the specified admin credentials.")]
     [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD% --timeout 00:30:00", description: "Deploys with a custom timeout of 30 minutes.")]
@@ -66,7 +66,7 @@ public interface IPgUpCliContract
 
 
     [CliRoute("deploy")]
-    [CliRouteArgument(nameof(projectFile), "PgUp project file.")]
+    [CliRouteArgumentSegment(nameof(projectFile), "PgUp project file.")]
     [Description(DeployCommandDescription)]
     [CliCommandExample("deploy pgup.json --connection \"Host=localhost;Username=postgres;Password=secret\"", description: "Deploys the database using the specified connection string.")]
     [CliCommandExample("deploy pgup.json --connection \"Host=localhost;Username=postgres;Password=secret\" --timeout 00:20:00", description: "Deploys with a custom timeout of 20 minutes using the provided connection string.")]
@@ -80,7 +80,7 @@ public interface IPgUpCliContract
 
 
     [CliRoute("deploy")]
-    [CliRouteArgument(nameof(projectFile), "PgUp project file.")]
+    [CliRouteArgumentSegment(nameof(projectFile), "PgUp project file.")]
     [Description(DeployCommandDescription)]
     [CliCommandExample("deploy pgup.json --connection \"Host=localhost;Username=postgres;Password=secret\" --overwrite", description: "Deploys by overwriting the existing database, resulting in the loss of all current data.")]
     [CliCommandExample("deploy pgup.json --connection \"Host=localhost;Username=postgres;Password=secret\" --overwrite --force", description: "Deploys by forcefully overwriting the existing database without confirmation, leading to complete data loss.")]
@@ -103,9 +103,9 @@ sealed class PgUpParametersOptionAttribute()
 
 
 
-sealed class PgUpProjectDirectoryArgumentAttribute : CliRouteArgumentAttribute
+sealed class PgUpProjectDirectoryArgumentSegmentAttribute : CliRouteArgumentSegmentAttribute
 {
-    public PgUpProjectDirectoryArgumentAttribute(string parameterName)
+    public PgUpProjectDirectoryArgumentSegmentAttribute(string parameterName)
         : base(parameterName, "PgUp project directory.")
     {
         ArgumentRole = "PROJECTDIR";

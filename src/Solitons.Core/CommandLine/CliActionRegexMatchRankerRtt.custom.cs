@@ -8,13 +8,13 @@ namespace Solitons.CommandLine;
 internal partial class CliActionRegexMatchRankerRtt
 {
     private CliActionRegexMatchRankerRtt(
-        IReadOnlyList<ICliRouteSegment> routeSegments,
+        IReadOnlyList<ICliRouteSegmentMetadata> routeSegments,
         IReadOnlyList<CliOptionInfo> options)
     {
         CommandSegmentRegularExpressions = routeSegments
             .Select((segment, index) => segment.IsArgument 
-                ? segment.BuildRegularExpression() 
-                : $"(?<{GenGroupName(index)}>{segment.BuildRegularExpression()})")
+                ? segment.BuildRegularExpression(routeSegments) 
+                : $"(?<{GenGroupName(index)}>{segment.BuildRegularExpression(routeSegments)})")
             .ToArray();
 
         OptionRegularExpressions = options
@@ -30,7 +30,7 @@ internal partial class CliActionRegexMatchRankerRtt
 
     [DebuggerStepThrough]
     public static string ToString(
-        IReadOnlyList<ICliRouteSegment> routeSegments,
+        IReadOnlyList<ICliRouteSegmentMetadata> routeSegments,
         IReadOnlyList<CliOptionInfo> options)
     {
         string expression = new CliActionRegexMatchRankerRtt(routeSegments, options);

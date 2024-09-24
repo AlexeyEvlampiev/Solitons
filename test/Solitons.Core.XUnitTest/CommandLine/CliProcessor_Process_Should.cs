@@ -17,7 +17,7 @@ public class CliProcessor_Process_Should
         var processor = new Mock<ICliProcessor>();
         int exitCode = processor.Object.Process(commandLine);
         processor.Verify(m => m
-            .ShowGeneralHelp("test-cli"), Times.Once());
+            .ShowCommandList("test-cli"), Times.Once());
         processor.Verify(m => m
             .ShowCommandHelp(It.IsAny<string>(), It.IsAny<CliTokenDecoder>()), Times.Never());
         Assert.Equal(expectedExitCode, exitCode);
@@ -34,7 +34,7 @@ public class CliProcessor_Process_Should
         processor.Verify(m => m
             .ShowCommandHelp(commandLine, It.IsAny<CliTokenDecoder>()), Times.Once());
         processor.Verify(m => m
-            .ShowGeneralHelp(It.IsAny<string>()), Times.Never());
+            .ShowCommandList(It.IsAny<string>()), Times.Never());
         Assert.Equal(expectedExitCode, exitCode);
     }
 
@@ -69,8 +69,8 @@ public class CliProcessor_Process_Should
     }
 
     [CliRoute("sum")]
-    [CliRouteArgument(nameof(a), "param a")]
-    [CliRouteArgument(nameof(b), "param b")]
+    [CliRouteArgumentSegment(nameof(a), "param a")]
+    [CliRouteArgumentSegment(nameof(b), "param b")]
     public int SumActionUsingArguments(int a, int b) => a + b;
 
     [CliRoute("sum")]

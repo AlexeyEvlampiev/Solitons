@@ -6,7 +6,7 @@ namespace Solitons.Postgres.PgUp;
 // ReSharper disable once InconsistentNaming
 public class Program_Examples_Should : CliCommandExamplesValidationTest
 {
-    private readonly Mock<IPgUpCliContract> _programMock = new();
+    private readonly Mock<IPgUpProgram> _programMock = new();
 
     [Fact]
     public void BeValid() => Validate();
