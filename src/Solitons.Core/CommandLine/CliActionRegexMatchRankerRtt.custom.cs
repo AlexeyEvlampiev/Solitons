@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -8,18 +9,19 @@ namespace Solitons.CommandLine;
 internal partial class CliActionRegexMatchRankerRtt
 {
     private CliActionRegexMatchRankerRtt(
-        IReadOnlyList<ICliRouteSegmentMetadata> routeSegments,
+        ICliActionSchema schema,
         IReadOnlyList<CliOptionInfo> options)
     {
-        CommandSegmentRegularExpressions = routeSegments
-            .Select((segment, index) => segment.IsArgument 
-                ? segment.BuildRegularExpression(routeSegments) 
-                : $"(?<{GenGroupName(index)}>{segment.BuildRegularExpression(routeSegments)})")
-            .ToArray();
+        throw new NotImplementedException();
+        //CommandSegmentRegularExpressions = routeSegments
+        //    .Select((segment, index) => segment.IsArgument 
+        //        ? segment.BuildRegularExpression(routeSegments) 
+        //        : $"(?<{GenGroupName(index)}>{segment.BuildRegularExpression(routeSegments)})")
+        //    .ToArray();
 
-        OptionRegularExpressions = options
-            .Select(option => option.RegularExpression)
-            .ToArray();
+        //OptionRegularExpressions = options
+        //    .Select(option => option.RegularExpression)
+        //    .ToArray();
     }
 
     private string GenGroupName(int index) => $"segment_{GetType().GUID:N}_{index}";
@@ -30,15 +32,15 @@ internal partial class CliActionRegexMatchRankerRtt
 
     [DebuggerStepThrough]
     public static string ToString(
-        IReadOnlyList<ICliRouteSegmentMetadata> routeSegments,
-        IReadOnlyList<CliOptionInfo> options)
+        ICliActionSchema schema)
     {
-        string expression = new CliActionRegexMatchRankerRtt(routeSegments, options);
-#if DEBUG
-        expression = Regex.Replace(expression, @"(?<=\S)[^\S\r\n]{2,}", " ");
-        expression = Regex.Replace(expression, @"(?<=\n)\s*\n", "");
-#endif
-        Debug.WriteLine(expression);
-        return expression;
+        throw new NotImplementedException();
+//        string expression = new CliActionRegexMatchRankerRtt(routeSegments, options);
+//#if DEBUG
+//        expression = Regex.Replace(expression, @"(?<=\S)[^\S\r\n]{2,}", " ");
+//        expression = Regex.Replace(expression, @"(?<=\n)\s*\n", "");
+//#endif
+//        Debug.WriteLine(expression);
+//        return expression;
     }
 }

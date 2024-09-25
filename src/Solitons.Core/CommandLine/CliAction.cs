@@ -14,7 +14,7 @@ namespace Solitons.CommandLine;
 
 internal sealed class CliAction : IComparable<CliAction>, ICliAction
 {
-    private readonly IReadOnlyList<ICliRouteSegmentMetadata> _routeSegments;
+    private readonly ICliActionSchema _actionSchema;
     internal const int OptimalMatchRankIncrement = 1;
     internal delegate Task<int> ActionHandler(object?[] args);
 
@@ -24,7 +24,7 @@ internal sealed class CliAction : IComparable<CliAction>, ICliAction
     private readonly Regex _rankerRegex;
 
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-    private readonly CliDeserializer[] _parameterDeserializers;
+    private readonly CliOperandMaterializer[] _parameterDeserializers;
     private readonly CliMasterOptionBundle[] _masterOptionBundles;
 
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -41,21 +41,21 @@ internal sealed class CliAction : IComparable<CliAction>, ICliAction
 
     internal CliAction(
         ActionHandler handler,
-        CliDeserializer[] parameterDeserializers,
+        ICliActionSchema schema,
+        CliOperandMaterializer[] parameterMaterializers,
         CliMasterOptionBundle[] masterOptionBundles,
-        IReadOnlyList<ICliRouteSegmentMetadata> routeSegments,
         IReadOnlyList<CliOptionInfo> options,
         IReadOnlyList<ICliExampleMetadata> examples,
         string description)
     {
-        _parameterDeserializers = ThrowIf.ArgumentNull(parameterDeserializers);
+        _actionSchema = ThrowIf.ArgumentNull(schema);
+        _parameterDeserializers = ThrowIf.ArgumentNull(parameterMaterializers);
         _masterOptionBundles = ThrowIf.ArgumentNull(masterOptionBundles);
-        _routeSegments = ThrowIf.ArgumentNull(routeSegments);
         _handler = ThrowIf.ArgumentNull(handler);
         Description = ThrowIf.ArgumentNullOrWhiteSpace(description);
 
-        RegularExpression = CliActionRegularExpressionRtt.ToString(routeSegments, options);
-        RankerRegularExpression = CliActionRegexMatchRankerRtt.ToString(routeSegments, options);
+        RegularExpression = CliActionRegularExpressionRtt.ToString(schema);
+        RankerRegularExpression = CliActionRegexMatchRankerRtt.ToString(schema);
 
         _unrecognizedTokenRegexGroupName = CliActionRegularExpressionRtt.UnrecognizedToken;
         _optimalMatchRegexGroupName = CliActionRegexMatchRankerRtt.OptimalMatchGroupName;
@@ -73,11 +73,7 @@ internal sealed class CliAction : IComparable<CliAction>, ICliAction
             RegexOptions.IgnoreCase);
 
         _help = new Lazy<string>(() => CliActionHelpRtt
-            .ToString(
-                description,
-                routeSegments,
-                options,
-                examples));
+            .ToString(schema));
     }
 
     internal static CliAction Create(
@@ -92,8 +88,10 @@ internal sealed class CliAction : IComparable<CliAction>, ICliAction
         ThrowIf.ArgumentNull(masterOptionBundles);
         ThrowIf.ArgumentNull(baseRoute);
 
+        var schema = new CliActionSchema();
+
         var parameters = method.GetParameters();
-        var parameterDeserializers = new CliDeserializer[parameters.Length];
+        var parameterDeserializers = new CliOperandMaterializer[parameters.Length];
 
         var methodAttributes = FluentList
             .Create(overwrites)
@@ -105,14 +103,13 @@ internal sealed class CliAction : IComparable<CliAction>, ICliAction
             .FirstOrDefault(method.Name);
        
 
-        var routeSegments = new List<ICliRouteSegmentMetadata>(10);
         var arguments = new Dictionary<ParameterInfo, CliArgumentInfo>();
         foreach (var attribute in methodAttributes)
         {
             if (attribute is CliRouteAttribute route &&
-                route.RouteExpression.IsPrintable())
+                route.PsvExpression.IsPrintable())
             {
-                routeSegments.AddRange(route);
+                schema.AddRoutePsvExpression(route.PsvExpression);
             }
             else if(attribute is CliRouteArgumentSegmentAttribute argument)
             {
@@ -138,13 +135,12 @@ internal sealed class CliAction : IComparable<CliAction>, ICliAction
                         );
                     }
 
-                    var argumentInfo = CliArgumentInfo.Create(argument, parameter, routeSegments);
-                    routeSegments.Add(argumentInfo);
+                    var argumentInfo = CliArgumentInfo.Create(schema,);
                     arguments.Add(parameter, argumentInfo);
 
                     var parameterIndex = Array.IndexOf(parameters, parameter);
                     ThrowIf.False(parameterIndex >= 0);
-                    parameterDeserializers[parameterIndex] = argumentInfo.Deserialize;
+                    parameterDeserializers[parameterIndex] = argumentInfo.Materialize;
                 }
                 catch (InvalidOperationException e)
                 {
@@ -239,9 +235,9 @@ internal sealed class CliAction : IComparable<CliAction>, ICliAction
         var examples = methodAttributes.OfType<ICliExampleMetadata>().ToList();
         return new CliAction(
             InvokeAsync,
+            schema,
             parameterDeserializers.ToArray(),
             masterOptionBundles,
-            routeSegments,
             options,
             examples,
             actionDescription);
@@ -345,7 +341,6 @@ internal sealed class CliAction : IComparable<CliAction>, ICliAction
 
     }
 
-    public IEnumerable<ICliRouteSegmentMetadata> GetRouteSegments() => _routeSegments;
 
     public double Rank(string commandLine)
     {

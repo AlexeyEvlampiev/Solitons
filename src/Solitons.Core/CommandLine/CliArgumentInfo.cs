@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
@@ -8,25 +7,22 @@ using System.Threading;
 
 namespace Solitons.CommandLine;
 
-internal sealed class CliArgumentInfo : ICliRouteSegmentMetadata
+internal sealed class CliArgumentInfo
 {
-    private static long _sequenceNumber = 0;
-    private readonly IReadOnlyList<ICliRouteSegmentMetadata> _routeSegments;
     private readonly TypeConverter _converter;
     private readonly Type _argumentType;
+    private readonly long _sequenceNumber;
 
     private CliArgumentInfo(
         CliRouteArgumentSegmentAttribute metadata, 
         string name, 
         string description,
         Type argumentType,
-        TypeConverter converter,
-        IReadOnlyList<ICliRouteSegmentMetadata> routeSegments)
+        TypeConverter converter)
     {
         SegmentMetadata = ThrowIf.ArgumentNull(metadata);
         Name = ThrowIf.ArgumentNullOrWhiteSpace(name);
         Description = ThrowIf.ArgumentNullOrWhiteSpace(description);
-        _routeSegments = ThrowIf.ArgumentNull(routeSegments);
         _argumentType = Nullable.GetUnderlyingType(argumentType) ?? argumentType;
 
         _converter = converter;
@@ -36,9 +32,9 @@ internal sealed class CliArgumentInfo : ICliRouteSegmentMetadata
     }
 
     public static CliArgumentInfo Create(
-        CliRouteArgumentSegmentAttribute metadata,
-        ParameterInfo parameter,
-        IReadOnlyList<ICliRouteSegmentMetadata> routeSegments)
+        ICliActionSchema schema,
+        int sequenceNumber,
+        ParameterInfo parameter)
     {
         var type = Nullable.GetUnderlyingType(parameter.ParameterType) ?? parameter.ParameterType;
         var methodInfo = ThrowIf.NullReference(parameter.Member as MethodInfo);
@@ -62,8 +58,7 @@ internal sealed class CliArgumentInfo : ICliRouteSegmentMetadata
             name, 
             description, 
             type, 
-            converter, 
-            routeSegments);
+            converter);
     }
 
     public string Name { get; }
@@ -72,11 +67,10 @@ internal sealed class CliArgumentInfo : ICliRouteSegmentMetadata
 
     public string RegexMatchGroupName { get; }
 
-    public ICliRouteArgumentSegmentMetadata SegmentMetadata { get; }
 
     public string ArgumentRole => SegmentMetadata.ArgumentRole;
 
-    public object? Deserialize(Match commandlineMatch, CliTokenDecoder decoder)
+    public object? Materialize(Match commandlineMatch, CliTokenDecoder decoder)
     {
         if (false == commandlineMatch.Success)
         {
@@ -109,48 +103,6 @@ internal sealed class CliArgumentInfo : ICliRouteSegmentMetadata
         throw new CliExitException(
             $"{SegmentMetadata.ParameterName} parameter received an invalid token which could not be converted to {_argumentType.FullName}."
         );
-    }
-
-    public string BuildRegularExpression()
-    {
-        var index = _routeSegments
-            .Select((seg, i) => ReferenceEquals(this, seg) ? i : -1)
-            .Where(i => i >= 0)
-            .FirstOrDefault(-1);
-        ThrowIf.False(index >= 0, "Oops...");
-
-        var subCommandExpression = _routeSegments
-            .OfType<CliSubCommandInfo>()
-            .Select(sc => sc.BuildRegularExpression())
-            .Select(exp => $"(?:{exp})")
-            .Join("|")
-            .Convert(exp => $"(?:{exp})");
-
-
-        return _routeSegments
-            .Take(index)
-            .Select(cs =>
-            {
-                if (cs is CliSubCommandInfo subCommand)
-                {
-                    return subCommand.BuildRegularExpression();
-                }
-                if (cs is CliArgumentInfo argument)
-                {
-                    return @$"(?!{subCommandExpression})(?!-)\S+";
-                }
-
-                throw new InvalidOperationException();
-            })
-            .Select(p => $"(?:{p})")
-            .Join("\\s+")
-            .Convert(p => p.IsPrintable() ? @$"(?<={p}\s+)" : string.Empty)
-            .Convert(lookBehindExpression
-                =>
-            {
-                var lookAheadExpression = $"(?!{subCommandExpression})(?!-)";
-                return @$"{lookBehindExpression}{lookAheadExpression}(?<{RegexMatchGroupName}>\S+)";
-            });
     }
 
     public override string ToString() => $"<{ArgumentRole.ToUpper()}>";

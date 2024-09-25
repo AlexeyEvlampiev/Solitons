@@ -2,4 +2,4 @@
 
 namespace Solitons.CommandLine;
 
-delegate object? CliDeserializer(Match commandLineMatch, CliTokenDecoder decoder);
+delegate object? CliOperandMaterializer(Match commandLineMatch, CliTokenDecoder decoder);

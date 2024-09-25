@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
@@ -9,18 +10,19 @@ internal partial class CliActionRegularExpressionRtt
     public static readonly string UnrecognizedToken = $"unrecognized_token_{typeof(CliActionRegularExpressionRtt).GUID:N}";
 
     private CliActionRegularExpressionRtt(
-        IReadOnlyList<ICliRouteSegmentMetadata> routeSegments,
+        ICliActionSchema patternBuilder,
         IReadOnlyList<CliOptionInfo> options)
     {
-        CommandSegmentRegularExpressions = routeSegments
-            .Select((segment, index) =>
+        CommandSegmentRegularExpressions = Enumerable
+            .Range(0, patternBuilder.SegmentsCount)
+            .Select(segmentIndex =>
             {
-                var expression = segment.BuildRegularExpression(routeSegments);
-                if (segment.IsArgument)
+                var expression = patternBuilder.GetSegmentRegularExpression(segmentIndex);
+                if (patternBuilder.IsArgument(segmentIndex))
                 {
                     return expression;
                 }
-                return $"(?<{GenGroupName(index)}>{expression})";
+                return $"(?<{GenGroupName(segmentIndex)}>{expression})";
             })
             .ToArray();
 
@@ -36,13 +38,13 @@ internal partial class CliActionRegularExpressionRtt
 
     [DebuggerStepThrough]
     public static string ToString(
-        IReadOnlyList<ICliRouteSegmentMetadata> routeSegments,
-        IReadOnlyList<CliOptionInfo> options)
+        ICliActionSchema patternBuilder)
     {
-        string expression = new CliActionRegularExpressionRtt(
-            routeSegments, 
-            options);
-        Debug.WriteLine(expression);
-        return expression;
+        throw new NotImplementedException();
+        //string expression = new CliActionRegularExpressionRtt(
+        //    patternBuilder, 
+        //    options);
+        //Debug.WriteLine(expression);
+        //return expression;
     }
 }

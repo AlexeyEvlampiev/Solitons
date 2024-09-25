@@ -179,7 +179,7 @@ internal sealed class CliProcessor : ICliProcessor
             CliRouteAttribute route, 
             DescriptionAttribute description)
         {
-            processor._helpCommandData = new HelpCommandData(route.RouteExpression, description.Description);
+            processor._helpCommandData = new HelpCommandData(route.PsvExpression, description.Description);
             return this;
         }
 

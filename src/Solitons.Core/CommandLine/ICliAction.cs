@@ -9,5 +9,4 @@ internal interface ICliAction
     double Rank(string commandLine);
     int Execute(string commandLine, CliTokenDecoder decoder, IMemoryCache cache);
 
-    IEnumerable<ICliRouteSegmentMetadata> GetRouteSegments();
 }

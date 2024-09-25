@@ -109,7 +109,7 @@ public abstract class CliOptionBundle
 
 
 
-    internal static CliDeserializer CreateDeserializerFor(
+    internal static CliOperandMaterializer CreateDeserializerFor(
         Type bundleType, 
         IMemoryCache cache,
         out IEnumerable<CliOptionInfo> options)

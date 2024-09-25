@@ -8,97 +8,57 @@ namespace Solitons.CommandLine;
 
 internal partial class CliActionHelpRtt
 {
-    private readonly IReadOnlyList<ICliExampleMetadata> _examples;
-    private readonly CliAction _action;
+    private readonly ICliActionSchema _schema;
     private const string Tab = "   ";
 
     sealed record Example(int Index, string Description, string Command);
 
     private CliActionHelpRtt(
-        string description,
-        IReadOnlyList<ICliRouteSegmentMetadata> routeSegments,
-        IReadOnlyList<CliOptionInfo> options,
-        IReadOnlyList<ICliExampleMetadata> examples)
+        ICliActionSchema schema)
     {
-        _examples = examples;
-        Description = description;
+        _schema = schema;
+
+        throw new NotImplementedException();
+        //Segments = routeSegments;
+        //UsageOptions = CommandOptions(routeSegments.OfType<CliSubCommandInfo>()).ToList();
+
+        //Arguments = routeSegments
+        //    .OfType<CliArgumentInfo>()
+        //    .Select(o =>
+        //    {
+        //        return o
+        //            .SegmentMetadata
+        //            .Convert(argument => $"<{argument.ArgumentRole.ToUpper()}>{Tab}{o.Description}");
+        //    })
+        //    .ToList();
 
 
-        Segments = routeSegments;
-        UsageOptions = CommandOptions(routeSegments.OfType<CliSubCommandInfo>()).ToList();
-
-        Arguments = routeSegments
-            .OfType<CliArgumentInfo>()
-            .Select(o =>
-            {
-                return o
-                    .SegmentMetadata
-                    .Convert(argument => $"<{argument.ArgumentRole.ToUpper()}>{Tab}{o.Description}");
-            })
-            .ToList();
-
-
-        Options = options
-            .Select(o => $"{o.AliasCsvExpression}{Tab}{o.Description}")
-            .ToList();
+        //Options = options
+        //    .Select(o => $"{o.AliasCsvExpression}{Tab}{o.Description}")
+        //    .ToList();
     }
 
     public IReadOnlyList<string> UsageOptions { get; }
 
     public IReadOnlyList<string> Options { get; }
 
-    IEnumerable<string> CommandOptions(IEnumerable<object> segments)
-    {
-        var list = segments.ToList();
-        var segment = list.FirstOrDefault();
-        if (segment == null)
-        {
-            yield return "[options]";
-            yield break;
-        }
 
-        var rhsOptions = CommandOptions(list.Skip(1)).ToList();
-        if (segment is CliSubCommandInfo command)
-        {
-            foreach (var option in command.Aliases)
-            {
-                foreach (var rhs in rhsOptions)
-                {
-                    yield return $"{option} {rhs}";
-                }
-            }
-        }
-
-        if (segment is CliArgumentInfo argument)
-        {
-            foreach (var rhs in rhsOptions)
-            {
-                yield return $"<{argument.ArgumentRole.ToUpper()}> {rhs}";
-            }
-        }
-    }
 
     public IEnumerable<object> Segments { get; }
 
     public IEnumerable<string> Arguments { get; }
-    public string Description { get; }
+    public string Description => _schema.Description;
 
-    private IEnumerable<Example> Examples => _examples
-        .Select((item, index) => new Example(index + 1, item.Description, item.Example));
+    private IEnumerable<Example> Examples => _schema
+        .Examples
+        .Select((item, index) => new Example(index + 1, item.Description, item.Command));
 
 
     [DebuggerStepThrough]
     public static string ToString(
-        string description,
-        IReadOnlyList<ICliRouteSegmentMetadata> routeSegments,
-        IReadOnlyList<CliOptionInfo> options,
-        IReadOnlyList<ICliExampleMetadata> examples)
+        ICliActionSchema schema)
     {
-        string help = new CliActionHelpRtt(
-            description,
-            routeSegments, 
-            options,
-            examples);
+        string help = new CliActionHelpRtt(schema);
         Debug.WriteLine(help);
         return help;
     }
