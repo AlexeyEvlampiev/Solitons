@@ -102,14 +102,7 @@ internal sealed class CliActionSchema : ICliActionSchema
         private string BuildRegularExpression()
         {
             Debug.Assert(Index == _segments.IndexOf(this));
-            var argValuePattern = @"[^\s\-]\S*";
-            var lookAhead = _segments
-                .OfType<Command>()
-                .Select(c => RegularExpression)
-                .Concat([argValuePattern])
-                .Select(RegexUtils.EnsureNonCapturingGroup)
-                .Join("|")
-                .Convert(p => $"(?!{p})");
+            
             var lookBehind = _segments
                 .Take(Index)
                 .Select(s =>
@@ -119,17 +112,31 @@ internal sealed class CliActionSchema : ICliActionSchema
                         return cmd.RegularExpression;
                     }
 
-                    return argValuePattern;
+                    return @"[^\s\-]\S*";
                 })
                 .Select(RegexUtils.EnsureNonCapturingGroup)
-                .Join(@"\s+");
+                .Join(@"\s+")
+                .Convert(RegexUtils.EnsureNonCapturingGroup)
+                .Convert(p => @$"(?<={p}\s+)");
 
-            return @$"{lookAhead}{lookBehind}{argValuePattern}";
+            var lookAhead = _segments
+                .OfType<Command>()
+                .Select(c => c.RegularExpression)
+                .Concat([@"[\-]"])
+                .Select(RegexUtils.EnsureNonCapturingGroup)
+                .Join("|")
+                .Convert(p => $"(?!{p})");
+
+
+            return @$"{lookBehind}{lookAhead}\S+";
         }
     }
 
-    [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
-    private readonly List<ISegment> _segments = new(10);
+    [DebuggerBrowsable(DebuggerBrowsableState.Collapsed)]
+    private readonly List<ISegment> _commandSegments = new(10);
+
+    [DebuggerBrowsable(DebuggerBrowsableState.Collapsed)]
+    private readonly List<object> _options = new(10);
 
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private readonly HashSet<string> _reservedCommandAliases = new(StringComparer.OrdinalIgnoreCase);
@@ -140,25 +147,31 @@ internal sealed class CliActionSchema : ICliActionSchema
     public CliActionSchema() {}
 
 
-    public int SegmentsCount => _segments.Count;
-    public int ArgumentsCount { get; }
+    public int CommandSegmentsCount => _commandSegments.Count;
+    public int OptionsCount => _options.Count;
+
     public int ExamplesCount { get; }
-    public string Description { get; }
+    public required string Description { get; init; }
 
     public string GetSegmentRegularExpression(int segmentIndex)
     {
-        if (segmentIndex < 0 || segmentIndex >= _segments.Count)
+        if (segmentIndex < 0 || segmentIndex >= _commandSegments.Count)
         {
             throw new ArgumentOutOfRangeException(nameof(segmentIndex));
         }
 
-        var segment = _segments[segmentIndex];
+        var segment = _commandSegments[segmentIndex];
         return segment.RegularExpression;
+    }
+
+    public string GetOptionRegularExpression(int optionIndex)
+    {
+        throw new NotImplementedException();
     }
 
     public string GetSegmentRegularExpression()
     {
-        return _segments
+        return _commandSegments
             .Select(s => s.RegularExpression)
             .Select(RegexUtils.EnsureNonCapturingGroup)
             .Join(@"\s+")
@@ -168,7 +181,7 @@ internal sealed class CliActionSchema : ICliActionSchema
 
     public string GetSynopsis()
     {
-        return _segments
+        return _commandSegments
             .Select(s =>
             {
                 if (s is Command cmd)
@@ -178,7 +191,7 @@ internal sealed class CliActionSchema : ICliActionSchema
 
                 if (s is Argument arg)
                 {
-                    return $"<{arg.Name}>";
+                    return $"<{arg.Name.ToUpper()}>";
                 }
 
                 throw new InvalidOperationException();
@@ -187,10 +200,11 @@ internal sealed class CliActionSchema : ICliActionSchema
             .Trim();
     }
 
-    public bool IsArgument(int segmentIndex) => _segments[segmentIndex] is Argument;
+    public bool IsArgumentSegment(int segmentIndex) => _commandSegments[segmentIndex] is Argument;
     public IEnumerable<ICliActionSchema.Argument> Arguments { get; }
     public IEnumerable<ICliActionSchema.Option> Options { get; }
     public IEnumerable<ICliActionSchema.Example> Examples { get; }
+    
 
     public ICliActionSchema.Argument GetArgument(int argumentIndex)
     {
@@ -223,12 +237,12 @@ internal sealed class CliActionSchema : ICliActionSchema
             throw new CliConfigurationException("Oops");
         }
 
-        var argument = new Argument(name, _segments)
+        var argument = new Argument(name, _commandSegments)
         {
             Description = description
         };
 
-        _segments.Add(argument);
+        _commandSegments.Add(argument);
     }
 
     private void Add(Command cmd)
@@ -241,6 +255,8 @@ internal sealed class CliActionSchema : ICliActionSchema
             }
         }
 
-        _segments.Add(cmd);
+        _commandSegments.Add(cmd);
     }
+
+    public override string ToString() => GetSynopsis();
 }

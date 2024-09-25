@@ -29,16 +29,15 @@ namespace Solitons.CommandLine
             this.Write(this.ToStringHelper.ToStringWithCulture(Description));
             this.Write("\r\n\r\nUsage:\r\n  ");
             this.Write(this.ToStringHelper.ToStringWithCulture(ProgramName));
-            this.Write(@" [command] [options]
-
-Available Commands:
-  init, initialize       Initializes a new PgUp project structure in the specified directory.
-                         Use this command to set up the necessary files and folders for PostgreSQL deployment.
-
-  deploy                 Deploys a PostgreSQL database according to the pgup.json deployment plan.
-                         Ensures all configurations and resources are correctly applied.
-
-  template list, ls      Displays all available project templates.");
+            this.Write(" [command] [options]\r\n\r\nAvailable Commands:  ");
+ foreach(var cmd in Commands){ 
+            this.Write(" \r\n    ");
+            this.Write(this.ToStringHelper.ToStringWithCulture(cmd.Synopsis.PadRight(SynopsisWidth)));
+            this.Write(" ");
+            this.Write(this.ToStringHelper.ToStringWithCulture(cmd.Description));
+            this.Write("\r\n  ");
+ } 
+            this.Write(" \r\n");
             return this.GenerationEnvironment.ToString();
         }
     }

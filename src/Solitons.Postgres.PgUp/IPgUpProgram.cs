@@ -7,11 +7,11 @@ namespace Solitons.Postgres.PgUp;
 
 public interface IPgUpProgram
 {
-    internal const string PgUpDescription = "PgUp is a simple, safe PostgreSQL migration tool using plain SQL for transaction-safe schema changes";
+    internal const string PgUpDescription = "PgUp is a PostgreSQL migration tool using plain SQL for transaction-safe schema changes";
     const string DeployCommandDescription = "Deploys a PostgreSQL database according to the pgup.json deployment plan, ensuring all configurations and resources are correctly applied.";
     const string InitializeProjectCommand = "init|initialize";
     const string ProjectDirectoryArgumentDescription = "File directory where to initialize the new pgup project.";
-    const string InitializeProjectCommandDescription = "Initializes a new PgUp project structure in the specified directory, setting up the necessary files and folders for PostgreSQL deployment.";
+    const string InitializeProjectCommandDescription = "Sets up a new PgUp project structure with required files and folders for PostgreSQL deployment in the specified directory";
     const string TemplateParameterDescription = "Specifies the project template to be applied during initialization.";
 
 
@@ -25,7 +25,7 @@ public interface IPgUpProgram
 
 
     [CliRoute(InitializeProjectCommand)]
-    [PgUpProjectDirectoryArgumentSegment(nameof(projectDir))]
+    [PgUpProjectDirectoryArgument(nameof(projectDir), Name = "ProjectDir")]
     [Description(InitializeProjectCommandDescription)]
     void Initialize(
         string projectDir,
@@ -103,12 +103,12 @@ sealed class PgUpParametersOptionAttribute()
 
 
 
-sealed class PgUpProjectDirectoryArgumentSegmentAttribute : CliRouteArgumentSegmentAttribute
+sealed class PgUpProjectDirectoryArgumentAttribute : CliRouteArgumentSegmentAttribute
 {
-    public PgUpProjectDirectoryArgumentSegmentAttribute(string parameterName)
+    public PgUpProjectDirectoryArgumentAttribute(string parameterName)
         : base(parameterName, "PgUp project directory.")
     {
-        ArgumentRole = "PROJECTDIR";
+        Name = "PROJECTDIR";
     }
 
     public override bool CanAccept(Type argumentType, out TypeConverter converter)

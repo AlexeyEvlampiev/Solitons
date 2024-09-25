@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -9,19 +8,26 @@ namespace Solitons.CommandLine;
 internal partial class CliActionRegexMatchRankerRtt
 {
     private CliActionRegexMatchRankerRtt(
-        ICliActionSchema schema,
-        IReadOnlyList<CliOptionInfo> options)
+        ICliActionSchema schema)
     {
-        throw new NotImplementedException();
-        //CommandSegmentRegularExpressions = routeSegments
-        //    .Select((segment, index) => segment.IsArgument 
-        //        ? segment.BuildRegularExpression(routeSegments) 
-        //        : $"(?<{GenGroupName(index)}>{segment.BuildRegularExpression(routeSegments)})")
-        //    .ToArray();
+        CommandSegmentRegularExpressions = Enumerable
+            .Range(0, schema.CommandSegmentsCount)
+            .Select(segmentIndex =>
+            {
+                var expression = schema.GetSegmentRegularExpression(segmentIndex);
+                if (schema.IsArgumentSegment(segmentIndex))
+                {
+                    return $"(?<{GenGroupName(segmentIndex)}>{expression})";
+                }
 
-        //OptionRegularExpressions = options
-        //    .Select(option => option.RegularExpression)
-        //    .ToArray();
+                return expression;
+            })
+            .ToArray();
+
+        OptionRegularExpressions = Enumerable
+            .Range(0, schema.OptionsCount)
+            .Select(schema.GetOptionRegularExpression)
+            .ToArray();
     }
 
     private string GenGroupName(int index) => $"segment_{GetType().GUID:N}_{index}";
@@ -34,13 +40,12 @@ internal partial class CliActionRegexMatchRankerRtt
     public static string ToString(
         ICliActionSchema schema)
     {
-        throw new NotImplementedException();
-//        string expression = new CliActionRegexMatchRankerRtt(routeSegments, options);
-//#if DEBUG
-//        expression = Regex.Replace(expression, @"(?<=\S)[^\S\r\n]{2,}", " ");
-//        expression = Regex.Replace(expression, @"(?<=\n)\s*\n", "");
-//#endif
-//        Debug.WriteLine(expression);
-//        return expression;
+        string expression = new CliActionRegexMatchRankerRtt(schema);
+#if DEBUG
+        expression = Regex.Replace(expression, @"(?<=\S)[^\S\r\n]{2,}", " ");
+        expression = Regex.Replace(expression, @"(?<=\n)\s*\n", "");
+#endif
+        Debug.WriteLine(expression);
+        return expression;
     }
 }

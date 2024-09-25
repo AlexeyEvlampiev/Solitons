@@ -25,7 +25,7 @@ public class CliRouteArgumentSegmentAttribute : Attribute
             .Trim(); 
         Description = description
             .DefaultIfNullOrWhiteSpace(ParameterName);
-        ArgumentRole = ParameterName;
+        Name = ParameterName;
     }
 
     /// <summary>
@@ -47,7 +47,7 @@ public class CliRouteArgumentSegmentAttribute : Attribute
     /// For example, in a command like 'git clone [repository]', the ArgumentRole for 'repository' might be 'SourceRepository',
     /// indicating that the argument should be a URL or path to a git repository.
     /// </remarks>
-    public string ArgumentRole { get; init; }
+    public string Name { get; init; }
 
     /// <summary>
     /// Determines if this attribute conflicts with another by comparing their parameter names.

@@ -14,7 +14,7 @@ namespace Solitons.CommandLine;
 
 internal sealed class CliAction : IComparable<CliAction>, ICliAction
 {
-    private readonly ICliActionSchema _actionSchema;
+    private readonly ICliActionSchema _schema;
     internal const int OptimalMatchRankIncrement = 1;
     internal delegate Task<int> ActionHandler(object?[] args);
 
@@ -48,7 +48,7 @@ internal sealed class CliAction : IComparable<CliAction>, ICliAction
         IReadOnlyList<ICliExampleMetadata> examples,
         string description)
     {
-        _actionSchema = ThrowIf.ArgumentNull(schema);
+        _schema = ThrowIf.ArgumentNull(schema);
         _parameterDeserializers = ThrowIf.ArgumentNull(parameterMaterializers);
         _masterOptionBundles = ThrowIf.ArgumentNull(masterOptionBundles);
         _handler = ThrowIf.ArgumentNull(handler);
@@ -88,7 +88,7 @@ internal sealed class CliAction : IComparable<CliAction>, ICliAction
         ThrowIf.ArgumentNull(masterOptionBundles);
         ThrowIf.ArgumentNull(baseRoute);
 
-        var schema = new CliActionSchema();
+        
 
         var parameters = method.GetParameters();
         var parameterDeserializers = new CliOperandMaterializer[parameters.Length];
@@ -101,7 +101,11 @@ internal sealed class CliAction : IComparable<CliAction>, ICliAction
             .OfType<DescriptionAttribute>()
             .Select(a => a.Description)
             .FirstOrDefault(method.Name);
-       
+
+        var schema = new CliActionSchema()
+        {
+            Description = actionDescription
+        };
 
         var arguments = new Dictionary<ParameterInfo, CliArgumentInfo>();
         foreach (var attribute in methodAttributes)
@@ -113,8 +117,10 @@ internal sealed class CliAction : IComparable<CliAction>, ICliAction
             }
             else if(attribute is CliRouteArgumentSegmentAttribute argument)
             {
+                schema.AddArgument(argument.Name, argument.Description);
                 try
                 {
+
                     var parameter = parameters.Single(argument.References);
                     var type = parameter.ParameterType;
                     if (CliOptionBundle.IsAssignableFrom(type))
@@ -135,7 +141,7 @@ internal sealed class CliAction : IComparable<CliAction>, ICliAction
                         );
                     }
 
-                    var argumentInfo = CliArgumentInfo.Create(schema,);
+                    var argumentInfo = CliArgumentInfo.Create(argument, parameter);
                     arguments.Add(parameter, argumentInfo);
 
                     var parameterIndex = Array.IndexOf(parameters, parameter);
@@ -381,4 +387,5 @@ internal sealed class CliAction : IComparable<CliAction>, ICliAction
 
     public string GetHelpText() => _help.Value;
 
+    public ICliActionSchema GetSchema() => _schema;
 }

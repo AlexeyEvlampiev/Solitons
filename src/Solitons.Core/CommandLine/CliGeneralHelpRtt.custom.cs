@@ -1,40 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 namespace Solitons.CommandLine;
 
 internal partial class CliGeneralHelpRtt
 {
-
-    private CliGeneralHelpRtt(IReadOnlyList<ICliAction> actions)
+    internal sealed record Command(string Synopsis, string Description);
+    private CliGeneralHelpRtt(
+        ICliActionSchema[] schemas)
     {
-        Commands = actions
-            .Select(a =>
-            {
-                var segments = new List<string>();
-                foreach (var segment in a.GetRouteSegments())
-                {
-                    if (segment is CliSubCommandInfo cmd &&
-                        cmd.SubCommandPattern.IsPrintable())
-                    {
-                        segments.Add(cmd.SubCommandPattern);
-                        
-                    }
-                    else if(segment is CliArgumentInfo argument)
-                    {
-                        segments.Add($"<{argument.ArgumentRole}>");
-                    }
-                }
-
-                return segments.Join(" ");
-            })
-            .Order(StringComparer.OrdinalIgnoreCase)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
+        Commands = schemas
+            .Select(s => new Command(s.GetSynopsis().DefaultIfNullOrWhiteSpace("''"), s.Description))
+            .Distinct()
             .ToArray();
+        SynopsisWidth = Commands.Max(cmd => cmd.Synopsis.Length) + 2;
     }
 
-    public IReadOnlyList<string> Commands { get; set; }
+    internal IReadOnlyList<Command> Commands { get; }
+
+    internal int SynopsisWidth { get; }
 
     public required string Logo { get; init; }
     public required string ProgramName { get; init; }
@@ -46,10 +30,10 @@ internal partial class CliGeneralHelpRtt
     public static string Build(
         string logo, 
         string programName, 
-        string description, 
-        IReadOnlyList<ICliAction> actions)
+        string description,
+        ICliActionSchema[] schemas)
     {
-        var list = new CliGeneralHelpRtt(actions)
+        var list = new CliGeneralHelpRtt(schemas)
             {
                 Logo = logo,
                 ProgramName = programName,

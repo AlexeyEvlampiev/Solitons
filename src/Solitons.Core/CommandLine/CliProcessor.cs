@@ -136,7 +136,13 @@ internal sealed class CliProcessor : ICliProcessor
     public void ShowCommandList(string programName)
     {
         var help = CliGeneralHelpRtt
-            .Build(_logo, programName, _description, _actions);
+            .Build(
+                _logo, 
+                programName, 
+                _description, 
+                _actions
+                    .Select(a => a.GetSchema())
+                    .ToArray());
         Console.WriteLine(help);
     }
 

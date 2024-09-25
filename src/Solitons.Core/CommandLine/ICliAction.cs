@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Solitons.Caching;
+﻿using Solitons.Caching;
 
 namespace Solitons.CommandLine;
 

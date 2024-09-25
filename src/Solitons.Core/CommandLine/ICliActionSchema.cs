@@ -4,9 +4,7 @@ namespace Solitons.CommandLine;
 
 internal interface ICliActionSchema
 {
-    int SegmentsCount { get; }
-
-    int ArgumentsCount { get; }
+    int CommandSegmentsCount { get; }
 
     int ExamplesCount { get; }
 
@@ -14,14 +12,17 @@ internal interface ICliActionSchema
 
     string GetSegmentRegularExpression(int segmentIndex);
 
+    string GetOptionRegularExpression(int optionIndex);
+
     string GetSynopsis();
-    bool IsArgument(int segmentIndex);
+    bool IsArgumentSegment(int segmentIndex);
 
     IEnumerable<Argument> Arguments { get; }
 
     IEnumerable<Option> Options { get; }
 
     IEnumerable<Example> Examples { get; }
+    int OptionsCount { get; }
 
     Argument GetArgument(int argumentIndex);
 
@@ -29,7 +30,6 @@ internal interface ICliActionSchema
 
 
     public sealed record Argument(string Name, string Description);
-
     public sealed record Option(string Name, string Description);
     public sealed record Example(string Command, string Description);
 }

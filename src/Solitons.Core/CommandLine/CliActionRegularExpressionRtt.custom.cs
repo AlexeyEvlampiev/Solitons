@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
@@ -10,24 +9,24 @@ internal partial class CliActionRegularExpressionRtt
     public static readonly string UnrecognizedToken = $"unrecognized_token_{typeof(CliActionRegularExpressionRtt).GUID:N}";
 
     private CliActionRegularExpressionRtt(
-        ICliActionSchema patternBuilder,
-        IReadOnlyList<CliOptionInfo> options)
+        ICliActionSchema schema)
     {
         CommandSegmentRegularExpressions = Enumerable
-            .Range(0, patternBuilder.SegmentsCount)
+            .Range(0, schema.CommandSegmentsCount)
             .Select(segmentIndex =>
             {
-                var expression = patternBuilder.GetSegmentRegularExpression(segmentIndex);
-                if (patternBuilder.IsArgument(segmentIndex))
+                var expression = schema.GetSegmentRegularExpression(segmentIndex);
+                if (schema.IsArgumentSegment(segmentIndex))
                 {
-                    return expression;
+                    return $"(?<{GenGroupName(segmentIndex)}>{expression})";
                 }
-                return $"(?<{GenGroupName(segmentIndex)}>{expression})";
+                return expression;
             })
             .ToArray();
 
-        OptionRegularExpressions = options
-            .Select(option => option.RegularExpression)
+        OptionRegularExpressions = Enumerable
+            .Range(0, schema.OptionsCount)
+            .Select(schema.GetOptionRegularExpression)
             .ToArray();
     }
 
@@ -38,13 +37,11 @@ internal partial class CliActionRegularExpressionRtt
 
     [DebuggerStepThrough]
     public static string ToString(
-        ICliActionSchema patternBuilder)
+        ICliActionSchema schema)
     {
-        throw new NotImplementedException();
-        //string expression = new CliActionRegularExpressionRtt(
-        //    patternBuilder, 
-        //    options);
-        //Debug.WriteLine(expression);
-        //return expression;
+        string expression = new CliActionRegularExpressionRtt(
+            schema);
+        Debug.WriteLine(expression);
+        return expression;
     }
 }
