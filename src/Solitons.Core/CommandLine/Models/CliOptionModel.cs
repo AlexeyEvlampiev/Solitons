@@ -20,8 +20,7 @@ internal sealed record CliOptionModel
     private const string AliasPattern = @"(?:\-{1,2}[\w\?][\w\-\?]*)";
     private const string PipeDelimiter = "|";
     private const string CommaDelimiter = ",";
-    private static readonly string KeyValuePairPattern;
-    private static readonly string ValueOptionPattern;
+
 
     private static readonly Regex ValidAliasesPsvRegex = new(
         @$"^{AliasPattern}(?:\{PipeDelimiter}{AliasPattern})*$",
@@ -74,23 +73,6 @@ internal sealed record CliOptionModel
         public bool IsRequired { get; }
     };
 
-    
-
-    static CliOptionModel()
-    {
-        KeyValuePairPattern = @$"(?:$dot-notation)|(?:$accessor-notation)"
-            .Replace("$dot-notation", @"\.(?:$key(?:\s+(?:$value)?)?)?")
-            .Replace("$accessor-notation", @"\[(?:$key (?:\] (?: \s+ (?:$value)? )? )? )? ")
-            .Replace("$key", @"\S+")
-            .Replace("$value", @"[^\s\-]\S*")
-            .Convert(RegexUtils.RemoveWhitespace)
-            .Convert(RegexUtils.EnsureNonCapturingGroup);
-        Debug.Assert(RegexUtils.IsValidExpression(KeyValuePairPattern));
-
-        ValueOptionPattern = @$"(?:[^\s\-]\S*)?";
-        Debug.Assert(RegexUtils.IsValidExpression(ValueOptionPattern));
-
-    }
 
     [DebuggerStepThrough]
     public CliOptionModel(ParameterInfo parameter) : this(new Settings(parameter))
@@ -149,17 +131,14 @@ internal sealed record CliOptionModel
 
         RegexPattern = aliases
             .Select(a => a.Replace("?", @"\?"))
-            .Select(a => a.Replace("-", @"\-"))
             .Join(PipeDelimiter)
-            .Convert(pattern =>
+            .Convert(RegexUtils.EnsureNonCapturingGroup)
+            .Convert(keyPattern =>
             {
-                var optionKey = RegexUtils.EnsureNonCapturingGroup(pattern);
-                var optionValue = FluentArray.Create(
-                    $@"(?<{RegexGroupName}>{KeyValuePairPattern})",
-                    $@"(?:\s+(?<{RegexGroupName}>{ValueOptionPattern}))")
-                    .Join(PipeDelimiter)
-                    .Convert(RegexUtils.EnsureNonCapturingGroup);
-                return @$"{optionKey}(?:{optionValue})";
+                var valuePattern = 
+                    @$"(?<{RegexGroupName}>(?:$input(?:\s+$input)*)?)"
+                    .Replace("$input", @"[^\s\-]\S*");
+                return @$"{keyPattern}\s*{valuePattern}";
             });
         Debug.Assert(RegexUtils.IsValidExpression(RegexPattern));
     }
