@@ -92,15 +92,15 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>CliActionRegularExpressionRtt.tt</DependentUpon>
     </Compile>
-    <Compile Update="CommandLine\CliGeneralHelpRtt.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>CliGeneralHelpRtt.tt</DependentUpon>
-    </Compile>
     <Compile Update="CommandLine\CliHelpRtt.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>CliHelpRtt.tt</DependentUpon>
+    </Compile>
+    <Compile Update="CommandLine\Models\Formatters\CliGeneralHelpRtt.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CliGeneralHelpRtt.tt</DependentUpon>
     </Compile>
     <Compile Update="Common\Azure\ResourceManager\AutoScaleSettingsRtt.cs">
       <DesignTime>True</DesignTime>
@@ -151,7 +151,7 @@
       <Generator>TextTemplatingFilePreprocessor</Generator>
       <LastGenOutput>CliActionRegularExpressionRtt.cs</LastGenOutput>
     </None>
-    <None Update="CommandLine\CliGeneralHelpRtt.tt">
+    <None Update="CommandLine\Models\Formatters\CliGeneralHelpRtt.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>
       <LastGenOutput>CliGeneralHelpRtt.cs</LastGenOutput>
     </None>

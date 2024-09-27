@@ -1,16 +1,17 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace Solitons.CommandLine;
+namespace Solitons.CommandLine.Models.Formatters;
 
 internal partial class CliGeneralHelpRtt
 {
     internal sealed record Command(string Synopsis, string Description);
     private CliGeneralHelpRtt(
-        ICliActionSchema[] schemas)
+        CliModel model)
     {
-        Commands = schemas
-            .Select(s => new Command(s.GetSynopsis().DefaultIfNullOrWhiteSpace("''"), s.Description))
+        Commands = model
+            .Commands
+            .Select(s => new Command(s.Synopsis.DefaultIfNullOrWhiteSpace("''"), s.Description))
             .Distinct()
             .ToArray();
         SynopsisWidth = Commands.Max(cmd => cmd.Synopsis.Length) + 2;
@@ -24,21 +25,21 @@ internal partial class CliGeneralHelpRtt
     public required string ProgramName { get; init; }
     public required string Description { get; init; }
 
-    
+
 
 
     public static string Build(
-        string logo, 
-        string programName, 
+        string logo,
+        string programName,
         string description,
-        ICliActionSchema[] schemas)
+        CliModel model)
     {
-        var list = new CliGeneralHelpRtt(schemas)
-            {
-                Logo = logo,
-                ProgramName = programName,
-                Description = description,
-            }
+        var list = new CliGeneralHelpRtt(model)
+        {
+            Logo = logo,
+            ProgramName = programName,
+            Description = description,
+        }
             .ToString();
         return list;
     }

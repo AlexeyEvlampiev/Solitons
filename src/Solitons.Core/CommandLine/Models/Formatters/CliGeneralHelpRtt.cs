@@ -7,7 +7,7 @@
 //     the code is regenerated.
 // </auto-generated>
 // ------------------------------------------------------------------------------
-namespace Solitons.CommandLine
+namespace Solitons.CommandLine.Models.Formatters
 {
     using System.Linq;
     using System.Text;

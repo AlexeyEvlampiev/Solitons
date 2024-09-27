@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using Solitons.Caching;
 using Solitons.CommandLine.Models;
+using Solitons.CommandLine.Models.Formatters;
 
 namespace Solitons.CommandLine;
 
@@ -23,13 +24,14 @@ internal sealed class CliProcessor : ICliProcessor
     private string _baseRoute = string.Empty;
     private HelpCommandData? _helpCommandData = null;
     private readonly IMemoryCache _cache = IMemoryCache.Create();
+    private readonly CliModel _model;
 
 
     public CliProcessor(Action<ICliConfigOptions> config)
     {
         config.Invoke(new Options(this));
 
-        var model = new CliModel(
+        _model = new CliModel(
             _modules,
             new CliMasterOptionBundle[]
             {
@@ -147,9 +149,7 @@ internal sealed class CliProcessor : ICliProcessor
                 _logo, 
                 programName, 
                 _description, 
-                _actions
-                    .Select(a => a.GetSchema())
-                    .ToArray());
+                _model);
         Console.WriteLine(help);
     }
 

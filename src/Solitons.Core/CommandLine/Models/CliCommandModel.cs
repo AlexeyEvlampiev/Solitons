@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Reflection;
 
@@ -84,23 +83,16 @@ internal sealed record CliCommandModel
                 {
                     throw new CliConfigurationException("Oops");
                 }
+
+                options.AddRange(CliOptionModel.FromBundle(parameter.ParameterType, this));
             }
             else if (optionAtt is not null)
             {
-                bool isRequired = 
-                    attributes.OfType<RequiredAttribute>().Any() || 
-                    (false == parameter.IsOptional);
-                var optionDescription = attributes
-                    .OfType<DescriptionAttribute>()
-                    .Select(a => a.Description)
-                    .Concat([optionAtt.Description])
-                    .Where(d => d.IsPrintable())
-                    .FirstOrDefault($"{parameter.Name} parameter of the {methodInfo.Name} command handler.");
-                options.Add(new CliOptionModel(
-                    optionAtt.PipeSeparatedAliases,
-                    parameter.Name.DefaultIfNullOrWhiteSpace("none"),
-                    optionDescription,
-                    isRequired));
+                options.Add(new CliOptionModel(parameter)
+                {
+                    Command = this,
+                    Provider = parameter
+                });
             }
         }
 
