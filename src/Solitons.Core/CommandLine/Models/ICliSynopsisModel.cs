@@ -1,6 +1,6 @@
 ﻿namespace Solitons.CommandLine.Models;
 
-internal interface ICliCommandSegmentModel
+internal interface ICliSynopsisModel
 {
     string ToSynopsis();
 }

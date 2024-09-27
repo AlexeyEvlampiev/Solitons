@@ -18,10 +18,9 @@ internal sealed class CliProcessor : ICliProcessor
 
     private readonly List<CliModule> _modules = new();
     private readonly CliAction[] _actions;
-    private readonly string _baseRoute;
     private string _logo = string.Empty;
     private string _description = string.Empty;
-    private string _baseRoot = string.Empty;
+    private string _baseRoute = string.Empty;
     private HelpCommandData? _helpCommandData = null;
     private readonly IMemoryCache _cache = IMemoryCache.Create();
 
@@ -38,7 +37,8 @@ internal sealed class CliProcessor : ICliProcessor
                 new CliTraceMasterOptionsBundle()
             },
             _description,
-            _logo
+            _logo,
+            _baseRoute
         );
 
         var masterOptionBundles = new CliMasterOptionBundle[]
@@ -74,7 +74,7 @@ internal sealed class CliProcessor : ICliProcessor
                     source.Program, 
                     mi, 
                     masterOptionBundles,
-                    _baseRoot,
+                    _baseRoute,
                     [],
                     _cache));
             }

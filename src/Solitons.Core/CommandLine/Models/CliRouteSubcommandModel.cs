@@ -9,7 +9,7 @@ namespace Solitons.CommandLine.Models;
 /// <summary>
 /// Represents a model for a CLI subcommand route that processes and validates aliases.
 /// </summary>
-internal sealed record CliRouteSubcommandModel : ICliCommandSegmentModel
+internal sealed record CliRouteSubcommandModel : ICliSynopsisModel
 {
     private const string AliasPattern = @"\w+"; 
     private const string PipeDelimiter = "|";
@@ -33,22 +33,22 @@ internal sealed record CliRouteSubcommandModel : ICliCommandSegmentModel
                 $"Invalid alias format: '{pipeSeparatedAliases}' must be pipe-separated words.");
         }
 
-        var sortedAliases = pipeSeparatedAliases
+        var aliases = pipeSeparatedAliases
             .Split(PipeDelimiter, StringSplitOptions.RemoveEmptyEntries)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderByDescending(alias => alias.Length)
             .ThenBy(alias => alias, StringComparer.OrdinalIgnoreCase)
             .ToImmutableArray();
 
-        if (sortedAliases.Length != pipeSeparatedAliases.Split(PipeDelimiter).Length)
+        if (aliases.Length != pipeSeparatedAliases.Split(PipeDelimiter).Length)
         {
-            throw new ArgumentException($"Duplicate aliases found: {string.Join(CommaDelimiter, sortedAliases)}", nameof(pipeSeparatedAliases));
+            throw new ArgumentException($"Duplicate aliases found: {string.Join(CommaDelimiter, aliases)}", nameof(pipeSeparatedAliases));
         }
 
-        Aliases = sortedAliases;
-        PipeDelimitedAliases = string.Join(PipeDelimiter, sortedAliases);
+        Aliases = aliases;
+        PipeDelimitedAliases = string.Join(PipeDelimiter, aliases);
         RegexPattern = $"(?:{PipeDelimitedAliases})";
-        Synopsis = sortedAliases
+        Synopsis = aliases
             .OrderBy(a => a.Length)
             .ThenBy(a => a, StringComparer.OrdinalIgnoreCase)
             .Join(PipeDelimiter);
@@ -106,5 +106,5 @@ internal sealed record CliRouteSubcommandModel : ICliCommandSegmentModel
     public ImmutableArray<string> Aliases { get; }
 
     public override string ToString() => ToCsv(includeSpaceAfterComma: true);
-    string ICliCommandSegmentModel.ToSynopsis() => Synopsis;
+    string ICliSynopsisModel.ToSynopsis() => Synopsis;
 }

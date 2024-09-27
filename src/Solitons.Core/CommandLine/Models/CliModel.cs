@@ -8,17 +8,19 @@ namespace Solitons.CommandLine.Models;
 
 internal sealed record CliModel
 {
-    private static long SequenceNumber = 0;
+    private static long _sequenceNumber = 0;
+
     public CliModel(
         IReadOnlyList<CliModule> sources,
         IReadOnlyList<CliMasterOptionBundle> masterOptionBundles,
 
     string description,
-        string logo)
+        string logo,
+        string baseRoute)
     {
         Logo = ThrowIf.ArgumentNull(logo).Trim();
         Description = ThrowIf.ArgumentNullOrWhiteSpace(description).Trim();
-
+        var baseSubcommands = CliRouteSubcommandModel.FromRoute(baseRoute);
         //var masterOptions = masterOptionBundles
         //    .SelectMany(CliOptionModel.GetOptions)
         //    .ToArray();
@@ -36,7 +38,7 @@ internal sealed record CliModel
                     .GetCustomAttributes()
                     .OfType<CliRouteAttribute>()
                     .Any())
-                .Select(mi => new CliCommandModel(mi, source.Program, []));
+                .Select(mi => new CliCommandModel(mi, source.Program, [], baseSubcommands));
             commands.AddRange(commandRange);
         }
 
@@ -52,7 +54,7 @@ internal sealed record CliModel
     public static string GenerateRegexGroupName(string operandName)
     {
         var suffix = Interlocked
-            .Increment(ref SequenceNumber)
+            .Increment(ref _sequenceNumber)
             .ToString()
             .PadLeft(16, '0');
         return $"{operandName}_{suffix}";

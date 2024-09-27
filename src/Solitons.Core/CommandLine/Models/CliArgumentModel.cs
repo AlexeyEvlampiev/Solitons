@@ -6,7 +6,7 @@ using Solitons.Text.RegularExpressions;
 
 namespace Solitons.CommandLine.Models;
 
-internal sealed record CliArgumentModel : ICliCommandSegmentModel
+internal sealed record CliArgumentModel : ICliSynopsisModel
 {
     private const string PipeDelimiter = "|";
 
@@ -82,5 +82,5 @@ internal sealed record CliArgumentModel : ICliCommandSegmentModel
     }
 
     public override string ToString() => Synopsis;
-    string ICliCommandSegmentModel.ToSynopsis() => Synopsis;
+    string ICliSynopsisModel.ToSynopsis() => Synopsis;
 }

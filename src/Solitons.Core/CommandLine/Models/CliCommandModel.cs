@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Reflection;
 
@@ -13,11 +14,13 @@ internal sealed record CliCommandModel
     public CliCommandModel(
         MethodInfo methodInfo, 
         object? program,
-        IReadOnlyList<CliOptionModel> masterOptions)
+        IReadOnlyList<CliOptionModel> masterOptions,
+        IReadOnlyList<CliRouteSubcommandModel> baseSubcommands)
     {
         var parameters = methodInfo.GetParameters();
         var subcommandAliases = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var segments = new List<ICliCommandSegmentModel>();
+        var segments = new List<ICliSynopsisModel>(){};
+        segments.AddRange(baseSubcommands);
 
         var methodAtt = methodInfo.GetCustomAttributes().ToArray();
         var description = methodAtt
@@ -61,18 +64,61 @@ internal sealed record CliCommandModel
         Synopsis = segments
             .Select(s => s.ToSynopsis())
             .Join(" ");
+        Examples = [.. methodAtt
+            .OfType<CliCommandExampleAttribute>()
+            .Select(a => new CliExampleModel()
+            {
+                Example = ThrowIf.NullOrWhiteSpace(a.Example).Trim(),
+                Description = ThrowIf.NullOrWhiteSpace(a.Description).Trim()
+            })
+            .OrderBy(e => e.Example.Length)];
+
+        var options = new List<CliOptionModel>();
+        foreach (var parameter in parameters)
+        {
+            var attributes = parameter.GetCustomAttributes().ToArray();
+            var optionAtt = attributes.OfType<CliOptionAttribute>().FirstOrDefault();
+            if (CliOptionBundle.IsAssignableFrom(parameter.ParameterType))
+            {
+                if (optionAtt is not null)
+                {
+                    throw new CliConfigurationException("Oops");
+                }
+            }
+            else if (optionAtt is not null)
+            {
+                bool isRequired = 
+                    attributes.OfType<RequiredAttribute>().Any() || 
+                    (false == parameter.IsOptional);
+                var optionDescription = attributes
+                    .OfType<DescriptionAttribute>()
+                    .Select(a => a.Description)
+                    .Concat([optionAtt.Description])
+                    .Where(d => d.IsPrintable())
+                    .FirstOrDefault($"{parameter.Name} parameter of the {methodInfo.Name} command handler.");
+                options.Add(new CliOptionModel(
+                    optionAtt.PipeSeparatedAliases,
+                    parameter.Name.DefaultIfNullOrWhiteSpace("none"),
+                    optionDescription,
+                    isRequired));
+            }
+        }
+
+        Options = [.. options];
     }
 
     public MethodInfo MethodInfo { get; }
     public object? Program { get; }
 
-    //public required string Synopsis { get; init; }
-
     public string Description { get; }
 
     public string Synopsis { get; }
 
-    public ImmutableArray<object> CommandSegments { get; }
+    public ImmutableArray<ICliSynopsisModel> CommandSegments { get; }
+
+    public ImmutableArray<CliOptionModel> Options { get; }
+
+    public ImmutableArray<CliExampleModel> Examples { get; }
 
     public override string ToString() => Synopsis;
 }

@@ -14,7 +14,7 @@ public interface ICliOptionMetadata
     /// <summary>
     /// Specification of options as used in the CLI.
     /// </summary>
-    string OptionPipeAliases { get; }
+    string PipeSeparatedAliases { get; }
 
     /// <summary>
     /// Description of the CLI options.
