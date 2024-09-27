@@ -89,7 +89,6 @@ internal sealed class CliAction : IComparable<CliAction>, ICliAction
         ThrowIf.ArgumentNull(masterOptionBundles);
         ThrowIf.ArgumentNull(baseRoute);
 
-        var builder = new CliCommandModelBuilder();
 
         var parameters = method.GetParameters();
         var parameterDeserializers = new CliOperandMaterializer[parameters.Length];
@@ -115,7 +114,6 @@ internal sealed class CliAction : IComparable<CliAction>, ICliAction
                 route.PsvExpression.IsPrintable())
             {
                 schema.AddRoutePsvExpression(route.PsvExpression);
-                builder.AddRoutePsvExpression(route.PsvExpression);
             }
             else if(attribute is CliRouteArgumentSegmentAttribute argument)
             {

@@ -7,20 +7,16 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Solitons.Caching;
+using Solitons.CommandLine.Models;
 
 namespace Solitons.CommandLine;
 
 internal sealed class CliProcessor : ICliProcessor
 {
-    private sealed record Source(
-        Type DeclaringType,
-        object? Instance,
-        string BaseRoute,
-        BindingFlags BindingFlags);
 
     private sealed record HelpCommandData(string Aliases, string Description);
 
-    private readonly List<Source> _sources = new();
+    private readonly List<CliModule> _modules = new();
     private readonly CliAction[] _actions;
     private readonly string _baseRoute;
     private string _logo = string.Empty;
@@ -34,6 +30,17 @@ internal sealed class CliProcessor : ICliProcessor
     {
         config.Invoke(new Options(this));
 
+        var model = new CliModel(
+            _modules,
+            new CliMasterOptionBundle[]
+            {
+                new CliHelpMasterOptionBundle(),
+                new CliTraceMasterOptionsBundle()
+            },
+            _description,
+            _logo
+        );
+
         var masterOptionBundles = new CliMasterOptionBundle[]
         {
             new CliHelpMasterOptionBundle(),
@@ -42,13 +49,13 @@ internal sealed class CliProcessor : ICliProcessor
 
         var actions = new List<CliAction>();
 
-        foreach (var source in _sources)
+        foreach (var source in _modules)
         {
             var methods = source
-                .DeclaringType
+                .ProgramType
                 .Convert(type => type.GetInterfaces().Concat([type]))
                 .Distinct()
-                .SelectMany(type => type.GetMethods(source.BindingFlags))
+                .SelectMany(type => type.GetMethods(source.Binding))
                 .Distinct();
 
             foreach (var mi in methods)
@@ -64,7 +71,7 @@ internal sealed class CliProcessor : ICliProcessor
 
                 Debug.WriteLine($"Action: {mi.Name}");
                 actions.Add(CliAction.Create(
-                    source.Instance, 
+                    source.Program, 
                     mi, 
                     masterOptionBundles,
                     _baseRoot,
@@ -157,7 +164,8 @@ internal sealed class CliProcessor : ICliProcessor
             string baseRoute = "",
             BindingFlags binding = BindingFlags.Default | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
         {
-            return UseCommands(program, program.GetType(), baseRoute, binding);
+            processor._modules.Add(new CliModule(program, binding, baseRoute));
+            return this;
         }
 
         [DebuggerStepThrough]
@@ -166,7 +174,8 @@ internal sealed class CliProcessor : ICliProcessor
             string baseRoute = "",
             BindingFlags binding = BindingFlags.Default | BindingFlags.Static | BindingFlags.Public)
         {
-            return UseCommands(null, declaringType, baseRoute, binding);
+            processor._modules.Add(new CliModule(declaringType, binding, baseRoute));
+            return this;
         }
 
         public ICliConfigOptions UseLogo(string logo)
@@ -190,24 +199,6 @@ internal sealed class CliProcessor : ICliProcessor
         }
 
 
-        [DebuggerStepThrough]
-        private ICliConfigOptions UseCommands(
-            object? instance,
-            Type declaringType,
-            string baseRoute,
-            BindingFlags binding)
-        {
-            if (binding.HasFlag(BindingFlags.Instance))
-            {
-                instance ??= Activator.CreateInstance(declaringType);
-                if (instance == null)
-                {
-                    throw new NotImplementedException();
-                }
-            }
-            processor._sources.Add(new Source(declaringType, instance, baseRoute, binding));
-            return this;
-        }
     }
 
 }

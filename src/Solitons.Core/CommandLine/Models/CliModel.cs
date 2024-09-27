@@ -1,33 +1,45 @@
-﻿using System.Collections.Immutable;
+﻿using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
+using System.Reflection;
 
 namespace Solitons.CommandLine.Models;
 
 internal sealed record CliModel
 {
-    public required string Logo { get; init; }
-    public required string Description { get; init; }
-    public required ImmutableArray<CliCommandModel> Commands { get; init; }
-}
+    public CliModel(
+        IReadOnlyList<CliModule> sources,
+        IReadOnlyList<CliMasterOptionBundle> masterOptionBundles,
 
-internal sealed record CliCommandModel
-{
-    public required string Synopsis { get; init; }
+    string description,
+        string logo)
+    {
+        Logo = ThrowIf.ArgumentNull(logo).Trim();
+        Description = ThrowIf.ArgumentNullOrWhiteSpace(description).Trim();
 
-    public required string Description { get; init; }
+        var masterOptions = masterOptionBundles
+            .SelectMany(CliOptionModel.GetOptions)
+            .ToArray();
 
-    public required ImmutableArray<CliCommandSegmentModel> CommandSegments { get; init; }
-}
+        var commands = new List<CliCommandModel>(10);
+        foreach (var source in sources)
+        {
+            var sites = source
+                .ProgramType
+                .GetInterfaces()
+                .Concat([source.ProgramType])
+                .Distinct()
+                .SelectMany(type => type.GetMethods(source.Binding))
+                .Where(mi => mi
+                    .GetCustomAttributes()
+                    .OfType<CliRouteAttribute>()
+                    .Any())
+                .Select(mi => new CliCommandModel(mi, source.Program, masterOptions));
+        }
+    }
 
-internal  record CliCommandSegmentModel
-{
-    public required string RegularExpression { get; init; }
-}
+    public string Logo { get; }
+    public string Description { get; }
 
-internal sealed record CliCommandArgumentModel : CliCommandSegmentModel
-{
-    public required string Name { get; init; }
-
-    public required string RegexGroupName { get; init; }
-
-    public required string Description { get; init; }
+    public ImmutableArray<CliCommandModel> Commands { get; }
 }

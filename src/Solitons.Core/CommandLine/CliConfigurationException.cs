@@ -148,7 +148,12 @@ internal sealed class CliConfigurationException : Exception
         throw new NotImplementedException();
     }
 
-    public static Exception ArgumentTypeNotSupported(MethodInfo methodInfo, ParameterInfo parameter, Type type, CliRouteArgumentSegmentAttribute metadata)
+    public static CliConfigurationException ArgumentTypeNotSupported(MethodInfo methodInfo, ParameterInfo parameter, Type type, CliRouteArgumentSegmentAttribute metadata)
+    {
+        throw new NotImplementedException();
+    }
+
+    public static CliConfigurationException AmbiguousCommandSegment(MethodInfo methodInfo, string ambigousTagsCsv)
     {
         throw new NotImplementedException();
     }
