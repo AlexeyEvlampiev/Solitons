@@ -9,7 +9,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Solitons.Caching;
 using Solitons.Collections;
-using Solitons.CommandLine.Models;
 
 namespace Solitons.CommandLine;
 
@@ -111,11 +110,11 @@ internal sealed class CliAction : IComparable<CliAction>, ICliAction
         foreach (var attribute in methodAttributes)
         {
             if (attribute is CliRouteAttribute route &&
-                route.PsvExpression.IsPrintable())
+                route.RouteDeclaration.IsPrintable())
             {
-                schema.AddRoutePsvExpression(route.PsvExpression);
+                schema.AddRoutePsvExpression(route.RouteDeclaration);
             }
-            else if(attribute is CliRouteArgumentSegmentAttribute argument)
+            else if(attribute is CliArgumentAttribute argument)
             {
                 schema.AddArgument(argument.Name, argument.Description);
                 try

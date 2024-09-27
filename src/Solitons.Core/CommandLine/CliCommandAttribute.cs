@@ -13,18 +13,18 @@ public class CliRouteAttribute : Attribute
     /// <summary>
     /// Initializes a new instance of the CliCommandAttribute class.
     /// </summary>
-    /// <param name="psvExpression">A space-separated string representing individual subcommands.</param>
-    public CliRouteAttribute(string psvExpression)
+    /// <param name="routeDeclaration">A space-separated string representing individual subcommands.</param>
+    public CliRouteAttribute(string routeDeclaration)
     {
-        PsvExpression = psvExpression;
+        RouteDeclaration = routeDeclaration;
     }
 
     /// <summary>
     /// Gets a space-separated string representing individual subcommands.
     /// </summary>
-    public string PsvExpression { get; }
+    public string RouteDeclaration { get; }
 
 
 
-    public override string ToString() => PsvExpression;
+    public override string ToString() => RouteDeclaration;
 }

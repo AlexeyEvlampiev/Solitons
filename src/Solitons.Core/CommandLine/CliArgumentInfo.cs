@@ -29,7 +29,7 @@ internal sealed class CliArgumentInfo
     }
 
     public static CliArgumentInfo Create(
-        CliRouteArgumentSegmentAttribute arg,
+        CliArgumentAttribute arg,
         ParameterInfo parameter)
     {
         var type = Nullable.GetUnderlyingType(parameter.ParameterType) ?? parameter.ParameterType;

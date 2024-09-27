@@ -33,7 +33,7 @@ public interface IPgUpProgram
 
 
     [CliRoute("deploy")]
-    [CliRouteArgumentSegment(nameof(projectFile), "PgUp configuration file.")]
+    [CliArgument(nameof(projectFile), "PgUp configuration file.")]
     [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD%", description: "Deploys using the specified admin credentials.")]
     [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD% --timeout 00:30:00", description: "Deploys with a custom timeout of 30 minutes.")]
     [CliCommandExample("deploy pgup.json --host localhost --port 5432 --maintenance-database postgres --username %ADMIN_USR% --password %ADMIN_PWD% --timeout 00:30:00", description: "Specifies port, management database, and timeout.")]
@@ -47,7 +47,7 @@ public interface IPgUpProgram
 
 
     [CliRoute("deploy")]
-    [CliRouteArgumentSegment(nameof(projectFile), "PgUp configuration file.")]
+    [CliArgument(nameof(projectFile), "PgUp configuration file.")]
     [Description(DeployCommandDescription)]
     [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD%", description: "Deploys the database using the specified admin credentials.")]
     [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD% --timeout 00:30:00", description: "Deploys with a custom timeout of 30 minutes.")]
@@ -66,7 +66,7 @@ public interface IPgUpProgram
 
 
     [CliRoute("deploy")]
-    [CliRouteArgumentSegment(nameof(projectFile), "PgUp project file.")]
+    [CliArgument(nameof(projectFile), "PgUp project file.")]
     [Description(DeployCommandDescription)]
     [CliCommandExample("deploy pgup.json --connection \"Host=localhost;Username=postgres;Password=secret\"", description: "Deploys the database using the specified connection string.")]
     [CliCommandExample("deploy pgup.json --connection \"Host=localhost;Username=postgres;Password=secret\" --timeout 00:20:00", description: "Deploys with a custom timeout of 20 minutes using the provided connection string.")]
@@ -80,7 +80,7 @@ public interface IPgUpProgram
 
 
     [CliRoute("deploy")]
-    [CliRouteArgumentSegment(nameof(projectFile), "PgUp project file.")]
+    [CliArgument(nameof(projectFile), "PgUp project file.")]
     [Description(DeployCommandDescription)]
     [CliCommandExample("deploy pgup.json --connection \"Host=localhost;Username=postgres;Password=secret\" --overwrite", description: "Deploys by overwriting the existing database, resulting in the loss of all current data.")]
     [CliCommandExample("deploy pgup.json --connection \"Host=localhost;Username=postgres;Password=secret\" --overwrite --force", description: "Deploys by forcefully overwriting the existing database without confirmation, leading to complete data loss.")]
@@ -103,7 +103,7 @@ sealed class PgUpParametersOptionAttribute()
 
 
 
-sealed class PgUpProjectDirectoryArgumentAttribute : CliRouteArgumentSegmentAttribute
+sealed class PgUpProjectDirectoryArgumentAttribute : CliArgumentAttribute
 {
     public PgUpProjectDirectoryArgumentAttribute(string parameterName)
         : base(parameterName, "PgUp project directory.")

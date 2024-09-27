@@ -69,8 +69,8 @@ public class CliProcessor_Process_Should
     }
 
     [CliRoute("sum")]
-    [CliRouteArgumentSegment(nameof(a), "param a")]
-    [CliRouteArgumentSegment(nameof(b), "param b")]
+    [CliArgument(nameof(a), "param a")]
+    [CliArgument(nameof(b), "param b")]
     public int SumActionUsingArguments(int a, int b) => a + b;
 
     [CliRoute("sum")]

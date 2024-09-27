@@ -1,10 +1,14 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 
 namespace Solitons.Text.RegularExpressions;
 
 public static class RegexUtils
 {
+    private static readonly Regex RemoveWhitespaceRegex = new(@"\s+", RegexOptions.Compiled);
+    private static readonly Regex ValidGroupNameRegex = new(@"^\w+$", RegexOptions.Compiled);
+
     /// <summary>
     /// Ensures that the given pattern is wrapped in a non-capturing group, if it is not already grouped.
     /// </summary>
@@ -33,7 +37,7 @@ public static class RegexUtils
         groupName = ThrowIf.ArgumentNullOrWhiteSpace(groupName).Trim();
 
         // Validate groupName to contain only word characters
-        if (!Regex.IsMatch(groupName, @"^\w+$"))
+        if (!ValidGroupNameRegex.IsMatch(groupName))
         {
             throw new ArgumentException("Group name must consist of alphanumeric characters and underscores.", nameof(groupName));
         }
@@ -53,4 +57,15 @@ public static class RegexUtils
         // Otherwise, wrap the pattern in the named capturing group
         return $"(?<{groupName}>{pattern})";
     }
+
+
+    /// <summary>
+    /// Removes all whitespace from the input string.
+    /// </summary>
+    /// <param name="input">The input string from which whitespace should be removed.</param>
+    /// <returns>The input string with all whitespace characters removed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if the <paramref name="input"/> is null.</exception>
+    [DebuggerNonUserCode]
+    public static string RemoveWhitespace(string input) =>
+        RemoveWhitespaceRegex.Replace(input, string.Empty);
 }

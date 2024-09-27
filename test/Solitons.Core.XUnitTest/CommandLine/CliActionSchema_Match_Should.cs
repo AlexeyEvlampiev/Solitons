@@ -40,6 +40,6 @@ public sealed class CliAction_Match_Should
         }
     }
 
-    [CliRoute("run"), CliRouteArgumentSegment(nameof(arg), "Description goes here")]
+    [CliRoute("run"), CliArgument(nameof(arg), "Description goes here")]
     public int ProgramRun(string arg) => 0;
 }

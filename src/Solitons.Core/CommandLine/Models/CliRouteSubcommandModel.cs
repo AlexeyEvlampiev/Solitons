@@ -2,6 +2,7 @@
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Solitons.Text.RegularExpressions;
 
 namespace Solitons.CommandLine.Models;
 
@@ -15,7 +16,7 @@ internal sealed record CliRouteSubcommandModel
     private const string CommaDelimiter = ",";
 
     private static readonly Regex ValidAliasesPsvRegex = new(
-        @$"^{AliasPattern}(?:[|]{AliasPattern})*$",
+        @$"^{AliasPattern}(?:\{PipeDelimiter}{AliasPattern})*$",
         RegexOptions.Compiled | 
         RegexOptions.CultureInvariant);
 
@@ -24,7 +25,7 @@ internal sealed record CliRouteSubcommandModel
     {
         pipeSeparatedAliases = ThrowIf
             .ArgumentNullOrWhiteSpace(pipeSeparatedAliases)
-            .Convert(s => Regex.Replace(s, @"\s+", string.Empty));
+            .Convert(RegexUtils.RemoveWhitespace);
 
         if (false == ValidAliasesPsvRegex.IsMatch(pipeSeparatedAliases))
         {
@@ -36,7 +37,7 @@ internal sealed record CliRouteSubcommandModel
             .Split(PipeDelimiter, StringSplitOptions.RemoveEmptyEntries)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderByDescending(alias => alias.Length)
-            .ThenBy(alias => alias)
+            .ThenBy(alias => alias, StringComparer.OrdinalIgnoreCase)
             .ToImmutableArray();
 
         if (sortedAliases.Length != pipeSeparatedAliases.Split(PipeDelimiter).Length)
@@ -45,7 +46,12 @@ internal sealed record CliRouteSubcommandModel
         }
 
         Aliases = sortedAliases;
-        AliasesPsv = string.Join(PipeDelimiter, sortedAliases);
+        PipeDelimitedAliases = string.Join(PipeDelimiter, sortedAliases);
+        RegexPattern = $"(?:{PipeDelimitedAliases})";
+
+        ThrowIf.False(Aliases.Any());
+        ThrowIf.False(PipeDelimitedAliases.IsPrintable());
+        ThrowIf.False(RegexPattern.IsPrintable());
     }
 
     /// <summary>
@@ -57,7 +63,7 @@ internal sealed record CliRouteSubcommandModel
     {
         return Regex
             .Split(route, @"(?<=[^|])\s+(?=[^|])")
-            .Select(s => Regex.Replace(s, @"\s+", string.Empty))
+            .Select(RegexUtils.RemoveWhitespace)
             .Where(s => s.IsPrintable())
             .Select(s => new CliRouteSubcommandModel(s))
             .ToArray();
@@ -66,7 +72,13 @@ internal sealed record CliRouteSubcommandModel
     /// <summary>
     /// Gets the pipe-separated alias values.
     /// </summary>
-    public string AliasesPsv { get; }
+    public string PipeDelimitedAliases { get; }
+
+
+    /// <summary>
+    /// Gets the regex pattern representing the aliases.
+    /// </summary>
+    public string RegexPattern { get; }
 
     /// <summary>
     /// Converts the aliases to a CSV format.
@@ -85,4 +97,6 @@ internal sealed record CliRouteSubcommandModel
     /// Gets the immutable array of aliases.
     /// </summary>
     public ImmutableArray<string> Aliases { get; }
+
+    public override string ToString() => ToCsv(includeSpaceAfterComma: true);
 }

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
-using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine.Models;
 
@@ -17,7 +17,8 @@ internal sealed record CliCommandModel
         MethodInfo = methodInfo;
         Program = program;
 
-        var registeredSegments = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var parameters = methodInfo.GetParameters();
+        var subcommandAliases = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var segments = new List<object>();
 
         var methodAtt = methodInfo.GetCustomAttributes().ToArray();
@@ -25,15 +26,29 @@ internal sealed record CliCommandModel
         {
             if (attribute is CliRouteAttribute route)
             {
-                var tag = new CliRouteSubcommandModel(route.PsvExpression);
-                segments.Add(tag);
-                var ambiguousTagsCsv = tag
-                    .Aliases
-                    .Where(registeredSegments.Contains)
-                    .Join(", ");
-                throw CliConfigurationException.AmbiguousCommandSegment(methodInfo, ambiguousTagsCsv);
+                segments.AddRange(CliRouteSubcommandModel
+                    .FromRoute(route.RouteDeclaration)
+                    .Do(subcommand =>
+                    {
+                        var duplicatesCsv = subcommand
+                            .Aliases
+                            .Where(alias => false == subcommandAliases.Add(alias))
+                            .Join(",");
+                        if (duplicatesCsv.IsPrintable())
+                        {
+                            throw new CliConfigurationException("Oops...");
+                        }
+                    }));
+            }
+            else if (attribute is CliArgumentAttribute argument)
+            {
+                var parameter = parameters.Single(argument.References);
+                var model = new CliArgumentModel(argument.Name, argument.Description, parameter, segments);
+                segments.Add(model);
             }
         }
+
+        CommandSegments = [.. segments];
     }
 
     public MethodInfo MethodInfo { get; }
@@ -43,5 +58,5 @@ internal sealed record CliCommandModel
 
     public string Description { get; }
 
-    //public required ImmutableArray<CliCommandSegmentModel> CommandSegments { get; init; }
+    public ImmutableArray<object> CommandSegments { get; }
 }
