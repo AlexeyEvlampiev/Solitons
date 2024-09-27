@@ -68,4 +68,23 @@ public static class RegexUtils
     [DebuggerNonUserCode]
     public static string RemoveWhitespace(string input) =>
         RemoveWhitespaceRegex.Replace(input, string.Empty);
+
+    /// <summary>
+    /// Validates whether the given regular expression pattern is valid.
+    /// </summary>
+    /// <param name="pattern">The regular expression pattern to validate.</param>
+    /// <returns>True if the pattern is a valid regular expression; otherwise, false.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if the <paramref name="pattern"/> is null or whitespace.</exception>
+    public static bool IsValidExpression(string pattern)
+    {
+        try
+        {
+            _ = Regex.Match(string.Empty, pattern);
+            return true;
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
+    }
 }

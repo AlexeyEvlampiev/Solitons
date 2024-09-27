@@ -9,9 +9,9 @@ namespace Solitons.CommandLine.Models;
 /// <summary>
 /// Represents a model for a CLI subcommand route that processes and validates aliases.
 /// </summary>
-internal sealed record CliRouteSubcommandModel
+internal sealed record CliRouteSubcommandModel : ICliCommandSegmentModel
 {
-    private const string AliasPattern = @"\w+"; // Matches a word (alias)
+    private const string AliasPattern = @"\w+"; 
     private const string PipeDelimiter = "|";
     private const string CommaDelimiter = ",";
 
@@ -48,9 +48,14 @@ internal sealed record CliRouteSubcommandModel
         Aliases = sortedAliases;
         PipeDelimitedAliases = string.Join(PipeDelimiter, sortedAliases);
         RegexPattern = $"(?:{PipeDelimitedAliases})";
+        Synopsis = sortedAliases
+            .OrderBy(a => a.Length)
+            .ThenBy(a => a, StringComparer.OrdinalIgnoreCase)
+            .Join(PipeDelimiter);
 
         ThrowIf.False(Aliases.Any());
         ThrowIf.False(PipeDelimitedAliases.IsPrintable());
+        ThrowIf.False(Synopsis.IsPrintable());
         ThrowIf.False(RegexPattern.IsPrintable());
     }
 
@@ -80,6 +85,8 @@ internal sealed record CliRouteSubcommandModel
     /// </summary>
     public string RegexPattern { get; }
 
+    public string Synopsis { get; }
+
     /// <summary>
     /// Converts the aliases to a CSV format.
     /// </summary>
@@ -99,4 +106,5 @@ internal sealed record CliRouteSubcommandModel
     public ImmutableArray<string> Aliases { get; }
 
     public override string ToString() => ToCsv(includeSpaceAfterComma: true);
+    string ICliCommandSegmentModel.ToSynopsis() => Synopsis;
 }

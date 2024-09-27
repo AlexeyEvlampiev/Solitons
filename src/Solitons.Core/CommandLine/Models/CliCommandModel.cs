@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 
@@ -14,14 +15,22 @@ internal sealed record CliCommandModel
         object? program,
         IReadOnlyList<CliOptionModel> masterOptions)
     {
-        MethodInfo = methodInfo;
-        Program = program;
-
         var parameters = methodInfo.GetParameters();
         var subcommandAliases = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var segments = new List<object>();
+        var segments = new List<ICliCommandSegmentModel>();
 
         var methodAtt = methodInfo.GetCustomAttributes().ToArray();
+        var description = methodAtt
+            .OfType<DescriptionAttribute>()
+            .Select(a => a.Description)
+            .Concat([methodInfo.Name])
+            .First(d => d.IsPrintable());
+
+        MethodInfo = methodInfo;
+        Program = program;
+        Description = description;
+
+        
         foreach (var attribute in methodAtt)
         {
             if (attribute is CliRouteAttribute route)
@@ -49,6 +58,9 @@ internal sealed record CliCommandModel
         }
 
         CommandSegments = [.. segments];
+        Synopsis = segments
+            .Select(s => s.ToSynopsis())
+            .Join(" ");
     }
 
     public MethodInfo MethodInfo { get; }
@@ -58,5 +70,9 @@ internal sealed record CliCommandModel
 
     public string Description { get; }
 
+    public string Synopsis { get; }
+
     public ImmutableArray<object> CommandSegments { get; }
+
+    public override string ToString() => Synopsis;
 }

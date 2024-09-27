@@ -6,8 +6,10 @@ using Solitons.Text.RegularExpressions;
 
 namespace Solitons.CommandLine.Models;
 
-internal sealed record CliArgumentModel
+internal sealed record CliArgumentModel : ICliCommandSegmentModel
 {
+    private const string PipeDelimiter = "|";
+
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private readonly IReadOnlyList<object> _segments;
 
@@ -17,16 +19,15 @@ internal sealed record CliArgumentModel
         ParameterInfo parameterInfo,
         IReadOnlyList<object> segments)
     {
-        _segments = segments;
-        Name = name;
-        Description = description;
+        _segments = ThrowIf.ArgumentNull(segments);
+        Name = ThrowIf.ArgumentNullOrWhiteSpace(name).Trim();
+        Description = ThrowIf.ArgumentNullOrWhiteSpace(description).Trim();
         ParameterInfo = parameterInfo;
-        Display = $"<{Name.ToUpperInvariant()}>";
+        Synopsis = $"<{Name.ToUpperInvariant()}>";
         RegexGroupName = parameterInfo
             .Name
             .DefaultIfNullOrWhiteSpace(name)
             .Convert(CliModel.GenerateRegexGroupName);
-
     }
 
     public string Name { get; }
@@ -35,7 +36,7 @@ internal sealed record CliArgumentModel
 
     public string RegexGroupName { get; }
 
-    public string Display { get; }
+    public string Synopsis { get; }
 
     public string RegexPattern
     {
@@ -51,9 +52,9 @@ internal sealed record CliArgumentModel
         var notArgumentPattern = _segments
             .OfType<CliRouteSubcommandModel>()
             .Select(subcommand => subcommand.RegexPattern)
-            .Concat([@"\-"])
+            .Concat([@$"\{PipeDelimiter}"])
             .Select(RegexUtils.EnsureNonCapturingGroup)
-            .Join("|")
+            .Join(PipeDelimiter)
             .Convert(RegexUtils.EnsureNonCapturingGroup);
         
 
@@ -75,8 +76,11 @@ internal sealed record CliArgumentModel
         var lookAhead = notArgumentPattern
             .Convert(RegexUtils.EnsureNonCapturingGroup)
             .Convert(p => $"(?!{p})");
-        return @$"(?<{RegexGroupName}>{lookBehind}{lookAhead}\S+)";
+        var pattern = @$"(?<{RegexGroupName}>{lookBehind}{lookAhead}\S+)";
+        Debug.Assert(RegexUtils.IsValidExpression(pattern));
+        return pattern;
     }
 
-    public override string ToString() => Display;
+    public override string ToString() => Synopsis;
+    string ICliCommandSegmentModel.ToSynopsis() => Synopsis;
 }
