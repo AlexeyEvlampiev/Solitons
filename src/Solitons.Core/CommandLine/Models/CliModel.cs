@@ -21,9 +21,9 @@ internal sealed record CliModel
         Logo = ThrowIf.ArgumentNull(logo).Trim();
         Description = ThrowIf.ArgumentNullOrWhiteSpace(description).Trim();
         var baseSubcommands = CliRouteSubcommandModel.FromRoute(baseRoute);
-        //var masterOptions = masterOptionBundles
-        //    .SelectMany(CliOptionModel.GetOptions)
-        //    .ToArray();
+
+        var masterOptionsFactory = CliOptionModel.CreateMasterOptionFactory(masterOptionBundles);
+        
 
         var commands = new List<CliCommandModel>(10);
         foreach (var source in sources)
@@ -38,7 +38,7 @@ internal sealed record CliModel
                     .GetCustomAttributes()
                     .OfType<CliRouteAttribute>()
                     .Any())
-                .Select(mi => new CliCommandModel(mi, source.Program, [], baseSubcommands));
+                .Select(mi => new CliCommandModel(mi, source.Program, masterOptionsFactory, baseSubcommands));
             commands.AddRange(commandRange);
         }
 

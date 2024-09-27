@@ -12,6 +12,8 @@ using Solitons.Collections;
 
 namespace Solitons.CommandLine.Models;
 
+internal delegate CliOptionModel[] MasterOptionFactory(CliCommandModel command);
+
 internal sealed record CliOptionModel
 {
     public string Name { get; }
@@ -147,6 +149,7 @@ internal sealed record CliOptionModel
 
         RegexPattern = aliases
             .Select(a => a.Replace("?", @"\?"))
+            .Select(a => a.Replace("-", @"\-"))
             .Join(PipeDelimiter)
             .Convert(pattern =>
             {
@@ -181,6 +184,43 @@ internal sealed record CliOptionModel
                 Provider = option.PropertyInfo,
                 Command = command
             };
+        }
+    }
+
+    [DebuggerStepThrough]
+    public static MasterOptionFactory CreateMasterOptionFactory(IEnumerable<CliMasterOptionBundle> bundles) => 
+        CreateMasterOptionFactory(bundles
+            .Select(b => b.GetType())
+            .Distinct());
+
+    public static MasterOptionFactory CreateMasterOptionFactory(IEnumerable<Type> bundleTypes)
+    {
+        var options = bundleTypes
+            .Do(type => ThrowIf.False(CliOptionBundle.IsAssignableFrom(type)))
+            .SelectMany(type => type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+            .Select(p => new
+            {
+                PropertyInfo = p,
+                Attributes = p.GetCustomAttributes(true)
+            })
+            .Where(i => i.Attributes.OfType<CliOptionAttribute>().Any())
+            .Select(i => new
+            {
+                Provider = i.PropertyInfo,
+                Settings = new Settings(i.PropertyInfo, i.Attributes)
+            })
+            .ToList();
+
+        return Factory;
+        CliOptionModel[] Factory(CliCommandModel command)
+        {
+            return options
+                .Select(opt => new CliOptionModel(opt.Settings)
+                {
+                    Command = command,
+                    Provider = opt.Provider
+                })
+                .ToArray();
         }
     }
 

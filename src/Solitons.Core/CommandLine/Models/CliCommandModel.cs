@@ -13,7 +13,7 @@ internal sealed record CliCommandModel
     public CliCommandModel(
         MethodInfo methodInfo, 
         object? program,
-        IReadOnlyList<CliOptionModel> masterOptions,
+        MasterOptionFactory masterOptionFactory,
         IReadOnlyList<CliRouteSubcommandModel> baseSubcommands)
     {
         var parameters = methodInfo.GetParameters();
@@ -96,6 +96,7 @@ internal sealed record CliCommandModel
             }
         }
 
+        options.AddRange(masterOptionFactory(this));
         Options = [.. options];
     }
 
