@@ -8,7 +8,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using Solitons.Collections;
 
 namespace Solitons.CommandLine.Models;
 
@@ -16,16 +15,42 @@ internal delegate CliOptionModel[] MasterOptionFactory(CliCommandModel command);
 
 internal sealed record CliOptionModel
 {
-    public string Name { get; }
+    delegate string OptionPatternBuilder(
+        string optionKeyPattern, 
+        string optionValueGroupName);
+
     private const string AliasPattern = @"(?:\-{1,2}[\w\?][\w\-\?]*)";
     private const string PipeDelimiter = "|";
     private const string CommaDelimiter = ",";
+    private static readonly OptionPatternBuilder BuildOptionPattern;
 
 
     private static readonly Regex ValidAliasesPsvRegex = new(
         @$"^{AliasPattern}(?:\{PipeDelimiter}{AliasPattern})*$",
         RegexOptions.Compiled |
         RegexOptions.CultureInvariant);
+
+
+    static CliOptionModel()
+    {
+        var pattern = 
+            @$"(?<$group>
+                        (?:
+                            $input 
+                            (?:\s+$input)*
+                        )?
+                    )"
+                .Replace("$input", @"[^\s\-]\S*");
+        pattern = @$"(?:$name)\s*{pattern}"
+            .Convert(RegexUtils.RemoveWhitespace);
+        BuildOptionPattern = Factory;
+        string Factory(string optionKeyPattern, string groupName)
+        {
+            return pattern
+                .Replace("$name", optionKeyPattern)
+                .Replace("$group", groupName);
+        }
+    }
 
     sealed record Settings
     {
@@ -133,13 +158,8 @@ internal sealed record CliOptionModel
             .Select(a => a.Replace("?", @"\?"))
             .Join(PipeDelimiter)
             .Convert(RegexUtils.EnsureNonCapturingGroup)
-            .Convert(keyPattern =>
-            {
-                var valuePattern = 
-                    @$"(?<{RegexGroupName}>(?:$input(?:\s+$input)*)?)"
-                    .Replace("$input", @"[^\s\-]\S*");
-                return @$"{keyPattern}\s*{valuePattern}";
-            });
+            .Convert(keyPattern => 
+                BuildOptionPattern(keyPattern, RegexGroupName));
         Debug.Assert(RegexUtils.IsValidExpression(RegexPattern));
     }
 
@@ -203,6 +223,7 @@ internal sealed record CliOptionModel
         }
     }
 
+    public string Name { get; }
 
     public ImmutableArray<string> Aliases { get; }
 
