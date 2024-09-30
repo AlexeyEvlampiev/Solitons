@@ -98,4 +98,29 @@ public sealed class CliTokenEncoder_SubstituteTokens_Should
         Assert.Equal(expectedValue, actualValue);
     }
 
+
+    [Fact]
+    public void Encoder_ShouldBeIdempotent()
+    {
+        var commandLine = @"%PATH% --config [setting] ""quoted text""";
+        Environment.SetEnvironmentVariable("PATH", @"C:\Windows");
+        var preprocessedCommandLine = CliTokenEncoder.Encode(commandLine, out var decoder);
+        var preprocessedAgain = CliTokenEncoder.Encode(preprocessedCommandLine, out var secondDecoder);
+        Assert.Equal(preprocessedCommandLine, preprocessedAgain); // Idempotent - encoding again should not alter the command line
+    }
+
+
+    [Fact]
+    public void Decoder_ShouldBeIdempotent()
+    {
+        var commandLine = @"%PATH% --config [setting] ""quoted text""";
+        Environment.SetEnvironmentVariable("PATH", @"C:\Windows");
+
+        var preprocessedCommandLine = CliTokenEncoder.Encode(commandLine, out var decoder);
+        var actualValue = decoder(preprocessedCommandLine);
+        var actualValueAgain = decoder(actualValue);
+
+        // Assert
+        Assert.Equal(actualValue, actualValueAgain); // Decoding again should not alter the result
+    }
 }
