@@ -1,6 +1,6 @@
 ﻿namespace Solitons.CommandLine.Models;
 
-internal enum CliOptionType
+internal enum CliOptionCategory
 {
     Flag,
     Value,

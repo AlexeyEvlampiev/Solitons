@@ -186,6 +186,8 @@ internal sealed record CliOptionModel
         }
     }
 
+    public CliOptionCategory Category { get; }
+
     [DebuggerStepThrough]
     public static MasterOptionFactory CreateMasterOptionFactory(IEnumerable<CliMasterOptionBundle> bundles) => 
         CreateMasterOptionFactory(bundles
