@@ -66,13 +66,36 @@ public sealed class CliTokenEncoder_SubstituteTokens_Should
     [InlineData(@"--setting . value", "--setting.value")]
     public void SubstituteKeyValueAccessorOptionCorrectly(string commandLine, string expectedValue)
     {
-        // Act
         var preprocessedCommandLine = CliTokenEncoder.Encode(commandLine, out var decoder);
         var actualValue = decoder(preprocessedCommandLine);
 
-        // Assert
         Assert.Equal(expectedValue, preprocessedCommandLine); // Encoded correctly
         Assert.Equal(expectedValue, actualValue); // Decoded should match
+    }
+
+
+    [Theory]
+    [InlineData(@"""C:\Program Files\App\app.exe""", "app.exe")]
+    [InlineData(@"/usr/local/bin/executable", "executable")]
+    public void SubstituteProgramPathCorrectly(string commandLine, string expectedValue)
+    {
+        var preprocessedCommandLine = CliTokenEncoder.Encode(commandLine, out var decoder);
+        var actualValue = decoder(preprocessedCommandLine);
+
+        Assert.Equal(expectedValue, preprocessedCommandLine); // Only the file name should be kept
+        Assert.Equal(expectedValue, actualValue); // Decoded should match
+    }
+
+
+    [Theory]
+    [InlineData(@"dir ""%TEMP%\file.txt""", @"C:\Users\Temp", @"dir C:\Users\Temp\file.txt")]
+    [InlineData(@"dir ""%TEMP%\folder\file.txt""", @"C:\Users\Temp", @"dir C:\Users\Temp\folder\file.txt")]
+    public void SubstituteEnvironmentVariablesInPathsCorrectly(string commandLine, string tempPath, string expectedValue)
+    {
+        Environment.SetEnvironmentVariable("TEMP", tempPath);
+        var preprocessedCommandLine = CliTokenEncoder.Encode(commandLine, out var decoder);
+        var actualValue = decoder(preprocessedCommandLine);
+        Assert.Equal(expectedValue, actualValue);
     }
 
 }

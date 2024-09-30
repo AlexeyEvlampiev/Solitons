@@ -55,7 +55,8 @@ internal sealed class CliTokenEncoder : ICliTokenEncoder
     string ICliTokenEncoder.Encode(string commandLine, out CliTokenDecoder decoder)
     {
         var dictionary = new Dictionary<string, string>(StringComparer.Ordinal);
-        decoder = (input) =>
+
+        string Decode(string input)
         {
             var comparer = StringComparer.Ordinal;
 
@@ -75,9 +76,10 @@ internal sealed class CliTokenEncoder : ICliTokenEncoder
                 input = result;
             }
 
-            ;
             return input;
-        };
+        }
+
+        decoder = Decode;
 
         commandLine = _envVariableReferenceRegex.Replace(
             commandLine,
@@ -108,6 +110,7 @@ internal sealed class CliTokenEncoder : ICliTokenEncoder
         commandLine = _programPathRegex.Replace(commandLine, m =>
         {
             var path = m.Value.Trim();
+            path = Decode(path);
             try
             {
                 return Path
