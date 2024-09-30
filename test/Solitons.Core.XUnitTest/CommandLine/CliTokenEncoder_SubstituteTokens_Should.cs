@@ -29,5 +29,18 @@ public sealed class CliTokenEncoder_SubstituteTokens_Should
 
         Assert.Equal(expectedValue, actualValue); // No replacement
         Assert.Equal(commandLine, preprocessedCommandLine); // Should remain the same
-        }
+    }
+
+    [Theory]
+    [InlineData(@"""This is quoted text""", "This is quoted text")]
+    [InlineData(@"""Another quoted text with spaces""", "Another quoted text with spaces")]
+    public void SubstituteQuotedTextCorrectly(string commandLine, string expectedValue)
+    {
+        // Act
+        var preprocessedCommandLine = CliTokenEncoder.Encode(commandLine, out var decoder);
+        var actualValue = decoder(preprocessedCommandLine);
+
+        // Assert
+        Assert.Equal(expectedValue, actualValue);
+    }
 }
