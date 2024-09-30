@@ -28,7 +28,7 @@ internal sealed class CliTokenEncoder : ICliTokenEncoder
         _keyValueIndexerOptionRegex = new Regex(
             @"(?<option>$option) \s* \[ \s* (?<key>$key) \s* \]"
                 .Replace("$option", @"\-{1,}\w[^\s\[]*")
-                .Replace("$key", @"[^[]\s]+")
+                .Replace("$key", @"[^\[\]\s]+")
                 .Convert(RegexUtils.RemoveWhitespace), RegexOptions.Compiled);
         _keyValueAccessorOptionRegex = new Regex(@"
             (?=\-)

@@ -43,4 +43,36 @@ public sealed class CliTokenEncoder_SubstituteTokens_Should
         // Assert
         Assert.Equal(expectedValue, actualValue);
     }
+
+    [Theory]
+    [InlineData(@"--config[setting]", "--config.setting")]
+    [InlineData(@"--config [setting]", "--config.setting")]
+    [InlineData(@"--option[value]", "--option.value")]
+    [InlineData(@"--option [ value ]", "--option.value")]
+    public void SubstituteKeyValueIndexerOptionCorrectly(string commandLine, string expectedValue)
+    {
+        var preprocessedCommandLine = CliTokenEncoder.Encode(commandLine, out var decoder);
+        var actualValue = decoder(preprocessedCommandLine);
+
+        Assert.Equal(expectedValue, preprocessedCommandLine); // Encoded correctly
+        Assert.Equal(expectedValue, actualValue); // Decoded should match
+    }
+
+
+    [Theory]
+    [InlineData(@"--config.option", "--config.option")]
+    [InlineData(@"--setting.value", "--setting.value")]
+    [InlineData(@"--config . option", "--config.option")]
+    [InlineData(@"--setting . value", "--setting.value")]
+    public void SubstituteKeyValueAccessorOptionCorrectly(string commandLine, string expectedValue)
+    {
+        // Act
+        var preprocessedCommandLine = CliTokenEncoder.Encode(commandLine, out var decoder);
+        var actualValue = decoder(preprocessedCommandLine);
+
+        // Assert
+        Assert.Equal(expectedValue, preprocessedCommandLine); // Encoded correctly
+        Assert.Equal(expectedValue, actualValue); // Decoded should match
+    }
+
 }
