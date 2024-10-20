@@ -11,18 +11,18 @@ internal delegate string CliTokenDecoder(string token);
 
 internal sealed class CliTokenEncoder
 {
-    delegate string Transformer(string commandLine, TokenGenerator generator);
+    delegate string Transformer(string commandLine, UniqueTokenGenerator generator);
     private readonly Dictionary<string, string> _tokens = new(StringComparer.Ordinal);
     private readonly Dictionary<object, Regex> _regexCache = new();
     private readonly Transformer[] _transformers;
 
-    class TokenGenerator
+    class UniqueTokenGenerator
     {
         private const string Prefix = "@val";
         private int _index = 0;
         private readonly HashSet<string> _reserved = new(StringComparer.OrdinalIgnoreCase);
 
-        public TokenGenerator(string commandLine)
+        public UniqueTokenGenerator(string commandLine)
         {
             var regex = new Regex(@$"\b{Prefix}\d+\b");
             foreach (Match match in regex.Matches(commandLine))
@@ -75,7 +75,7 @@ internal sealed class CliTokenEncoder
 
     string Encode(string commandLine)
     {
-        var generator = new TokenGenerator(commandLine);
+        var generator = new UniqueTokenGenerator(commandLine);
         foreach (var transformer in _transformers)
         {
             commandLine = transformer.Invoke(commandLine, generator);
@@ -95,7 +95,7 @@ internal sealed class CliTokenEncoder
         return token;
     }
 
-    string TrimProgramPath(string commandLine, TokenGenerator generator)
+    string TrimProgramPath(string commandLine, UniqueTokenGenerator generator)
     {
         return _regexCache
             .GetOrAdd(nameof(TrimProgramPath), () =>
@@ -109,6 +109,13 @@ internal sealed class CliTokenEncoder
                     var file = Path
                         .GetFileName(path)
                         .DefaultIfNullOrWhiteSpace(path);
+                    if (Regex.IsMatch(file, @"\s+"))
+                    {
+                        var token = generator.Next();
+                        _tokens[token] = file;
+                        return token;
+                    }
+
                     _tokens[file] = path;
                     return file;
                 }
@@ -120,7 +127,7 @@ internal sealed class CliTokenEncoder
             });
     }
 
-    string SubstituteQutatedText(string commandLine, TokenGenerator generator)
+    string SubstituteQutatedText(string commandLine, UniqueTokenGenerator generator)
     {
         return _regexCache
             .GetOrAdd(nameof(SubstituteQutatedText), () =>
@@ -135,7 +142,7 @@ internal sealed class CliTokenEncoder
             });
     }
 
-    string SubstituteEnvVariables(string commandLine, TokenGenerator generator)
+    string SubstituteEnvVariables(string commandLine, UniqueTokenGenerator generator)
     {
         return _regexCache
             .GetOrAdd(nameof(SubstituteEnvVariables), () =>
@@ -158,11 +165,11 @@ internal sealed class CliTokenEncoder
     }
     
 
-    string SubstituteKeyValuePairs(string commandLine, TokenGenerator generator)
+    string SubstituteKeyValuePairs(string commandLine, UniqueTokenGenerator generator)
     {
         return _regexCache
             .GetOrAdd(nameof(SubstituteKeyValuePairs), () =>
-            @"(?<=\s)$option$key_value_pair)"
+            @"(?<=\s)$option$key_value_pair"
                 .Replace("$option", @"(?<option>\-{1,}[^\s\[\]\.]+)")
                 .Replace("$key_value_pair", @"(?:$dot_notation|$accessor_notation)")
                 .Replace("$dot_notation", @"(?:\s*\.\s*$key(?:\s+$value)?)")

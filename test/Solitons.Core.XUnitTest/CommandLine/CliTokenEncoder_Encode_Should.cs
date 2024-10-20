@@ -4,8 +4,20 @@ using Xunit;
 namespace Solitons.CommandLine;
 
 // ReSharper disable once InconsistentNaming
-public sealed class CliTokenEncoder_SubstituteTokens_Should
+public sealed class CliTokenEncoder_Encode_Should
 {
+    [Theory]
+    [InlineData("cli")]
+    [InlineData("apps/cli")]
+    [InlineData("apps\\cli")]
+    [InlineData(@"""my-apps/app 1/cli""")]
+    public void Work(string commandLine)
+    {
+        var encoded = CliTokenEncoder.Encode(commandLine, out _).Trim();
+        Assert.Equal("cli", encoded);
+    }
+
+
     [Theory]
     [InlineData("%CLI_TEST%", "CLI_TEST", "This is a test", "This is a test")]
     [InlineData("%PATH%", "PATH", @"C:\Windows\System32", @"C:\Windows\System32")]
