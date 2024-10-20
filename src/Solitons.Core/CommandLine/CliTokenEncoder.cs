@@ -3,131 +3,180 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
-using Solitons.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
 
 internal delegate string CliTokenDecoder(string token);
-internal interface ICliTokenEncoder
-{
-    string Encode(string text, out CliTokenDecoder decoder);
-}
 
-internal sealed class CliTokenEncoder : ICliTokenEncoder
+
+internal sealed class CliTokenEncoder
 {
-    private readonly Regex _keyValueIndexerOptionRegex;
-    private readonly Regex _keyValueAccessorOptionRegex;
-    private readonly Regex _programPathRegex;
-    private readonly Regex _envVariableReferenceRegex;
-    private readonly Regex _quotedTextRegex;
+    delegate string Transformer(string commandLine, TokenGenerator generator);
+    private readonly Dictionary<string, string> _tokens = new(StringComparer.Ordinal);
+    private readonly Dictionary<object, Regex> _regexCache = new();
+    private readonly Transformer[] _transformers;
+
+    class TokenGenerator
+    {
+        private const string Prefix = "@val";
+        private int _index = 0;
+        private readonly HashSet<string> _reserved = new(StringComparer.OrdinalIgnoreCase);
+
+        public TokenGenerator(string commandLine)
+        {
+            var regex = new Regex(@$"\b{Prefix}\d+\b");
+            foreach (Match match in regex.Matches(commandLine))
+            {
+                _reserved.Add(match.Value);
+            }
+        }
+
+        public string Next()
+        {
+            for (int i = 0; i < _reserved.Count; ++i)
+            {
+                var next = $"{Prefix}{_index++:00}";
+                if (_reserved.Contains(next))
+                {
+                    continue;
+                }
+
+                return next;
+            }
+
+            throw new InvalidOperationException();
+        }
+    }
 
 
     [DebuggerStepThrough]
     private CliTokenEncoder()
     {
-        _keyValueIndexerOptionRegex = new Regex(
-            @"(?<option>$option) \s* \[ \s* (?<key>$key) \s* \]"
-                .Replace("$option", @"\-{1,}\w[^\s\[]*")
-                .Replace("$key", @"[^\[\]\s]+")
-                .Convert(RegexUtils.RemoveWhitespace), RegexOptions.Compiled);
-        _keyValueAccessorOptionRegex = new Regex(@"
-            (?=\-)
-            (?<=^|\s)
-            (?<option>[^\s\.]+) \s* \. \s* 
-            (?<key>[^\-\s]\S*)"
-            .Convert(RegexUtils.RemoveWhitespace), RegexOptions.Compiled);
-        _programPathRegex = new Regex(@"^\s*\S+", RegexOptions.Compiled);
-
-        _envVariableReferenceRegex = new Regex(@"(?:""$variable""|$variable)".Replace("$variable", "%[^%]+%"), RegexOptions.Compiled);
-
-        _quotedTextRegex = new Regex(@"""[^""]*""", RegexOptions.Compiled);
+        _transformers =
+        [
+            TrimProgramPath,
+            SubstituteEnvVariables,
+            SubstituteQutatedText,
+            SubstituteKeyValuePairs
+        ];
     }
 
 
     [DebuggerStepThrough]
     public static string Encode(string commandLine, out CliTokenDecoder decoder)
     {
-        ICliTokenEncoder encoder = new CliTokenEncoder();
-        return encoder.Encode(commandLine, out decoder);
+        var encoder = new CliTokenEncoder();
+        decoder = encoder.Decode;
+        return encoder.Encode(commandLine);
     }
 
 
-    string ICliTokenEncoder.Encode(string commandLine, out CliTokenDecoder decoder)
+
+
+    string Encode(string commandLine)
     {
-        var dictionary = new Dictionary<string, string>(StringComparer.Ordinal);
-
-        string Decode(string input)
+        var generator = new TokenGenerator(commandLine);
+        foreach (var transformer in _transformers)
         {
-            var comparer = StringComparer.Ordinal;
-
-            for (int i = 0; i < 1000; ++i)
-            {
-                var result = input;
-                foreach (var pair in dictionary)
-                {
-                    result = result.Replace(pair.Key, pair.Value);
-                }
-
-                if (comparer.Equals(result, input))
-                {
-                    return result;
-                }
-
-                input = result;
-            }
-
-            return input;
+            commandLine = transformer.Invoke(commandLine, generator);
         }
-
-        decoder = Decode;
-
-        commandLine = _envVariableReferenceRegex.Replace(
-            commandLine,
-            match =>
-            {
-                var key = GenerateKey();
-                var value = match.Value.Trim('"').Trim('%');
-                value = Environment.GetEnvironmentVariable(value);
-                if (value.IsNullOrWhiteSpace())
-                {
-                    return match.Value;
-                }
-                dictionary[key] = value!;
-                return key;
-            });
-
-        commandLine = _quotedTextRegex.Replace(
-            commandLine,
-            match =>
-            { ;
-                var key = GenerateKey();
-                dictionary[key] = match.Value.Trim('"');
-                return key;
-            });
-
-        commandLine = _keyValueIndexerOptionRegex.Replace(commandLine, m => m.Result("${option}.${key}"));
-        commandLine = _keyValueAccessorOptionRegex.Replace(commandLine, m => m.Result("${option}.${key}"));
-        commandLine = _programPathRegex.Replace(commandLine, m =>
-        {
-            var path = m.Value.Trim();
-            path = Decode(path);
-            try
-            {
-                return Path
-                    .GetFileName(path)
-                    .DefaultIfNullOrWhiteSpace(path);
-            }
-            catch (Exception e)
-            {
-                Debug.Fail(e.Message);
-                return path;
-            }
-            
-        });
         return commandLine;
     }
 
+    string Decode(string token)
+    {
+        for (int i = 0; 
+             i < _tokens.Count && _tokens.TryGetValue(token, out var decoded); 
+             i++)
+        {
+            token = decoded;
+        }
 
+        return token;
+    }
+
+    string TrimProgramPath(string commandLine, TokenGenerator generator)
+    {
+        return _regexCache
+            .GetOrAdd(nameof(TrimProgramPath), () =>
+                @"^(?:""[^""]+""?|\S+)"
+                    .Convert(pattern => new Regex(pattern)))
+            .Replace(commandLine, match =>
+            {
+                var path = match.Value.Trim('"');
+                try
+                {
+                    var file = Path
+                        .GetFileName(path)
+                        .DefaultIfNullOrWhiteSpace(path);
+                    _tokens[file] = path;
+                    return file;
+                }
+                catch (Exception e)
+                {
+                    Debug.Fail(e.Message);
+                    return path;
+                }
+            });
+    }
+
+    string SubstituteQutatedText(string commandLine, TokenGenerator generator)
+    {
+        return _regexCache
+            .GetOrAdd(nameof(SubstituteQutatedText), () =>
+                @"""[^""]*"""
+                    .Convert(pattern => new Regex(pattern)))
+            .Replace(commandLine, match =>
+            {
+                var token = generator.Next();
+                var value = match.Value.Trim('"');
+                _tokens[token] = value!;
+                return token;
+            });
+    }
+
+    string SubstituteEnvVariables(string commandLine, TokenGenerator generator)
+    {
+        return _regexCache
+            .GetOrAdd(nameof(SubstituteEnvVariables), () =>
+                @"(?:""$variable""|$variable)"
+                    .Replace("$variable", "%[^%]+%")
+                    .Convert(pattern => new Regex(pattern)))
+            .Replace(commandLine, match =>
+            {
+                var token = generator.Next();
+                var value = match.Value.Trim('%');
+                var variableValue = Environment.GetEnvironmentVariable(value);
+                if (variableValue.IsPrintable())
+                {
+                    value = variableValue;
+                }
+                
+                _tokens[token] = value!;
+                return token;
+            });
+    }
+    
+
+    string SubstituteKeyValuePairs(string commandLine, TokenGenerator generator)
+    {
+        return _regexCache
+            .GetOrAdd(nameof(SubstituteKeyValuePairs), () =>
+            @"(?<=\s)$option$key_value_pair)"
+                .Replace("$option", @"(?<option>\-{1,}[^\s\[\]\.]+)")
+                .Replace("$key_value_pair", @"(?:$dot_notation|$accessor_notation)")
+                .Replace("$dot_notation", @"(?:\s*\.\s*$key(?:\s+$value)?)")
+                .Replace("$accessor_notation", @"(?:\s*\[\s*$key\s*\](?:\s+$value)?)")
+                .Replace("$key", @"(?<key>\S+)")
+                .Replace("$value", @"(?<value>[^\-\s]\S+)")
+                .Convert(pattern => new Regex(pattern)))
+            .Replace(commandLine, match =>
+            {
+                var token = generator.Next();
+                _tokens[token] = match.Result("${key} ${value}").Trim();
+                return match.Result("${option} {token}");
+            });
+    }
 
     private static string GenerateKey() => Guid.NewGuid().ToString("N");
 
