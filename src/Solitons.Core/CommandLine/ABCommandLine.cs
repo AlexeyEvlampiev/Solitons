@@ -87,6 +87,88 @@ public sealed class ABCommandLine
     }
 
 
+    public bool IsCollectionOption(int index, out string optionName, out string[] optionValues)
+    {
+        ThrowIfOptionIndexOutOfRange(index);
+        var option = _options[index];
+        if (option is KeyValuePair<string, string[]> pair)
+        {
+            optionName = pair.Key;
+            optionValues = pair.Value.ToArray();
+            return true;
+        }
+
+        optionName = string.Empty;
+        optionValues = [];
+        return false;
+    }
+
+    public bool IsKeyValueOption(
+        int index, 
+        out string optionName, 
+        out string optionKey, 
+        out string optionValue)
+    {
+        ThrowIfOptionIndexOutOfRange(index);
+        var option = _options[index];
+        if (option is KeyValuePair<string, KeyValuePair<string, string>> pair)
+        {
+            optionName = pair.Key;
+            optionKey = pair.Value.Key;
+            optionValue = pair.Value.Value;
+            return true;
+        }
+
+        optionName = string.Empty;
+        optionKey = string.Empty;
+        optionValue = string.Empty;
+        return false;
+    }
+
+
+    public bool IsKeyCollectionOption(
+        int index,
+        out string optionName,
+        out string optionKey,
+        out string[] optionValue)
+    {
+        ThrowIfOptionIndexOutOfRange(index);
+        var option = _options[index];
+        if (option is KeyValuePair<string, KeyValuePair<string, string[]>> pair)
+        {
+            optionName = pair.Key;
+            optionKey = pair.Value.Key;
+            optionValue = pair.Value.Value;
+            return true;
+        }
+
+        optionName = string.Empty;
+        optionKey = string.Empty;
+        optionValue = [];
+        return false;
+    }
+
+
+    public bool IsKeyFlagOption(
+        int index,
+        out string optionName,
+        out string optionKey)
+    {
+        ThrowIfOptionIndexOutOfRange(index);
+        var option = _options[index];
+        if (option is KeyValuePair<string, KeyValuePair<string, Unit>> pair)
+        {
+            optionName = pair.Key;
+            optionKey = pair.Value.Key;
+            return true;
+        }
+
+        optionName = string.Empty;
+        optionKey = string.Empty;
+        return false;
+    }
+
+
     public string Decode(string input)
     {
         int maxCycles = 1000;
@@ -214,10 +296,6 @@ public sealed class ABCommandLine
                 Debug.Assert(name.Success);
                 if (key.Success)
                 {
-                    if (values.Any() == false)
-                    {
-                        throw new FormatException("Map with key specified but value is missing");
-                    }
                     state.AddMapOption(name.Value, key.Value, values);
                 }
                 else
@@ -275,7 +353,6 @@ public sealed class ABCommandLine
         {
             Debug.Assert(name.IsPrintable());
             Debug.Assert(key.IsPrintable());
-            Debug.Assert(values.Any());
             if (values.Length == 0)
             {
                 _options.Add(KeyValuePair.Create(
