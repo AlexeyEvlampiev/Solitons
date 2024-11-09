@@ -32,7 +32,7 @@ public sealed class ABCommandLine
             EncodeEnvVariables,
             EncodeQuotedText,
             FormatMapOptions,
-            StripOptions
+            CaptureOptions
         };
 
         foreach (var transformer in transformers)
@@ -40,7 +40,7 @@ public sealed class ABCommandLine
             commandLine = transformer.Invoke(commandLine, state);
         }
 
-        CanonicalForm = commandLine;
+        TokenizedCommandLine = commandLine;
         ExecutableName = ThrowIf.NullOrWhiteSpace(state.ProgramName).Trim();
         Options = [..state.Options.Select(o => o.Decode(this.Decode))];
     }
@@ -51,7 +51,7 @@ public sealed class ABCommandLine
 
     public string CommandLine { get; }
 
-    public string CanonicalForm { get; }
+    public string TokenizedCommandLine { get; }
 
     public ImmutableArray<CliOptionCapture> Options { get; }
 
@@ -162,7 +162,7 @@ public sealed class ABCommandLine
     }
 
 
-    private string StripOptions(string commandline, State state)
+    private string CaptureOptions(string commandline, State state)
     {
         commandline = @"(?xis-m)(?<=\s|^)
             (?<option>(?<name>-{1,2}[^\.\s]+) (?:\.(?<key>\S*))?)   
@@ -185,7 +185,7 @@ public sealed class ABCommandLine
                     state.AddOption(name.Value, values);
                 }
                 
-                return option.Value;
+                return match.Value;
             });
         return commandline;
     }
