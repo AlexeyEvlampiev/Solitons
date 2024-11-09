@@ -6,7 +6,7 @@ namespace Solitons.Text.RegularExpressions;
 
 public static class RegexUtils
 {
-    private static readonly Regex RemoveWhitespaceRegex = new(@"\s+", RegexOptions.Compiled);
+    private static readonly Regex WhiteSpaceRegex = new(@"\s+", RegexOptions.Compiled);
     private static readonly Regex ValidGroupNameRegex = new(@"^\w+$", RegexOptions.Compiled);
 
     /// <summary>
@@ -67,7 +67,7 @@ public static class RegexUtils
     /// <exception cref="ArgumentNullException">Thrown if the <paramref name="input"/> is null.</exception>
     [DebuggerNonUserCode]
     public static string RemoveWhitespace(string input) =>
-        RemoveWhitespaceRegex.Replace(input, string.Empty);
+        WhiteSpaceRegex.Replace(input, string.Empty);
 
     /// <summary>
     /// Validates whether the given regular expression pattern is valid.
@@ -87,4 +87,6 @@ public static class RegexUtils
             return false;
         }
     }
+
+    public static bool HasWhiteSpaces(string command) => WhiteSpaceRegex.IsMatch(command);
 }
