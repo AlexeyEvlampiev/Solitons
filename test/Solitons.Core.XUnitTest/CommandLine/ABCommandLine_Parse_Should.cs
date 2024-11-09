@@ -30,4 +30,15 @@ public sealed class ABCommandLine_Parse_Should
 
         Assert.True(cl.ParsedOptions[6] is CliKeyFlagOptionCapture { Name: "--opt7", Key: "some_flag" });
     }
+
+
+
+    [Fact]
+    public void Work2()
+    {
+        var cl = ABCommandLine.ParseCommandLine(
+            @"tool cmd1 --opt1 ""this is a test"" --opt2.""this is a key"" ""this is a value""");
+        Assert.Equal("tool", cl.ApplicationName);
+
+    }
 }

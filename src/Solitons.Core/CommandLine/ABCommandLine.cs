@@ -297,15 +297,19 @@ public sealed record CliCollectionOptionCapture(string Name, ImmutableArray<stri
 
 public sealed record CliKeyFlagOptionCapture(string Name, string Key) : CliOptionCapture(Name)
 {
-    internal override CliOptionCapture Decode(Func<string, string> decoder) => this;
+    internal override CliOptionCapture Decode(Func<string, string> decoder) => this with {Key = decoder(Key)};
 }
 
 public sealed record CliKeyValueOptionCapture(string Name, string Key, string Value) : CliOptionCapture(Name)
 {
-    internal override CliOptionCapture Decode(Func<string, string> decoder) => this with { Value = decoder(Value) };
+    internal override CliOptionCapture Decode(Func<string, string> decoder) => this with { Key = decoder(Key), Value = decoder(Value) };
 }
 
 public sealed record CliKeyCollectionOptionCapture(string Name, string Key, ImmutableArray<string> Values) : CliOptionCapture(Name)
 {
-    internal override CliOptionCapture Decode(Func<string, string> decoder) => this with { Values = [..Values.Select(decoder)] };
+    internal override CliOptionCapture Decode(Func<string, string> decoder) => this with
+    {
+        Key = decoder(Key),
+        Values = [..Values.Select(decoder)]
+    };
 }
