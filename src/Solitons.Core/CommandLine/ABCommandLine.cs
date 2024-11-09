@@ -58,25 +58,23 @@ public sealed class ABCommandLine
 
     public string CanonicalForm { get; }
 
+
+
     public bool IsFlagOption(int index, out string optionName)
     {
-        ThrowIfOptionIndexOutOfRange(index);
-        var option = _options[index];
-        if (option is KeyValuePair<string, Unit> pair)
+        if (TryGetOption<KeyValuePair<string, Unit>>(index, out var pair))
         {
             optionName = pair.Key;
             return true;
         }
-
         optionName = string.Empty;
         return false;
     }
 
+
     public bool IsScalarOption(int index, out string optionName, out string optionValue )
     {
-        ThrowIfOptionIndexOutOfRange(index);
-        var option = _options[index];
-        if (option is KeyValuePair<string, string> pair)
+        if (TryGetOption<KeyValuePair<string, string>>(index, out var pair))
         {
             optionName = pair.Key;
             optionValue = pair.Value;
@@ -91,9 +89,7 @@ public sealed class ABCommandLine
 
     public bool IsCollectionOption(int index, out string optionName, out string[] optionValues)
     {
-        ThrowIfOptionIndexOutOfRange(index);
-        var option = _options[index];
-        if (option is KeyValuePair<string, string[]> pair)
+        if (TryGetOption<KeyValuePair<string, string[]>>(index, out var pair))
         {
             optionName = pair.Key;
             optionValues = pair.Value.ToArray();
@@ -111,9 +107,7 @@ public sealed class ABCommandLine
         out string optionKey, 
         out string optionValue)
     {
-        ThrowIfOptionIndexOutOfRange(index);
-        var option = _options[index];
-        if (option is KeyValuePair<string, KeyValuePair<string, string>> pair)
+        if (TryGetOption<KeyValuePair<string, KeyValuePair<string, string>>>(index, out var pair))
         {
             optionName = pair.Key;
             optionKey = pair.Value.Key;
@@ -134,9 +128,7 @@ public sealed class ABCommandLine
         out string optionKey,
         out string[] optionValue)
     {
-        ThrowIfOptionIndexOutOfRange(index);
-        var option = _options[index];
-        if (option is KeyValuePair<string, KeyValuePair<string, string[]>> pair)
+        if (TryGetOption<KeyValuePair<string, KeyValuePair<string, string[]>>>(index, out var pair))
         {
             optionName = pair.Key;
             optionKey = pair.Value.Key;
@@ -156,9 +148,7 @@ public sealed class ABCommandLine
         out string optionName,
         out string optionKey)
     {
-        ThrowIfOptionIndexOutOfRange(index);
-        var option = _options[index];
-        if (option is KeyValuePair<string, KeyValuePair<string, Unit>> pair)
+        if (TryGetOption<KeyValuePair<string, KeyValuePair<string, Unit>>>(index, out var pair))
         {
             optionName = pair.Key;
             optionKey = pair.Value.Key;
@@ -199,17 +189,22 @@ public sealed class ABCommandLine
 
     }
 
-
-    private void ThrowIfOptionIndexOutOfRange(int index)
+    private bool TryGetOption<T>(int index, out T? option)
     {
-        if (index >= _options.Length)
+        if (index < 0 || index >= _options.Length)
         {
-            if (index >= _options.Length)
-            {
-                throw new ArgumentOutOfRangeException(nameof(index), index, $"Index should be less than {_options.Length}.");
-            }
+            throw new ArgumentOutOfRangeException(nameof(index), index, $"Index should be less than {_options.Length}.");
         }
+        if (_options[index] is T matchedOption)
+        {
+            option = matchedOption;
+            return true;
+        }
+        option = default;
+        return false;
     }
+
+
 
     private static string EncodeCommandName(string commandLine, State state)
     {
