@@ -11,7 +11,7 @@ namespace Solitons.CommandLine;
 
 public sealed class ABCommandLine
 {
-    delegate string Transformer(string commandLine, State state);
+    delegate string Transformer(string commandLine, ParsingContext context);
 
 
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -19,45 +19,43 @@ public sealed class ABCommandLine
 
 
     [DebuggerStepThrough]
-    public static ABCommandLine Parse(string commandLine) => new(commandLine);
+    public static ABCommandLine ParseCommandLine(string commandLine) => new(commandLine);
 
-    private ABCommandLine(string commandLine)
+    private ABCommandLine(string originalCommand)
     {
-        CommandLine = commandLine;
-        var state = new State(commandLine, _encodings);
+        RawCommandLine = originalCommand;
+        var state = new ParsingContext(originalCommand, _encodings);
 
         var transformers = new Transformer[]
         {
-            EncodeCommandName,
-            EncodeEnvVariables,
-            EncodeQuotedText,
-            FormatMapOptions,
-            CaptureOptions
+            ProcessCommandName,
+            ProcessEnvironmentVariables,
+            ProcessQuotedStrings,
+            FormatKeyedOptions,
+            ExtractOptions
         };
 
         foreach (var transformer in transformers)
         {
-            commandLine = transformer.Invoke(commandLine, state);
+            originalCommand = transformer.Invoke(originalCommand, state);
         }
 
-        TokenizedCommandLine = commandLine;
-        ExecutableName = ThrowIf.NullOrWhiteSpace(state.ProgramName).Trim();
-        Options = [..state.Options.Select(o => o.Decode(this.Decode))];
+        ProcessedCommandLine = originalCommand;
+        ApplicationName = ThrowIf.NullOrWhiteSpace(state.ProgramName).Trim();
+        ParsedOptions = [..state.Options.Select(o => o.Decode(this.DecodeEncodings))];
     }
 
 
 
-    public string ExecutableName { get; }
+    public string ApplicationName { get; }
 
-    public string CommandLine { get; }
+    public string RawCommandLine { get; }
 
-    public string TokenizedCommandLine { get; }
+    public string ProcessedCommandLine { get; }
 
-    public ImmutableArray<CliOptionCapture> Options { get; }
+    public ImmutableArray<CliOptionCapture> ParsedOptions { get; }
 
-
-
-    public string Decode(string input)
+    public string DecodeEncodings(string input)
     {
         int maxCycles = 1000;
         int cycle = 0;
@@ -85,10 +83,11 @@ public sealed class ABCommandLine
 
     }
 
+    public override string ToString() => RawCommandLine;
 
+    public static implicit operator string(ABCommandLine commandLine) => commandLine.ToString();
 
-
-    private static string EncodeCommandName(string commandLine, State state)
+    private static string ProcessCommandName(string commandLine, ParsingContext context)
     {
         var match = @"(?xis-m)^(?<command>""[^""]+""|\S+)(?:\s+(?<parameters>.*))?$"
             .Convert(pattern => new Regex(pattern))
@@ -105,17 +104,17 @@ public sealed class ABCommandLine
             command = Path.GetFileName(command);
         }
 
-        state.ProgramName = command;
+        context.ProgramName = command;
         if (RegexUtils.HasWhiteSpaces(command))
         {
-            var encoded = state.Encode(command);
+            var encoded = context.Encode(command);
             return $"{encoded} {parameters}";
         }
 
         return $"{command} {parameters}";
     }
 
-    private string EncodeEnvVariables(string commandline, State state)
+    private string ProcessEnvironmentVariables(string commandline, ParsingContext context)
     {
         return @"%[\w_]+%"
             .Replace("$variable", @"%[\w_]+%")
@@ -129,7 +128,7 @@ public sealed class ABCommandLine
                 var envVariable = Environment.GetEnvironmentVariable(value);
                 if (envVariable.IsPrintable())
                 {
-                    var key = state.Encode(envVariable!);
+                    var key = context.Encode(envVariable!);
                     return key;
 
                 }
@@ -138,19 +137,18 @@ public sealed class ABCommandLine
             });
     }
 
-    private string EncodeQuotedText(string commandLine, State state)
+    private string ProcessQuotedStrings(string commandLine, ParsingContext context)
     {
         return @"""[^""]*"""
             .Convert(pattern => new Regex(pattern))
             .Replace(commandLine, match =>
             {
                 var value = match.Value.Trim('"');
-                return state.Encode(value);
+                return context.Encode(value);
             });
     }
 
-
-    private string FormatMapOptions(string commandline, State state)
+    private string FormatKeyedOptions(string commandline, ParsingContext context)
     {
         commandline = @"(?<option>-{1,}$option)\s*\[\s*(?<key>$key)\s*\]"
             .Replace("$option", @"[^\[\s]+")
@@ -162,7 +160,7 @@ public sealed class ABCommandLine
     }
 
 
-    private string CaptureOptions(string commandline, State state)
+    private string ExtractOptions(string commandline, ParsingContext context)
     {
         commandline = @"(?xis-m)(?<=\s|^)
             (?<option>(?<name>-{1,2}[^\.\s]+) (?:\.(?<key>\S*))?)   
@@ -178,11 +176,11 @@ public sealed class ABCommandLine
                 Debug.Assert(name.Success);
                 if (key.Success)
                 {
-                    state.AddMapOption(name.Value, key.Value, values);
+                    context.AddKeyedOption(name.Value, key.Value, values);
                 }
                 else
                 {
-                    state.AddOption(name.Value, values);
+                    context.AddOption(name.Value, values);
                 }
                 
                 return match.Value;
@@ -190,7 +188,7 @@ public sealed class ABCommandLine
         return commandline;
     }
 
-    sealed class State(
+    sealed class ParsingContext(
         string commandLine,
         IDictionary<string, string> encodings)
     {
@@ -208,14 +206,14 @@ public sealed class ABCommandLine
 
         public string Encode(string value)
         {
-            var key = NextUniqueKey();
+            var key = GenerateUniqueEncodingKey();
             _encodings.Add(key, value);
             return key;
         }
 
         public ImmutableArray<CliOptionCapture> Options => [.._options];
 
-        private string NextUniqueKey()
+        private string GenerateUniqueEncodingKey()
         {
             var key = $"{{{_index++}}}";
             int attempt = 0;
@@ -231,7 +229,7 @@ public sealed class ABCommandLine
             return key;
         }
 
-        public void AddMapOption(string name, string key, string[] values)
+        public void AddKeyedOption(string name, string key, string[] values)
         {
             Debug.Assert(name.IsPrintable());
             Debug.Assert(key.IsPrintable());
@@ -271,9 +269,9 @@ public sealed class ABCommandLine
 
 public abstract record CliOptionCapture
 {
-    protected internal CliOptionCapture(string Name)
+    protected internal CliOptionCapture(string name)
     {
-        this.Name = Name;
+        this.Name = name;
     }
 
     public string Name { get; }
