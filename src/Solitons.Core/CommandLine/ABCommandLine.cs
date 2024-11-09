@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reactive;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using Solitons.Text.RegularExpressions;
 
@@ -15,11 +14,21 @@ public sealed class ABCommandLine
 {
     delegate string Transformer(string commandLine, State state);
 
+    abstract record Option(string Name);
+
+    sealed record FlagOption(string Name) : Option(Name);
+    sealed record ScalarOption(string Name, string Value) : Option(Name);
+    sealed record CollectionOption(string Name, ImmutableArray<string> Values) : Option(Name);
+
+    sealed record KeyFlagOption(string Name, string Key) : Option(Name);
+    sealed record KeyValueOption(string Name, string Key, string Value) : Option(Name);
+    sealed record KeyCollectionOption(string Name, string Key, ImmutableArray<string> Values) : Option(Name);
+
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private readonly Dictionary<string, string> _encodings = new(StringComparer.Ordinal);
 
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-    private readonly ImmutableArray<object> _options;
+    private readonly ImmutableArray<Option> _options;
 
     [DebuggerStepThrough]
     public static ABCommandLine Parse(string commandLine) => new(commandLine);
@@ -62,9 +71,9 @@ public sealed class ABCommandLine
 
     public bool IsFlagOption(int index, out string optionName)
     {
-        if (TryGetOption<KeyValuePair<string, Unit>>(index, out var pair))
+        if (TryGetOption<FlagOption>(index, out var option))
         {
-            optionName = pair.Key;
+            optionName = option!.Name;
             return true;
         }
         optionName = string.Empty;
@@ -74,10 +83,10 @@ public sealed class ABCommandLine
 
     public bool IsScalarOption(int index, out string optionName, out string optionValue )
     {
-        if (TryGetOption<KeyValuePair<string, string>>(index, out var pair))
+        if (TryGetOption<ScalarOption>(index, out var option))
         {
-            optionName = pair.Key;
-            optionValue = pair.Value;
+            optionName = option!.Name;
+            optionValue = option.Value;
             return true;
         }
 
@@ -87,12 +96,12 @@ public sealed class ABCommandLine
     }
 
 
-    public bool IsCollectionOption(int index, out string optionName, out string[] optionValues)
+    public bool IsCollectionOption(int index, out string optionName, out ImmutableArray<string> optionValues)
     {
-        if (TryGetOption<KeyValuePair<string, string[]>>(index, out var pair))
+        if (TryGetOption<CollectionOption>(index, out var option))
         {
-            optionName = pair.Key;
-            optionValues = pair.Value.ToArray();
+            optionName = option!.Name;
+            optionValues = option.Values;
             return true;
         }
 
@@ -107,11 +116,11 @@ public sealed class ABCommandLine
         out string optionKey, 
         out string optionValue)
     {
-        if (TryGetOption<KeyValuePair<string, KeyValuePair<string, string>>>(index, out var pair))
+        if (TryGetOption<KeyValueOption>(index, out var option))
         {
-            optionName = pair.Key;
-            optionKey = pair.Value.Key;
-            optionValue = pair.Value.Value;
+            optionName = option!.Name;
+            optionKey = option.Key;
+            optionValue = option.Value;
             return true;
         }
 
@@ -126,13 +135,13 @@ public sealed class ABCommandLine
         int index,
         out string optionName,
         out string optionKey,
-        out string[] optionValue)
+        out ImmutableArray<string> optionValue)
     {
-        if (TryGetOption<KeyValuePair<string, KeyValuePair<string, string[]>>>(index, out var pair))
+        if (TryGetOption<KeyCollectionOption>(index, out var option))
         {
-            optionName = pair.Key;
-            optionKey = pair.Value.Key;
-            optionValue = pair.Value.Value;
+            optionName = option!.Name;
+            optionKey = option.Key;
+            optionValue = option.Values;
             return true;
         }
 
@@ -148,10 +157,10 @@ public sealed class ABCommandLine
         out string optionName,
         out string optionKey)
     {
-        if (TryGetOption<KeyValuePair<string, KeyValuePair<string, Unit>>>(index, out var pair))
+        if (TryGetOption<KeyFlagOption>(index, out var pair))
         {
-            optionName = pair.Key;
-            optionKey = pair.Value.Key;
+            optionName = pair!.Name;
+            optionKey = pair.Key;
             return true;
         }
 
@@ -189,7 +198,7 @@ public sealed class ABCommandLine
 
     }
 
-    private bool TryGetOption<T>(int index, out T? option)
+    private bool TryGetOption<T>(int index, out T? option) where T : Option
     {
         if (index < 0 || index >= _options.Length)
         {
@@ -318,7 +327,7 @@ public sealed class ABCommandLine
         private readonly string _commandLine = commandLine;
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly List<object> _options = new();
+        private readonly List<Option> _options = new();
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private int _index = 0;
 
@@ -331,7 +340,7 @@ public sealed class ABCommandLine
             return key;
         }
 
-        public ImmutableArray<object> Options => [.._options];
+        public ImmutableArray<Option> Options => [.._options];
 
         private string NextUniqueKey()
         {
@@ -355,21 +364,15 @@ public sealed class ABCommandLine
             Debug.Assert(key.IsPrintable());
             if (values.Length == 0)
             {
-                _options.Add(KeyValuePair.Create(
-                    name,
-                    KeyValuePair.Create(key, Unit.Default)));
+                _options.Add(new KeyFlagOption(name, key));
             }
             else if (values.Length == 1)
             {
-                _options.Add(KeyValuePair.Create(
-                    name,
-                    KeyValuePair.Create(key, values.Single())));
+                _options.Add(new KeyValueOption(name, key, values.Single()));
             }
             else
             {
-                _options.Add(KeyValuePair.Create(
-                    name,
-                    KeyValuePair.Create(key, values)));
+                _options.Add(new KeyCollectionOption(name, key, [..values]));
             }
 
         }
@@ -378,15 +381,15 @@ public sealed class ABCommandLine
         {
             if (values.Length == 0)
             {
-                _options.Add(KeyValuePair.Create(name, Unit.Default));
+                _options.Add(new FlagOption(name));
             }
             else if (values.Length == 1)
             {
-                _options.Add(KeyValuePair.Create(name, values.Single()));
+                _options.Add(new ScalarOption(name, values.Single()));
             }
             else
             {
-                _options.Add(KeyValuePair.Create(name, values));
+                _options.Add(new CollectionOption(name, [.. values]));
             }
         }
     }
