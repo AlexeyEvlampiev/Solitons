@@ -13,21 +13,10 @@ public sealed class ABCommandLine
 {
     delegate string Transformer(string commandLine, State state);
 
-    abstract record Option(string Name);
-
-    sealed record FlagOption(string Name) : Option(Name);
-    sealed record ScalarOption(string Name, string Value) : Option(Name);
-    sealed record CollectionOption(string Name, ImmutableArray<string> Values) : Option(Name);
-
-    sealed record KeyFlagOption(string Name, string Key) : Option(Name);
-    sealed record KeyValueOption(string Name, string Key, string Value) : Option(Name);
-    sealed record KeyCollectionOption(string Name, string Key, ImmutableArray<string> Values) : Option(Name);
 
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private readonly Dictionary<string, string> _encodings = new(StringComparer.Ordinal);
 
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-    private readonly ImmutableArray<Option> _options;
 
     [DebuggerStepThrough]
     public static ABCommandLine Parse(string commandLine) => new(commandLine);
@@ -53,11 +42,9 @@ public sealed class ABCommandLine
 
         CanonicalForm = commandLine;
         ExecutableName = ThrowIf.NullOrWhiteSpace(state.ProgramName).Trim();
-        _options = state.Options;
+        Options = state.Options;
     }
 
-
-    public int OptionCount => _options.Length;
 
 
     public string ExecutableName { get; }
@@ -66,107 +53,8 @@ public sealed class ABCommandLine
 
     public string CanonicalForm { get; }
 
+    public ImmutableArray<CliOptionCapture> Options { get; }
 
-
-    public bool IsFlagOption(int index, out string optionName)
-    {
-        if (TryGetOption<FlagOption>(index, out var option))
-        {
-            optionName = option!.Name;
-            return true;
-        }
-        optionName = string.Empty;
-        return false;
-    }
-
-
-    public bool IsScalarOption(int index, out string optionName, out string optionValue )
-    {
-        if (TryGetOption<ScalarOption>(index, out var option))
-        {
-            optionName = option!.Name;
-            optionValue = option.Value;
-            return true;
-        }
-
-        optionName = string.Empty;
-        optionValue = string.Empty;
-        return false;
-    }
-
-
-    public bool IsCollectionOption(int index, out string optionName, out ImmutableArray<string> optionValues)
-    {
-        if (TryGetOption<CollectionOption>(index, out var option))
-        {
-            optionName = option!.Name;
-            optionValues = option.Values;
-            return true;
-        }
-
-        optionName = string.Empty;
-        optionValues = [];
-        return false;
-    }
-
-    public bool IsKeyValueOption(
-        int index, 
-        out string optionName, 
-        out string optionKey, 
-        out string optionValue)
-    {
-        if (TryGetOption<KeyValueOption>(index, out var option))
-        {
-            optionName = option!.Name;
-            optionKey = option.Key;
-            optionValue = option.Value;
-            return true;
-        }
-
-        optionName = string.Empty;
-        optionKey = string.Empty;
-        optionValue = string.Empty;
-        return false;
-    }
-
-
-    public bool IsKeyCollectionOption(
-        int index,
-        out string optionName,
-        out string optionKey,
-        out ImmutableArray<string> optionValue)
-    {
-        if (TryGetOption<KeyCollectionOption>(index, out var option))
-        {
-            optionName = option!.Name;
-            optionKey = option.Key;
-            optionValue = option.Values;
-            return true;
-        }
-
-        optionName = string.Empty;
-        optionKey = string.Empty;
-        optionValue = [];
-        return false;
-    }
-
-
-    public bool IsKeyFlagOption(
-        int index,
-        out string optionName,
-        out string optionKey)
-    {
-        if (TryGetOption<KeyFlagOption>(index, out var pair))
-        {
-            optionName = pair!.Name;
-            optionKey = pair.Key;
-            return true;
-        }
-
-        optionName = string.Empty;
-        optionKey = string.Empty;
-        return false;
-    }
 
 
     public string Decode(string input)
@@ -197,20 +85,6 @@ public sealed class ABCommandLine
 
     }
 
-    private bool TryGetOption<T>(int index, out T? option) where T : Option
-    {
-        if (index < 0 || index >= _options.Length)
-        {
-            throw new ArgumentOutOfRangeException(nameof(index), index, $"Index should be less than {_options.Length}.");
-        }
-        if (_options[index] is T matchedOption)
-        {
-            option = matchedOption;
-            return true;
-        }
-        option = default;
-        return false;
-    }
 
 
 
@@ -326,7 +200,7 @@ public sealed class ABCommandLine
         private readonly string _commandLine = commandLine;
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly List<Option> _options = new();
+        private readonly List<CliOptionCapture> _options = new();
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private int _index = 0;
 
@@ -339,7 +213,7 @@ public sealed class ABCommandLine
             return key;
         }
 
-        public ImmutableArray<Option> Options => [.._options];
+        public ImmutableArray<CliOptionCapture> Options => [.._options];
 
         private string NextUniqueKey()
         {
@@ -363,15 +237,15 @@ public sealed class ABCommandLine
             Debug.Assert(key.IsPrintable());
             if (values.Length == 0)
             {
-                _options.Add(new KeyFlagOption(name, key));
+                _options.Add(new CliKeyFlagOptionCapture(name, key));
             }
             else if (values.Length == 1)
             {
-                _options.Add(new KeyValueOption(name, key, values.Single()));
+                _options.Add(new CliKeyValueOptionCapture(name, key, values.Single()));
             }
             else
             {
-                _options.Add(new KeyCollectionOption(name, key, [..values]));
+                _options.Add(new CliKeyCollectionOptionCapture(name, key, [..values]));
             }
 
         }
@@ -380,17 +254,37 @@ public sealed class ABCommandLine
         {
             if (values.Length == 0)
             {
-                _options.Add(new FlagOption(name));
+                _options.Add(new CliFlagOptionCapture(name));
             }
             else if (values.Length == 1)
             {
-                _options.Add(new ScalarOption(name, values.Single()));
+                _options.Add(new CliScalarOptionCapture(name, values.Single()));
             }
             else
             {
-                _options.Add(new CollectionOption(name, [.. values]));
+                _options.Add(new CliCollectionOptionCapture(name, [.. values]));
             }
         }
     }
 
 }
+
+
+public abstract record CliOptionCapture
+{
+    protected internal CliOptionCapture(string Name)
+    {
+        this.Name = Name;
+    }
+
+    public string Name { get; }
+
+}
+
+public sealed record CliFlagOptionCapture(string Name) : CliOptionCapture(Name);
+public sealed record CliScalarOptionCapture(string Name, string Value) : CliOptionCapture(Name);
+public sealed record CliCollectionOptionCapture(string Name, ImmutableArray<string> Values) : CliOptionCapture(Name);
+
+public sealed record CliKeyFlagOptionCapture(string Name, string Key) : CliOptionCapture(Name);
+public sealed record CliKeyValueOptionCapture(string Name, string Key, string Value) : CliOptionCapture(Name);
+public sealed record CliKeyCollectionOptionCapture(string Name, string Key, ImmutableArray<string> Values) : CliOptionCapture(Name);
