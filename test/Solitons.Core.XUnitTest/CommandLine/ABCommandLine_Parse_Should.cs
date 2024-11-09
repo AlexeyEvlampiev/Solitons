@@ -10,9 +10,9 @@ public sealed class ABCommandLine_Parse_Should
     {
         var cl = ABCommandLine.Parse(
             "tool cmd1 cmd2 --opt1 --opt2 item --opt3 item1 item2 --opt4.key value --opt5.key value1 value2 --opt6[key] value --opt7.some_flag");
-        Assert.Equal("tool", cl.ProgramName);
+        Assert.Equal("tool", cl.ExecutableName);
 
-        Assert.Equal(7, cl.OptionsCount);
+        Assert.Equal(7, cl.OptionCount);
         Assert.True(cl.IsFlagOption(0, out var optionName) && optionName == "--opt1");
 
         Assert.True(cl.IsScalarOption(1, out optionName, out var optionValue) 

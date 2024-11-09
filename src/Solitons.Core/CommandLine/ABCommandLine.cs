@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reactive;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using Solitons.Text.RegularExpressions;
 
@@ -17,6 +18,7 @@ public sealed class ABCommandLine
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private readonly Dictionary<string, string> _encodings = new(StringComparer.Ordinal);
 
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private readonly ImmutableArray<object> _options;
 
     [DebuggerStepThrough]
@@ -41,20 +43,20 @@ public sealed class ABCommandLine
             commandLine = transformer.Invoke(commandLine, state);
         }
 
-        EncodedCommandLine = commandLine;
-        ProgramName = ThrowIf.NullOrWhiteSpace(state.ProgramName).Trim();
+        CanonicalForm = commandLine;
+        ExecutableName = ThrowIf.NullOrWhiteSpace(state.ProgramName).Trim();
         _options = state.Options;
     }
 
 
-    public int OptionsCount => _options.Length;
+    public int OptionCount => _options.Length;
 
 
-    public string ProgramName { get; }
+    public string ExecutableName { get; }
 
     public string CommandLine { get; }
 
-    public string EncodedCommandLine { get; }
+    public string CanonicalForm { get; }
 
     public bool IsFlagOption(int index, out string optionName)
     {
@@ -202,7 +204,10 @@ public sealed class ABCommandLine
     {
         if (index >= _options.Length)
         {
-            throw new ArgumentOutOfRangeException();
+            if (index >= _options.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index), index, $"Index should be less than {_options.Length}.");
+            }
         }
     }
 
