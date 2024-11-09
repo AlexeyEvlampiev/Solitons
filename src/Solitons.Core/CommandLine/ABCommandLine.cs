@@ -42,7 +42,7 @@ public sealed class ABCommandLine
 
         CanonicalForm = commandLine;
         ExecutableName = ThrowIf.NullOrWhiteSpace(state.ProgramName).Trim();
-        Options = state.Options;
+        Options = [..state.Options.Select(o => o.Decode(this.Decode))];
     }
 
 
@@ -269,7 +269,6 @@ public sealed class ABCommandLine
 
 }
 
-
 public abstract record CliOptionCapture
 {
     protected internal CliOptionCapture(string Name)
@@ -279,12 +278,36 @@ public abstract record CliOptionCapture
 
     public string Name { get; }
 
+
+    internal abstract CliOptionCapture Decode(Func<string, string> decoder);
 }
 
-public sealed record CliFlagOptionCapture(string Name) : CliOptionCapture(Name);
-public sealed record CliScalarOptionCapture(string Name, string Value) : CliOptionCapture(Name);
-public sealed record CliCollectionOptionCapture(string Name, ImmutableArray<string> Values) : CliOptionCapture(Name);
+public sealed record CliFlagOptionCapture(string Name) : CliOptionCapture(Name)
+{
+    internal override CliOptionCapture Decode(Func<string, string> decoder) => this;
+}
 
-public sealed record CliKeyFlagOptionCapture(string Name, string Key) : CliOptionCapture(Name);
-public sealed record CliKeyValueOptionCapture(string Name, string Key, string Value) : CliOptionCapture(Name);
-public sealed record CliKeyCollectionOptionCapture(string Name, string Key, ImmutableArray<string> Values) : CliOptionCapture(Name);
+public sealed record CliScalarOptionCapture(string Name, string Value) : CliOptionCapture(Name)
+{
+    internal override CliOptionCapture Decode(Func<string, string> decoder) => this with { Value = decoder(Value) };
+}
+
+public sealed record CliCollectionOptionCapture(string Name, ImmutableArray<string> Values) : CliOptionCapture(Name)
+{
+    internal override CliOptionCapture Decode(Func<string, string> decoder) => this with { Values = [.. Values.Select(decoder)] };
+}
+
+public sealed record CliKeyFlagOptionCapture(string Name, string Key) : CliOptionCapture(Name)
+{
+    internal override CliOptionCapture Decode(Func<string, string> decoder) => this;
+}
+
+public sealed record CliKeyValueOptionCapture(string Name, string Key, string Value) : CliOptionCapture(Name)
+{
+    internal override CliOptionCapture Decode(Func<string, string> decoder) => this with { Value = decoder(Value) };
+}
+
+public sealed record CliKeyCollectionOptionCapture(string Name, string Key, ImmutableArray<string> Values) : CliOptionCapture(Name)
+{
+    internal override CliOptionCapture Decode(Func<string, string> decoder) => this with { Values = [..Values.Select(decoder)] };
+}
