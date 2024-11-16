@@ -224,4 +224,51 @@ public sealed class CliCommandLine_Parse_Should
         string implicitString = parsedCommand;
         Assert.Equal("app.exe --verbose --debug -h", implicitString);
     }
+
+
+    /// <summary>
+    /// Tests that parsing an executable with scalar options correctly captures all scalar options.
+    /// </summary>
+    [Fact]
+    public void Parse_ExecutableWithScalarOptions_Should_CaptureScalarOptions()
+    {
+        // Arrange
+        string commandLine = @"app.exe --output ""C:\Output Folder"" --level 5";
+
+        // Act
+        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+
+        // Assert
+        Assert.NotNull(parsedCommand); // Ensure that the parsedCommand is not null
+        Assert.Equal("app.exe", parsedCommand.ExecutableName);
+        Assert.Equal(@"app.exe --output ""C:\Output Folder"" --level 5", parsedCommand.CommandLine);
+        Assert.Equal("app.exe --output --level", parsedCommand.Signature);
+        Assert.Equal("app.exe --output --level", parsedCommand.ToString("Signature"));
+        Assert.Equal("app.exe --output --level", parsedCommand.ToString("S"));
+
+        // Verify that Segments are empty since there are no arguments
+        Assert.Empty(parsedCommand.Segments);
+
+        // Ensure that Options contain exactly two scalar options
+        Assert.Equal(2, parsedCommand.Options.Length);
+
+        // Verify that each option is a CliScalarOptionCapture and has the correct name and value
+        Assert.Contains(parsedCommand.Options, option =>
+            option is CliScalarOptionCapture scalarOption &&
+            scalarOption.Name == "--output" &&
+            scalarOption.Value == @"C:\Output Folder");
+
+        Assert.Contains(parsedCommand.Options, option =>
+            option is CliScalarOptionCapture scalarOption &&
+            scalarOption.Name == "--level" &&
+            scalarOption.Value == "5");
+
+        // Additional Assertions (Optional)
+        // Verify that ToString returns the original command line
+        Assert.Equal(@"app.exe --output ""C:\Output Folder"" --level 5", parsedCommand.ToString());
+
+        // Implicit string conversion should return the original command line
+        string implicitString = parsedCommand;
+        Assert.Equal(@"app.exe --output ""C:\Output Folder"" --level 5", implicitString);
+    }
 }
