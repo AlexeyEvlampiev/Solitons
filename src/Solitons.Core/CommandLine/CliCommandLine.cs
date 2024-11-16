@@ -149,7 +149,7 @@ public sealed class CliCommandLine : IFormattable
     /// <exception cref="FormatException">
     /// Thrown when an unsupported format specifier is provided.
     /// </exception>
-    public string ToString(string? format, IFormatProvider? formatProvider)
+    public string ToString(string? format, IFormatProvider? formatProvider = null)
     {
         if (string.IsNullOrEmpty(format) || string.Equals(format, "G", StringComparison.OrdinalIgnoreCase))
         {
@@ -325,39 +325,26 @@ public sealed class CliCommandLine : IFormattable
 
         public string Encode(string value)
         {
-            var key = GenerateUniqueEncodingKey();
+            var key = Guid.NewGuid().ToString("N");
             _encodings.Add(key, value);
             return key;
         }
 
         private string Decode(string input)
         {
-            if (_encodings.TryGetValue(input, out var decoded))
+            while (_encodings.Keys.Any(input.Contains))
             {
-                return decoded;
+                foreach (var pair in _encodings)
+                {
+                    input = input.Replace(pair.Key, pair.Value);
+                }
             }
-
-            return input;
+            return _encodings.GetValueOrDefault(input, input);
         }
 
         public ImmutableArray<CliOptionCapture> Options => [.._options];
         public IReadOnlyDictionary<string, string> Encodings => _encodings;
 
-        private string GenerateUniqueEncodingKey()
-        {
-            var key = $"{{{_index++}}}";
-            int attempt = 0;
-            while (_commandLine.Contains(key))
-            {
-                key = $"{{{Guid.NewGuid():N}}}";
-                if ((attempt++) > 10)
-                {
-                    throw new InvalidOperationException();
-                }
-            }
-
-            return key;
-        }
 
         public void AddKeyedOption(string name, string key, string[] values)
         {
