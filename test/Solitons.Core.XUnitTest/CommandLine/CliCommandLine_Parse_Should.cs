@@ -363,4 +363,52 @@ public sealed class CliCommandLine_Parse_Should
         string implicitString = parsedCommand;
         Assert.Equal("app.exe --config[env] --config[debug]", implicitString);
     }
+
+    /// <summary>
+    /// Tests that parsing an executable with a quoted name containing spaces correctly captures the executable and its options.
+    /// </summary>
+    [Fact]
+    public void Parse_ExecutableWithQuotedName_Should_CaptureQuotedExecutableAndOptions()
+    {
+        // Arrange
+        string commandLine = @"""C:\Program Files\MyApp\app.exe"" --mode release";
+
+
+        // Act
+        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+
+        // Assert
+        Assert.NotNull(parsedCommand); // Ensure that the parsedCommand is not null
+
+        // Verify ExecutableName is correctly extracted without surrounding quotes
+        Assert.Equal(@"app.exe", parsedCommand.ExecutableName);
+
+        // Verify that CommandLine retains the original quotes
+        Assert.Equal(commandLine, parsedCommand.CommandLine);
+
+        // Verify that Signature replaces the option value with a placeholder
+        Assert.Equal(@"app.exe --mode", parsedCommand.Signature);
+
+        // Verify that Segments are empty since there are no standalone arguments
+        Assert.Empty(parsedCommand.Segments);
+
+        // Ensure that Options contain exactly one scalar option
+        Assert.Single(parsedCommand.Options);
+
+        // Retrieve and verify the scalar option
+        var scalarOption = Assert.IsType<CliScalarOptionCapture>(parsedCommand.Options[0]);
+        Assert.Equal("--mode", scalarOption.Name);
+        Assert.Equal("release", scalarOption.Value);
+
+        // Additional Assertions (Optional)
+        // Verify that ToString returns the original command line
+        Assert.Equal(commandLine, parsedCommand.ToString());
+
+        // Verify that the formatted signature is correct
+        Assert.Equal(@"app.exe --mode", parsedCommand.ToString("Signature"));
+
+        // Implicit string conversion should return the signature
+        string implicitString = parsedCommand;
+        Assert.Equal(commandLine, implicitString);
+    }
 }
