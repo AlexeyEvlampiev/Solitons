@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Immutable;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Xunit;
 
@@ -270,5 +272,95 @@ public sealed class CliCommandLine_Parse_Should
         // Implicit string conversion should return the original command line
         string implicitString = parsedCommand;
         Assert.Equal(@"app.exe --output ""C:\Output Folder"" --level 5", implicitString);
+    }
+
+
+    /// <summary>
+    /// Tests that parsing an executable with collection options correctly captures all collection options.
+    /// </summary>
+    [Fact]
+    public void Parse_ExecutableWithCollectionOptions_Should_CaptureCollectionOptions()
+    {
+        // Arrange
+        string commandLine = "app.exe --files file1.txt file2.txt file3.txt";
+
+        // Act
+        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+
+        // Assert
+        Assert.NotNull(parsedCommand); // Ensure that the parsedCommand is not null
+        Assert.Equal("app.exe", parsedCommand.ExecutableName);
+        Assert.Equal("app.exe --files file1.txt file2.txt file3.txt", parsedCommand.CommandLine);
+        Assert.Equal("app.exe --files", parsedCommand.Signature);
+        
+
+        // Verify that Segments are empty since there are no arguments
+        Assert.Empty(parsedCommand.Segments);
+
+        // Ensure that Options contain exactly one collection option
+        Assert.Single(parsedCommand.Options);
+
+        // Verify that the option is a CliCollectionOptionCapture and has the correct name and values
+        var collectionOption = Assert.IsType<CliCollectionOptionCapture>(parsedCommand.Options[0]);
+        Assert.Equal("--files", collectionOption.Name);
+        Assert.Equivalent(new[] { "file1.txt", "file2.txt", "file3.txt" }, collectionOption.Values.ToArray());
+
+        // Additional Assertions (Optional)
+        // Verify that ToString returns the original command line
+        Assert.Equal("app.exe --files file1.txt file2.txt file3.txt", parsedCommand.ToString());
+
+
+
+        // Implicit string conversion should return the signature
+        string implicitString = parsedCommand;
+        Assert.Equal(commandLine, implicitString);
+    }
+
+    /// <summary>
+    /// Tests that parsing an executable with keyed flag options correctly captures all keyed flag options.
+    /// </summary>
+    [Fact]
+    public void Parse_ExecutableWithKeyedFlagOptions_Should_CaptureKeyedFlagOptions()
+    {
+        // Arrange
+        string commandLine = "app.exe --config[env] --config[debug]";
+
+        // Act
+        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+
+        // Assert
+        Assert.NotNull(parsedCommand); // Ensure that the parsedCommand is not null
+        Assert.Equal("app.exe", parsedCommand.ExecutableName);
+        Assert.Equal("app.exe --config[env] --config[debug]", parsedCommand.CommandLine);
+        Assert.Equal("app.exe --config --config", parsedCommand.Signature);
+        Assert.Equal("app.exe --config --config", parsedCommand.ToString("Signature"));
+        Assert.Equal("app.exe --config --config", parsedCommand.ToString("S"));
+
+        // Verify that Segments are empty since there are no arguments
+        Assert.Empty(parsedCommand.Segments);
+
+        // Ensure that Options contain exactly two keyed flag options
+        Assert.Equal(2, parsedCommand.Options.Length);
+
+        // Verify that each option is a CliKeyFlagOptionCapture and has the correct name and key
+        Assert.Contains(parsedCommand.Options, option =>
+            option is CliKeyFlagOptionCapture keyFlagOption &&
+            keyFlagOption.Name == "--config" &&
+            keyFlagOption.Key == "env");
+
+        Assert.Contains(parsedCommand.Options, option =>
+            option is CliKeyFlagOptionCapture keyFlagOption &&
+            keyFlagOption.Name == "--config" &&
+            keyFlagOption.Key == "debug");
+
+        // Additional Assertions (Optional)
+        // Verify that ToString returns the original command line
+        Assert.Equal("app.exe --config[env] --config[debug]", parsedCommand.ToString());
+
+        
+
+        // Implicit string conversion should return the signature
+        string implicitString = parsedCommand;
+        Assert.Equal("app.exe --config[env] --config[debug]", implicitString);
     }
 }
