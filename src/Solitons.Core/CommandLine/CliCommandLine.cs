@@ -71,7 +71,7 @@ public sealed class CliCommandLine : IFormattable
             originalCommand = transformer.Invoke(originalCommand, context);
         }
 
-        Signature = originalCommand;
+        Signature = originalCommand.Trim();
         ExecutableName = ThrowIf.NullOrWhiteSpace(context.ExecutableName).Trim();
         Segments = [..context.Segments];
         Options = [..context.Options];
