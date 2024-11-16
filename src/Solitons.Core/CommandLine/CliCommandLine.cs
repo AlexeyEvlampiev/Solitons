@@ -400,7 +400,7 @@ public sealed class CliCommandLine : IFormattable
         public void RegisterSegments(string[] segments)
         {
             Debug.Assert(ExecutableName.IsPrintable());
-            Debug.Assert(segments.Length == 0);
+            Debug.Assert(Segments.Length == 0);
             Segments = segments.Select(Decode).ToArray();
         }
     }
