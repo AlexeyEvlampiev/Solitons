@@ -3,6 +3,7 @@ using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -19,7 +20,7 @@ namespace Solitons.CommandLine;
 /// arguments, and various options. This class ensures that the command line adheres to the expected format
 /// and throws descriptive exceptions if any discrepancies are found.
 /// </remarks>
-public sealed class CliCommandLine
+public sealed class CliCommandLine : IFormattable
 {
     private delegate string Transformer(string commandLine, ParsingContext context);
 
@@ -53,7 +54,7 @@ public sealed class CliCommandLine
     private CliCommandLine(string originalCommand)
     {
         CommandLine = originalCommand;
-        var state = new ParsingContext(originalCommand);
+        var context = new ParsingContext(originalCommand);
 
         var transformers = new Transformer[]
         {
@@ -61,18 +62,21 @@ public sealed class CliCommandLine
             ProcessEnvironmentVariables,
             ProcessQuotedStrings,
             FormatKeyedOptions,
+            CaptureSegments,
             ExtractOptions
         };
 
         foreach (var transformer in transformers)
         {
-            originalCommand = transformer.Invoke(originalCommand, state);
+            originalCommand = transformer.Invoke(originalCommand, context);
         }
 
         Signature = originalCommand;
-        ExecutableName = ThrowIf.NullOrWhiteSpace(state.ExecutableName).Trim();
-        Options = [..state.Options];
+        ExecutableName = ThrowIf.NullOrWhiteSpace(context.ExecutableName).Trim();
+        Segments = [..context.Segments];
+        Options = [..context.Options];
     }
+
 
 
     /// <summary>
@@ -117,12 +121,60 @@ public sealed class CliCommandLine
     public ImmutableArray<CliOptionCapture> Options { get; }
 
     /// <summary>
-    /// Returns a string representation of the command line.
+    /// Gets a collection of subcommands or arguments captured from the command line.
+    /// </summary>
+    /// <value>
+    /// An <see cref="ImmutableArray{T}"/> of <see cref="string"/> representing the segments
+    /// (subcommands or arguments) extracted from the command line.
+    /// </value>
+    /// <remarks>
+    /// The <see cref="Segments"/> property contains the subcommands or arguments that follow the executable name.
+    /// These segments provide additional context or instructions for the command being executed.
+    /// </remarks>
+    public ImmutableArray<string> Segments { get; }
+
+    /// <summary>
+    /// Returns a string representation of the command line based on the specified format.
+    /// </summary>
+    /// <param name="format">
+    /// The format specifier. Use <c>null</c> or "G" for the original command line string,
+    /// and "S" or "Signature" for the normalized signature.
+    /// </param>
+    /// <param name="formatProvider">
+    /// The format provider to use. This parameter is ignored in the current implementation.
+    /// </param>
+    /// <returns>
+    /// A <see cref="string"/> representation of the command line based on the specified format.
+    /// </returns>
+    /// <exception cref="FormatException">
+    /// Thrown when an unsupported format specifier is provided.
+    /// </exception>
+    public string ToString(string? format, IFormatProvider? formatProvider)
+    {
+        if (string.IsNullOrEmpty(format) || string.Equals(format, "G", StringComparison.OrdinalIgnoreCase))
+        {
+            return CommandLine;
+        }
+
+        if (string.Equals(format, "S", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(format, "Signature", StringComparison.OrdinalIgnoreCase))
+        {
+            return Signature;
+        }
+
+        throw new FormatException($"The format string '{format}' is not supported.");
+    }
+
+    /// <summary>
+    /// Returns a string representation of the command line using general formatting.
     /// </summary>
     /// <returns>
     /// A <see cref="string"/> representing the original command line.
     /// </returns>
-    public override string ToString() => CommandLine;
+    public override string ToString()
+    {
+        return ToString("G", CultureInfo.CurrentCulture);
+    }
 
     /// <summary>
     /// Implicitly converts a <see cref="CliCommandLine"/> instance to a <see cref="string"/> representation.
@@ -158,8 +210,8 @@ public sealed class CliCommandLine
             throw CliCommandLineFormatException.InvalidExecutableName(e);
         }
 
-
         context.ExecutableName = executable;
+
         if (RegexUtils.HasWhiteSpaces(executable))
         {
             var encoded = context.Encode(executable);
@@ -214,6 +266,19 @@ public sealed class CliCommandLine
         return commandline;
     }
 
+    private string CaptureSegments(string commandline, ParsingContext context)
+    {
+        Debug.Assert(context.ExecutableName.IsPrintable());
+        var segments = @"^(?<executable>\S+)\s+(?:(?<segment>[^-\s]\S*)\s*)*"
+                .Convert(pattern => new Regex(pattern))
+                .Match(commandline)
+                .Convert(m => m.Groups["segment"].Captures)
+                .Select(c => c.Value)
+                .ToArray();
+        context.RegisterSegments(segments);
+        return commandline;
+    }
+
     private string ExtractOptions(string commandline, ParsingContext context)
     {
         commandline = @"(?xis-m)(?<=\s|^)
@@ -255,6 +320,8 @@ public sealed class CliCommandLine
         private int _index = 0;
 
         public string ExecutableName { get; set; } = String.Empty;
+
+        public string[] Segments { get; private set; } = [];
 
         public string Encode(string value)
         {
@@ -328,6 +395,13 @@ public sealed class CliCommandLine
                     _options.Add(new CliCollectionOptionCapture(name, [..values.Select(Decode)]));
                     break;
             }
+        }
+
+        public void RegisterSegments(string[] segments)
+        {
+            Debug.Assert(ExecutableName.IsPrintable());
+            Debug.Assert(segments.Length == 0);
+            Segments = segments.Select(Decode).ToArray();
         }
     }
 
