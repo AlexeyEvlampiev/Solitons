@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Xunit;
@@ -761,4 +760,126 @@ public sealed class CliCommandLine_Parse_Should
         Assert.Equal("servers", serversOption.Key);
         Assert.Equivalent(new[] { "server1", "server2", "server3" }, serversOption.Values.ToArray());
     }
+
+
+    [Fact]
+    public void Parse_SimpleCommand_ExtractsExecutableName()
+    {
+        // Arrange
+        var commandLine = "dotnet.exe build";
+
+        // Act
+        var result = CliCommandLine.Parse(commandLine);
+
+        // Assert
+        Assert.Equal("dotnet.exe", result.ExecutableName);
+        Assert.Single(result.Segments, "build");
+        Assert.Empty(result.Options);
+    }
+
+
+
+    [Fact]
+    public void Parse_QuotedExecutableName_HandlesCorrectly()
+    {
+        // Arrange
+        var commandLine = "\"My Program.exe\" arg1 arg2";
+
+        // Act
+        var result = CliCommandLine.Parse(commandLine);
+
+        // Assert
+        Assert.Equal("My Program.exe", result.ExecutableName);
+        Assert.Equal(new[] { "arg1", "arg2" }, result.Segments);
+    }
+
+    [Fact]
+    public void Parse_EnvironmentVariables_ResolvesCorrectly()
+    {
+        // Arrange
+        Environment.SetEnvironmentVariable("TEST_VAR", "test-value");
+        var commandLine = "app.exe %TEST_VAR%";
+
+        // Act
+        var result = CliCommandLine.Parse(commandLine);
+
+        // Assert
+        Assert.Equal("app.exe", result.ExecutableName);
+        Assert.Single(result.Segments, "test-value");
+    }
+
+
+    [Theory]
+    [InlineData("app.exe --flag", typeof(CliFlagOptionCapture))]
+    [InlineData("app.exe --option value", typeof(CliScalarOptionCapture))]
+    [InlineData("app.exe --list val1 val2", typeof(CliCollectionOptionCapture))]
+    public void Parse_DifferentOptionTypes_CapturedCorrectly(string commandLine, Type expectedType)
+    {
+        // Act
+        var result = CliCommandLine.Parse(commandLine);
+
+        // Assert
+        Assert.Single(result.Options);
+        Assert.IsType(expectedType, result.Options[0]);
+    }
+
+    [Fact]
+    public void Parse_KeyedOptions_CapturedCorrectly()
+    {
+        // Arrange
+        var commandLine = "app.exe --config[env] prod --settings[log] debug info warn";
+
+        // Act
+        var result = CliCommandLine.Parse(commandLine);
+
+        // Assert
+        Assert.Equal(2, result.Options.Length);
+
+        var configOption = Assert.IsType<CliKeyValueOptionCapture>(result.Options[0]);
+        Assert.Equal("--config", configOption.Name);
+        Assert.Equal("env", configOption.Key);
+        Assert.Equal("prod", configOption.Value);
+
+        var settingsOption = Assert.IsType<CliKeyCollectionOptionCapture>(result.Options[1]);
+        Assert.Equal("--settings", settingsOption.Name);
+        Assert.Equal("log", settingsOption.Key);
+        Assert.Equal(new[] { "debug", "info", "warn" }, settingsOption.Values);
+    }
+
+    [Fact]
+    public void Parse_ComplexCommand_HandlesAllFeatures()
+    {
+        // Arrange
+        var commandLine = @"tool.exe subcommand ""quoted arg"" --flag --scalar value --list item1 item2 --config[env] prod --multi[tags] tag1 tag2";
+
+        // Act
+        var result = CliCommandLine.Parse(commandLine);
+
+        // Assert
+        Assert.Equal("tool.exe", result.ExecutableName);
+        Assert.Equal(new[] { "subcommand", "quoted arg" }, result.Segments);
+        Assert.Equal(5, result.Options.Length);
+
+        Assert.IsType<CliFlagOptionCapture>(result.Options[0]);
+        Assert.IsType<CliScalarOptionCapture>(result.Options[1]);
+        Assert.IsType<CliCollectionOptionCapture>(result.Options[2]);
+        Assert.IsType<CliKeyValueOptionCapture>(result.Options[3]);
+        Assert.IsType<CliKeyCollectionOptionCapture>(result.Options[4]);
+    }
+
+
+    [Fact]
+    public void ToString_FormatsCorrectly()
+    {
+        // Arrange
+        var commandLine = "app.exe arg --flag";
+        var parsed = CliCommandLine.Parse(commandLine);
+
+        // Act & Assert
+        Assert.Equal(commandLine, parsed.ToString());
+        Assert.Equal(commandLine, parsed.ToString("G"));
+        Assert.Equal(commandLine, parsed.ToString("S")); // Signature format should be different
+        Assert.Throws<FormatException>(() => parsed.ToString("Invalid"));
+    }
+
 }
