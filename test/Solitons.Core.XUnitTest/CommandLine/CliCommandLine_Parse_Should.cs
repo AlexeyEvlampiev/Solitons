@@ -411,4 +411,59 @@ public sealed class CliCommandLine_Parse_Should
         string implicitString = parsedCommand;
         Assert.Equal(commandLine, implicitString);
     }
+
+    /// <summary>
+    /// Tests that parsing an executable with mixed positional arguments and options correctly captures both.
+    /// </summary>
+    [Fact]
+    public void Parse_ExecutableWithMixedArgumentsAndOptions_Should_CaptureCorrectly()
+    {
+        // Arrange
+        string commandLine = @"app.exe input.txt --verbose --output ""C:\Output Folder""";
+
+        // Act
+        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+
+        // Assert
+        Assert.NotNull(parsedCommand); // Ensure that the parsedCommand is not null
+
+        // Verify ExecutableName is correctly extracted
+        Assert.Equal("app.exe", parsedCommand.ExecutableName);
+
+        // Verify that CommandLine retains the original input
+        Assert.Equal(commandLine, parsedCommand.CommandLine);
+
+        // Verify that Signature replaces the scalar option value with a placeholder
+        Assert.Equal(@"app.exe input.txt --verbose --output", parsedCommand.Signature);
+        Assert.Equal(@"app.exe input.txt --verbose --output", parsedCommand.ToString("Signature"));
+        Assert.Equal(@"app.exe input.txt --verbose --output", parsedCommand.ToString("S"));
+
+        // Verify that Segments contain the positional argument
+        Assert.Single(parsedCommand.Segments);
+        Assert.Contains("input.txt", parsedCommand.Segments);
+
+        // Ensure that Options contain exactly two options
+        Assert.Equal(2, parsedCommand.Options.Length);
+
+        // Verify that --verbose is captured as a CliFlagOptionCapture
+        Assert.Contains(parsedCommand.Options, option =>
+            option is CliFlagOptionCapture flagOption &&
+            flagOption.Name == "--verbose");
+
+        // Verify that --output is captured as a CliScalarOptionCapture with the correct value
+        Assert.Contains(parsedCommand.Options, option =>
+            option is CliScalarOptionCapture scalarOption &&
+            scalarOption.Name == "--output" &&
+            scalarOption.Value == @"C:\Output Folder");
+
+        // Additional Assertions (Optional)
+        // Verify that ToString returns the original command line
+        Assert.Equal(commandLine, parsedCommand.ToString());
+
+
+
+        // Implicit string conversion should return the signature
+        string implicitString = parsedCommand;
+        Assert.Equal(commandLine, implicitString);
+    }
 }
