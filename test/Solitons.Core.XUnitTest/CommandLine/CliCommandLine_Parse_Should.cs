@@ -466,4 +466,59 @@ public sealed class CliCommandLine_Parse_Should
         string implicitString = parsedCommand;
         Assert.Equal(commandLine, implicitString);
     }
+
+    /// <summary>
+    /// Tests that parsing an executable with subcommands and their options correctly captures both.
+    /// </summary>
+    [Fact]
+    public void Parse_ExecutableWithSubcommandsAndOptions_Should_CaptureSubcommandsAndTheirOptions()
+    {
+        // Arrange
+        string commandLine = @"app.exe deploy --environment production --force";
+
+        // Act
+        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+
+        // Assert
+        Assert.NotNull(parsedCommand); // Ensure that the parsedCommand is not null
+
+        // Verify ExecutableName is correctly extracted
+        Assert.Equal("app.exe", parsedCommand.ExecutableName);
+
+        Assert.Equal(1, parsedCommand.Segments.Length);
+        // Verify Subcommand is correctly identified
+        Assert.Equal("deploy", parsedCommand.Segments[0]);
+
+        // Verify that CommandLine retains the original input
+        Assert.Equal(@"app.exe deploy --environment production --force", parsedCommand.CommandLine);
+
+        // Verify that Signature replaces the scalar option value with a placeholder
+        Assert.Equal("app.exe deploy --environment --force", parsedCommand.Signature);
+        Assert.Equal("app.exe deploy --environment --force", parsedCommand.ToString("Signature"));
+        Assert.Equal("app.exe deploy --environment --force", parsedCommand.ToString("S"));
+
+
+        // Ensure that Options contain exactly two options
+        Assert.Equal(2, parsedCommand.Options.Length);
+
+        // Verify that --environment is captured as a CliScalarOptionCapture with the correct value
+        Assert.Contains(parsedCommand.Options, option =>
+            option is CliScalarOptionCapture scalarOption &&
+            scalarOption.Name == "--environment" &&
+            scalarOption.Value == "production");
+
+        // Verify that --force is captured as a CliFlagOptionCapture
+        Assert.Contains(parsedCommand.Options, option =>
+            option is CliFlagOptionCapture flagOption &&
+            flagOption.Name == "--force");
+
+        // Additional Assertions (Optional)
+        // Verify that ToString returns the original command line
+        Assert.Equal(@"app.exe deploy --environment production --force", parsedCommand.ToString());
+
+
+        // Implicit string conversion should return the signature
+        string implicitString = parsedCommand;
+        Assert.Equal(commandLine, implicitString);
+    }
 }
