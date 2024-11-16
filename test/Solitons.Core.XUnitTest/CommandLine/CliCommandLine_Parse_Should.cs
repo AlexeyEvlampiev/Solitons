@@ -521,4 +521,244 @@ public sealed class CliCommandLine_Parse_Should
         string implicitString = parsedCommand;
         Assert.Equal(commandLine, implicitString);
     }
+
+    /// <summary>
+    /// Tests that parsing an empty command line throws an ArgumentOutOfRangeException.
+    /// </summary>
+    [Theory]
+    [InlineData("")]
+    [InlineData("  ")]
+    public void Parse_EmptyCommandLine_Should_ThrowArgumentNullException(string commandLined)
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentOutOfRangeException>(() => CliCommandLine.Parse(commandLined));
+    }
+
+    /// <summary>
+    /// Tests that parsing a command line with special characters correctly captures them.
+    /// </summary>
+    [Fact]
+    public void Parse_CommandLineWithSpecialCharacters_Should_CaptureSpecialCharacters()
+    {
+        // Arrange
+        string commandLine = @"app.exe --path C:\Path\With\Special\!@#$%^&*() chars";
+
+        // Act
+        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+
+        // Assert
+        Assert.NotNull(parsedCommand);
+        Assert.Equal("app.exe", parsedCommand.ExecutableName);
+        Assert.Equal(@"app.exe --path C:\Path\With\Special\!@#$%^&*() chars", parsedCommand.CommandLine);
+        Assert.Equal("app.exe --path", parsedCommand.Signature);
+
+        Assert.Single(parsedCommand.Options);
+        var collectionOption = Assert.IsType<CliCollectionOptionCapture>(parsedCommand.Options[0]);
+        Assert.Equal("--path", collectionOption.Name);
+        Assert.Equal(2, collectionOption.Values.Length);
+        Assert.True(collectionOption.Values.Contains(@"C:\Path\With\Special\!@#$%^&*()"));
+        Assert.True(collectionOption.Values.Contains(@"chars"));
+    }
+
+
+    /// <summary>
+    /// Tests that parsing a command line with duplicate options aggregates their values.
+    /// </summary>
+    [Fact]
+    public void Parse_CommandLineWithDuplicateOptions_Should_AggregateValues()
+    {
+        // Arrange
+        string commandLine = "app.exe --include file1.txt --include file2.txt";
+
+        // Act
+        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+
+        // Assert
+        Assert.NotNull(parsedCommand);
+        Assert.Equal("app.exe", parsedCommand.ExecutableName);
+        Assert.Equal("app.exe --include file1.txt --include file2.txt", parsedCommand.CommandLine);
+        Assert.Equal("app.exe --include --include", parsedCommand.Signature);
+
+        Assert.Equal(2, parsedCommand.Options.Length);
+        Assert.All(parsedCommand.Options, option =>
+        {
+            Assert.IsType<CliScalarOptionCapture>(option);
+            Assert.Equal("--include", option.Name);
+        });
+
+        var includeOptions = parsedCommand.Options.Cast<CliScalarOptionCapture>().ToList();
+        Assert.Contains(includeOptions, option => option.Value == "file1.txt");
+        Assert.Contains(includeOptions, option => option.Value == "file2.txt");
+    }
+
+
+    /// <summary>
+    /// Tests that parsing a command line with nested subcommands and their options correctly captures all components.
+    /// </summary>
+    [Fact]
+    public void Parse_CommandLineWithNestedSubcommandsAndOptions_Should_CaptureAllComponents()
+    {
+        // Arrange
+        string commandLine = @"app.exe service start --force --timeout 30";
+
+        // Act
+        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+
+        // Assert
+        Assert.NotNull(parsedCommand);
+        Assert.Equal("app.exe", parsedCommand.ExecutableName);
+        Assert.Equal(@"app.exe service start --force --timeout 30", parsedCommand.CommandLine);
+        Assert.Equal(@"app.exe service start --force --timeout", parsedCommand.Signature);
+
+        // Verify segments (subcommands)
+        Assert.Equal(2, parsedCommand.Segments.Length);
+        Assert.Contains("service", parsedCommand.Segments);
+        Assert.Contains("start", parsedCommand.Segments);
+
+        // Verify options
+        Assert.Equal(2, parsedCommand.Options.Length);
+        var forceOption = Assert.IsType<CliFlagOptionCapture>(parsedCommand.Options[0]);
+        Assert.Equal("--force", forceOption.Name);
+
+        var timeoutOption = Assert.IsType<CliScalarOptionCapture>(parsedCommand.Options[1]);
+        Assert.Equal("--timeout", timeoutOption.Name);
+        Assert.Equal("30", timeoutOption.Value);
+    }
+
+
+    /// <summary>
+    /// Tests that parsing a command line with Unicode characters correctly captures them.
+    /// </summary>
+    [Fact]
+    public void Parse_CommandLineWithUnicodeCharacters_Should_CaptureUnicodeCharacters()
+    {
+        // Arrange
+        string commandLine = @"app.exe --message ""こんにちは世界"" --path C:\データ";
+
+        // Act
+        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+
+        // Assert
+        Assert.NotNull(parsedCommand);
+        Assert.Equal("app.exe", parsedCommand.ExecutableName);
+        Assert.Equal(@"app.exe --message ""こんにちは世界"" --path C:\データ", parsedCommand.CommandLine);
+        Assert.Equal("app.exe --message --path", parsedCommand.Signature);
+
+        Assert.Equal(2, parsedCommand.Options.Length);
+
+        var messageOption = Assert.IsType<CliScalarOptionCapture>(parsedCommand.Options[0]);
+        Assert.Equal("--message", messageOption.Name);
+        Assert.Equal("こんにちは世界", messageOption.Value);
+
+        var pathOption = Assert.IsType<CliScalarOptionCapture>(parsedCommand.Options[1]);
+        Assert.Equal("--path", pathOption.Name);
+        Assert.Equal(@"C:\データ", pathOption.Value);
+    }
+
+
+    /// <summary>
+    /// Tests that parsing a command line with mixed option types correctly captures all options.
+    /// </summary>
+    [Fact]
+    public void Parse_CommandLineWithMixedOptionTypes_Should_CaptureAllOptionTypes()
+    {
+        // Arrange
+        string commandLine = @"app.exe --enable-feature --set-level 3 --tags tag1 tag2 tag3 --config[env] production";
+
+        // Act
+        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+
+        // Assert
+        Assert.NotNull(parsedCommand);
+        Assert.Equal("app.exe", parsedCommand.ExecutableName);
+        Assert.Equal(@"app.exe --enable-feature --set-level 3 --tags tag1 tag2 tag3 --config[env] production", parsedCommand.CommandLine);
+        Assert.Equal("app.exe --enable-feature --set-level --tags --config", parsedCommand.Signature);
+
+        Assert.Equal(4, parsedCommand.Options.Length);
+
+        var enableFeatureOption = Assert.IsType<CliFlagOptionCapture>(parsedCommand.Options[0]);
+        Assert.Equal("--enable-feature", enableFeatureOption.Name);
+
+        var setLevelOption = Assert.IsType<CliScalarOptionCapture>(parsedCommand.Options[1]);
+        Assert.Equal("--set-level", setLevelOption.Name);
+        Assert.Equal("3", setLevelOption.Value);
+
+        var tagsOption = Assert.IsType<CliCollectionOptionCapture>(parsedCommand.Options[2]);
+        Assert.Equal("--tags", tagsOption.Name);
+        Assert.Equivalent(new[] { "tag1", "tag2", "tag3" }, tagsOption.Values.ToArray());
+
+        var configOption = Assert.IsType<CliKeyValueOptionCapture>(parsedCommand.Options[3]);
+        Assert.Equal("--config", configOption.Name);
+        Assert.Equal("env", configOption.Key);
+        Assert.Equal("production", configOption.Value);
+    }
+
+    /// <summary>
+    /// Tests that parsing a command line with nested keyed options correctly captures all keys and their values.
+    /// </summary>
+    [Fact]
+    public void Parse_CommandLineWithNestedKeyedOptions_Should_CaptureAllKeysAndValues()
+    {
+        // Arrange
+        string commandLine = "app.exe --database[host] localhost --database[port] 5432 --database[user] admin";
+
+        // Act
+        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+
+        // Assert
+        Assert.NotNull(parsedCommand);
+        Assert.Equal("app.exe", parsedCommand.ExecutableName);
+        Assert.Equal("app.exe --database[host] localhost --database[port] 5432 --database[user] admin", parsedCommand.CommandLine);
+        Assert.Equal("app.exe --database --database --database", parsedCommand.Signature);
+
+        Assert.Equal(3, parsedCommand.Options.Length);
+
+        var hostOption = Assert.IsType<CliKeyValueOptionCapture>(parsedCommand.Options[0]);
+        Assert.Equal("--database", hostOption.Name);
+        Assert.Equal("host", hostOption.Key);
+        Assert.Equal("localhost", hostOption.Value);
+
+        var portOption = Assert.IsType<CliKeyValueOptionCapture>(parsedCommand.Options[1]);
+        Assert.Equal("--database", portOption.Name);
+        Assert.Equal("port", portOption.Key);
+        Assert.Equal("5432", portOption.Value);
+
+        var userOption = Assert.IsType<CliKeyValueOptionCapture>(parsedCommand.Options[2]);
+        Assert.Equal("--database", userOption.Name);
+        Assert.Equal("user", userOption.Key);
+        Assert.Equal("admin", userOption.Value);
+    }
+
+
+
+    /// <summary>
+    /// Tests that parsing a command line with multiple keyed options and their collections correctly captures all keys and values.
+    /// </summary>
+    [Fact]
+    public void Parse_CommandLineWithMultipleKeyedOptionsAndCollections_Should_CaptureAllKeysAndValues()
+    {
+        // Arrange
+        string commandLine = "app.exe --config[env] production --config[servers] server1 server2 server3";
+
+        // Act
+        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+
+        // Assert
+        Assert.NotNull(parsedCommand);
+        Assert.Equal("app.exe", parsedCommand.ExecutableName);
+        Assert.Equal("app.exe --config[env] production --config[servers] server1 server2 server3", parsedCommand.CommandLine);
+        Assert.Equal("app.exe --config --config", parsedCommand.Signature);
+
+        Assert.Equal(2, parsedCommand.Options.Length);
+
+        var envOption = Assert.IsType<CliKeyValueOptionCapture>(parsedCommand.Options[0]);
+        Assert.Equal("--config", envOption.Name);
+        Assert.Equal("env", envOption.Key);
+        Assert.Equal("production", envOption.Value);
+
+        var serversOption = Assert.IsType<CliKeyCollectionOptionCapture>(parsedCommand.Options[1]);
+        Assert.Equal("--config", serversOption.Name);
+        Assert.Equal("servers", serversOption.Key);
+        Assert.Equivalent(new[] { "server1", "server2", "server3" }, serversOption.Values.ToArray());
+    }
 }

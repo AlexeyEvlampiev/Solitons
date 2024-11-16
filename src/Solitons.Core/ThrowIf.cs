@@ -295,7 +295,7 @@ public static class ThrowIf
             throw new ArgumentNullException(paramName, message);
         }
 
-        if(string.IsNullOrEmpty(value))
+        if(string.IsNullOrWhiteSpace(value))
         {
             message ??= IsVariableName(paramName)
                 ? $"{paramName} is an empty or a whitespace {typeof(string)} value."
