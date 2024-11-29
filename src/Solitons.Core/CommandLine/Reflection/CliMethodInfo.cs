@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using Solitons.Reflection;
 
 namespace Solitons.CommandLine.Reflection;
@@ -14,16 +15,38 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
     {
         Debug.Assert(IsCliMethod(method));
         var parameters = GetParameters();
-        var arguments = GetCustomAttributes<CliArgumentAttribute>(true).ToList();
+        var attributes = GetCustomAttributes(true).OfType<Attribute>().ToList();
+        var routeParts = attributes
+            .SelectMany(attribute =>
+            {
+                if (attribute is CliRouteAttribute route)
+                {
+                    return Regex
+                        .Split(route.RouteDeclaration, @"\s+")
+                        .Where(r => r.IsPrintable())
+                        .Select(r => (object)r.Trim());
+                }
 
-        var argumentParameterPairs = arguments
+                if (attribute is CliArgumentAttribute argument)
+                {
+                    return [argument];
+                }
+
+                return [];
+            })
+            .ToList();
+
+
+
+        var arguments = attributes
+            .OfType<CliArgumentAttribute>()
             .Select(arg => KeyValuePair
                 .Create(
                     parameters.FirstOrDefault(arg.References),
                     arg))
             .ToList();
 
-        var argumentByParameter = argumentParameterPairs
+        var argumentByParameter = arguments
             .Where(p => p.Key is not null)
             .ToDictionary(p => p.Key!, p => p.Value);
 
@@ -32,7 +55,8 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
         {
             if (argumentByParameter.TryGetValue(parameter, out var arg))
             {
-                cliParameters.Add(new CliArgumentParameterInfo(parameter, arg));
+                var position = routeParts.IndexOf(arg);
+                cliParameters.Add(new CliArgumentParameterInfo(parameter, arg, position));
             }
 
 
