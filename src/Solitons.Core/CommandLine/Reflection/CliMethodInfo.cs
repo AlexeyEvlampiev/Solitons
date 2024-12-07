@@ -11,7 +11,9 @@ namespace Solitons.CommandLine.Reflection;
 
 internal sealed class CliMethodInfo : MethodInfoDecorator
 {
-    private CliMethodInfo(MethodInfo method) : base(method)
+    private CliMethodInfo(
+        CliRouteAttribute[] baseRoutes,
+        MethodInfo method) : base(method)
     {
         Debug.Assert(IsCliMethod(method));
         var parameters = GetParameters();
@@ -49,9 +51,11 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
         CliParameters = [.. cliParameters];
     }
 
+    public static CliMethodInfo[] Get(Type type) => Get([], type);
 
-    public static IEnumerable<CliMethodInfo> Get(Type type)
+    public static CliMethodInfo[] Get(CliRouteAttribute[] baseRoutes, Type type)
     {
+        var list = new List<CliMethodInfo>();
         foreach (var method in type.GetMethods())
         {
             if (false == IsCliMethod(method))
@@ -59,12 +63,14 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
                 continue;
             }
 
-            yield return new CliMethodInfo(method);
+            list.Add(new CliMethodInfo(baseRoutes, method));
         }
+
+        return list.ToArray();
     }
 
 
-    public int Invoke(CliCommandLine commandLine)
+    public int Invoke(object?  instance, CliCommandLine? commandLine)
     {
         throw new NotImplementedException();
     }
@@ -73,7 +79,7 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
 
     private static bool IsCliMethod(MethodInfo methodInfo)
     {
-        throw new NotImplementedException();
+        return methodInfo.GetCustomAttributes<CliRouteAttribute>().Any();
     }
 
     private static IReadOnlyList<object> ExtractRouteParts(IReadOnlyList<Attribute> attributes)
