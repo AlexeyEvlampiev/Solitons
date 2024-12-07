@@ -94,7 +94,7 @@ public class CliOptionAttribute : Attribute, ICliOptionMetadata
                 .Select(n => $"-{n}"))
             .Join("|");
 
-        OptionNamesCsv = ShortOptionNames
+        OptionAliasesCsv = ShortOptionNames
             .Select(o => $"-{o}")
             .Union(LongOptionNames.Select(o => $"--{o}"))
             .Join(", ");
@@ -103,7 +103,7 @@ public class CliOptionAttribute : Attribute, ICliOptionMetadata
     /// <summary>
     /// Comma-separated list of all options.
     /// </summary>
-    public string OptionNamesCsv { get; }
+    public string OptionAliasesCsv { get; }
 
     /// <summary>
     /// Specification of options as used in the CLI.

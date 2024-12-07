@@ -9,7 +9,7 @@ public interface ICliOptionMetadata
     /// <summary>
     /// Comma-separated list of all options.
     /// </summary>
-    string OptionNamesCsv { get; }
+    string OptionAliasesCsv { get; }
 
     /// <summary>
     /// Specification of options as used in the CLI.
