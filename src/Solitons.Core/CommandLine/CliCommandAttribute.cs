@@ -7,7 +7,7 @@ namespace Solitons.CommandLine;
 /// This attribute should be applied to methods that represent complex CLI commands,
 /// where each part of the command string represents a distinct subcommand.
 /// </summary>
-[AttributeUsage(AttributeTargets.Method)]
+[AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
 public class CliRouteAttribute : Attribute
 {
     /// <summary>

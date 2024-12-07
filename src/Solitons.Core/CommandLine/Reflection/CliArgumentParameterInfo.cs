@@ -45,4 +45,5 @@ internal sealed class CliArgumentParameterInfo : ParameterInfoDecorator
     public int CliRoutePosition { get; }
 
     public string CliArgumentName => _argument.Name;
+
 }

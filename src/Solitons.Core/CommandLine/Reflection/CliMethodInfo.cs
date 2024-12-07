@@ -11,12 +11,14 @@ namespace Solitons.CommandLine.Reflection;
 
 internal sealed class CliMethodInfo : MethodInfoDecorator
 {
+    private readonly ImmutableArray<ParameterInfoDecorator> _parameters;
+
     private CliMethodInfo(
         CliRouteAttribute[] baseRoutes,
         MethodInfo method) : base(method)
     {
         Debug.Assert(IsCliMethod(method));
-        var parameters = GetParameters();
+        var parameters = base.GetParameters();
         var attributes = GetCustomAttributes(true).OfType<Attribute>().ToList();
         var routeParts = ExtractRouteParts(attributes);
         
@@ -48,7 +50,8 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
 
         }
 
-        CliParameters = [.. cliParameters];
+        _parameters = [.. cliParameters];
+        Examples = [.. attributes.OfType<CliCommandExampleAttribute>()];
     }
 
     public static CliMethodInfo[] Get(Type type) => Get([], type);
@@ -75,7 +78,9 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
         throw new NotImplementedException();
     }
 
-    public ImmutableArray<ParameterInfoDecorator> CliParameters { get; }
+    public new ImmutableArray<ParameterInfoDecorator> GetParameters() => _parameters;
+
+    public ImmutableArray<CliCommandExampleAttribute> Examples { get; }
 
     private static bool IsCliMethod(MethodInfo methodInfo)
     {

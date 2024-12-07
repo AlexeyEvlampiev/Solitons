@@ -36,7 +36,7 @@ public class CliArgumentAttribute : Attribute
     /// <summary>
     /// Gets or sets a description of the parameter, which can be used to generate help text in CLI applications.
     /// </summary>
-    public string Description { get; init; }
+    public string Description { get; }
 
     /// <summary>
     /// Gets or sets the role of the argument in the command, indicating its purpose or usage context.
