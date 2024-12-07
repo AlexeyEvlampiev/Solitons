@@ -54,11 +54,12 @@ internal sealed class CliOptionParameterInfo : ParameterInfoDecorator
         if (underlyingType == typeof(Unit) ||
             underlyingType == typeof(CliFlag))
         {
-            Converter = null;
+            IsFlag = true;
+            ValueConverter = null;
         }
         else if (_optionInfo.CanAccept(underlyingType, out var converter))
         {
-            Converter = converter;
+            ValueConverter = converter;
         }
         else
         {
@@ -83,9 +84,9 @@ internal sealed class CliOptionParameterInfo : ParameterInfoDecorator
 
 
 
+    public bool IsFlag { get; }
 
-
-    public TypeConverter? Converter { get; }
+    public TypeConverter? ValueConverter { get; }
 
     public string Description { get; }
 
