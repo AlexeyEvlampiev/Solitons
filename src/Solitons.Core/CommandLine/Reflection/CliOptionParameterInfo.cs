@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Reactive;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using Solitons.Reflection;
 
 namespace Solitons.CommandLine.Reflection;
 
-internal sealed class CliOptionParameterInfo : ParameterInfoDecorator
+internal sealed class CliOptionParameterInfo : CliParameterInfo
 {
     private readonly CliOptionAttribute _optionInfo;
     private readonly Regex _aliasExactRegex;
@@ -103,7 +103,23 @@ internal sealed class CliOptionParameterInfo : ParameterInfoDecorator
     public override bool HasDefaultValue { get; }
 
     public override object? DefaultValue { get; }
+    public override object Parse(string arg)
+    {
+        if (IsFlag)
+        {
+            Debug.Assert(ValueConverter is null);
+            throw new InvalidOperationException("Oops...");
+        }
 
-
-
+        var converter = ThrowIf.NullReference(ValueConverter);
+        try
+        {
+            var value = converter.ConvertFrom(arg);
+            return ThrowIf.NullReference(value);
+        }
+        catch (Exception e)
+        {
+            throw new InvalidOperationException("Oops...");
+        }
+    }
 }

@@ -2,11 +2,10 @@
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
-using Solitons.Reflection;
 
 namespace Solitons.CommandLine.Reflection;
 
-internal sealed class CliArgumentParameterInfo : ParameterInfoDecorator
+internal sealed class CliArgumentParameterInfo : CliParameterInfo
 {
     private readonly CliArgumentAttribute _argument;
 
@@ -46,4 +45,8 @@ internal sealed class CliArgumentParameterInfo : ParameterInfoDecorator
 
     public string CliArgumentName => _argument.Name;
 
+    public override object Parse(string arg)
+    {
+        throw new NotImplementedException();
+    }
 }
