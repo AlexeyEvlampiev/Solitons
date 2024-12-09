@@ -47,7 +47,7 @@ public abstract class CliRouteTest<T> where T : class
             Debug.WriteLine(testCase.Description);
 
             var commandLine = $"program {testCase.Example}";
-            int result = processor.Process($"program {testCase.Example}");
+            int result = processor.Process2($"program {testCase.Example}");
             if (result == 0)
             {
                 onInvoked(testCase);
@@ -84,5 +84,7 @@ public abstract class CliRouteTest<T> where T : class
 
             return 0;
         }
+
+        public override string ToString() => typeof(CliRouteTest<T>).ToString();
     }
 }

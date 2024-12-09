@@ -8,10 +8,22 @@ namespace Solitons.CommandLine;
 
 public interface ICliProcessor
 {
+
+    public sealed int Process2(string commandLine)
+    {
+        var args = CliCommandLine.Parse(commandLine);
+
+        throw new NotImplementedException();
+    }
+
     public sealed int Process(string commandLine)
     {
         try
         {
+            
+
+
+
             var context = new CliContext(commandLine);
             commandLine = context.EncodedCommandLine;
             var decoder = context.Decoder;
