@@ -7,7 +7,7 @@ internal partial class CliHelpRtt
 {
     sealed record Command(string Path, string Description);
 
-    private CliHelpRtt(CliAction[] actions)
+    private CliHelpRtt(CliActionOld[] actions)
     {
         Commands = actions
             .OrderBy(cmd => cmd)
@@ -27,7 +27,7 @@ internal partial class CliHelpRtt
         string logo, 
         string programName,
         string description, 
-        CliAction[] actions)
+        CliActionOld[] actions)
     {
         var rtt = new CliHelpRtt(actions)
         {

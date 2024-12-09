@@ -9,6 +9,8 @@ using System.Text.RegularExpressions;
 using Solitons.Caching;
 using Solitons.CommandLine.Models;
 using Solitons.CommandLine.Models.Formatters;
+using Solitons.CommandLine.Reflection;
+using Solitons.Data;
 
 namespace Solitons.CommandLine;
 
@@ -18,7 +20,7 @@ internal sealed class CliProcessor : ICliProcessor
     private sealed record HelpCommandData(string Aliases, string Description);
 
     private readonly List<CliModule> _modules = new();
-    private readonly CliAction[] _actions;
+    private readonly CliActionOld[] _actionsOld;
     private string _logo = string.Empty;
     private string _description = string.Empty;
     private string _baseRoute = string.Empty;
@@ -27,9 +29,19 @@ internal sealed class CliProcessor : ICliProcessor
     private readonly CliModel _model;
 
 
+    sealed record CliAction(CliMethodInfo Method, object? Instance);
+    private readonly HashSet<CliAction> _actions;
+
+
     public CliProcessor(Action<ICliConfigOptions> config)
     {
         config.Invoke(new Options(this));
+
+        _actions = _modules.
+            SelectMany(m => CliMethodInfo
+                .Get(m.ProgramType)
+                .Select(method => new CliAction(method, m.Program ?? (method.IsStatic ? null : Activator.CreateInstance(m.ProgramType)))))
+            .ToHashSet();
 
         _model = new CliModel(
             _modules,
@@ -49,7 +61,7 @@ internal sealed class CliProcessor : ICliProcessor
             new CliTraceMasterOptionsBundle()
         };
 
-        var actions = new List<CliAction>();
+        var actions = new List<CliActionOld>();
 
         foreach (var source in _modules)
         {
@@ -72,7 +84,7 @@ internal sealed class CliProcessor : ICliProcessor
                 }
 
                 Debug.WriteLine($"Action: {mi.Name}");
-                actions.Add(CliAction.Create(
+                actions.Add(CliActionOld.Create(
                     source.Program, 
                     mi, 
                     masterOptionBundles,
@@ -90,10 +102,10 @@ internal sealed class CliProcessor : ICliProcessor
             {
                 new DescriptionAttribute(_helpCommandData.Description)
             };
-            var action = CliAction.Create(this, mi, masterOptionBundles, "", attributes, _cache);
+            var action = CliActionOld.Create(this, mi, masterOptionBundles, "", attributes, _cache);
             actions.Add(action);
         }
-        _actions = actions.ToArray();
+        _actionsOld = actions.ToArray();
     }
 
 
@@ -108,7 +120,7 @@ internal sealed class CliProcessor : ICliProcessor
     }
 
 
-    ICliAction[] ICliProcessor.GetActions() => _actions.ToArray();
+    ICliAction[] ICliProcessor.GetActions() => _actionsOld.ToArray();
 
     public void ShowCommandHelp(string commandLine, CliTokenDecoder decoder)
     {
@@ -126,13 +138,13 @@ internal sealed class CliProcessor : ICliProcessor
                 _logo,
                 programName,
                 _description,
-                _actions);
+                _actionsOld);
             Console.WriteLine(help);
             return;
         }
 
-        var noMatchedActions = (false == _actions.Any(a => a.IsMatch(commandLine)));
-        var text = _actions
+        var noMatchedActions = (false == _actionsOld.Any(a => a.IsMatch(commandLine)));
+        var text = _actionsOld
             .Where(a => noMatchedActions || a.IsMatch(commandLine))
             .GroupBy(a => a.Rank(commandLine))
             .OrderByDescending(similarActions => similarActions.Key)

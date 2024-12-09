@@ -63,7 +63,7 @@ internal partial class CliActionHelpRtt
         return help;
     }
 
-    public static string ToString(IEnumerable<CliAction> actions)
+    public static string ToString(IEnumerable<CliActionOld> actions)
     {
         return actions
             .Select(a => a.GetHelpText())

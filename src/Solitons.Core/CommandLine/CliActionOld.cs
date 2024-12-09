@@ -12,7 +12,7 @@ using Solitons.Collections;
 
 namespace Solitons.CommandLine;
 
-internal sealed class CliAction : IComparable<CliAction>, ICliAction
+internal sealed class CliActionOld : IComparable<CliActionOld>, ICliAction
 {
     private readonly ICliActionSchema _schema;
     internal const int OptimalMatchRankIncrement = 1;
@@ -39,7 +39,7 @@ internal sealed class CliAction : IComparable<CliAction>, ICliAction
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private readonly Lazy<string> _help;
 
-    internal CliAction(
+    internal CliActionOld(
         ActionHandler handler,
         ICliActionSchema schema,
         CliOperandMaterializer[] parameterMaterializers,
@@ -76,7 +76,7 @@ internal sealed class CliAction : IComparable<CliAction>, ICliAction
             .ToString(schema));
     }
 
-    internal static CliAction Create(
+    internal static CliActionOld Create(
         object? instance,
         MethodInfo method,
         CliMasterOptionBundle[] masterOptionBundles,
@@ -238,7 +238,7 @@ internal sealed class CliAction : IComparable<CliAction>, ICliAction
         }
 
         var examples = methodAttributes.OfType<ICliExampleMetadata>().ToList();
-        return new CliAction(
+        return new CliActionOld(
             InvokeAsync,
             schema,
             parameterDeserializers.ToArray(),
@@ -374,7 +374,7 @@ internal sealed class CliAction : IComparable<CliAction>, ICliAction
     }
 
 
-    public int CompareTo(CliAction? other)
+    public int CompareTo(CliActionOld? other)
     {
         other = ThrowIf.ArgumentNull(other, "Cannot compare to a null object.");
         return String.Compare(RegularExpression, other.RegularExpression, StringComparison.OrdinalIgnoreCase);

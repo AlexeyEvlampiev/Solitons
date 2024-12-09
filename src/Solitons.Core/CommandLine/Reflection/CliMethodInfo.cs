@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using Solitons.Collections;
 using Solitons.Reflection;
 
 namespace Solitons.CommandLine.Reflection;
@@ -57,12 +58,21 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
         Examples = [.. attributes.OfType<CliCommandExampleAttribute>()];
     }
 
+    [DebuggerStepThrough]
     public static CliMethodInfo[] Get(Type type) => Get([], type);
 
     public static CliMethodInfo[] Get(CliRouteAttribute[] baseRoutes, Type type)
     {
+        var methods = FluentList
+            .Create(type)
+            .AddRange(type.GetInterfaces())
+            .SelectMany(t => t.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
+            .Distinct()
+            .ToList();
+
         var list = new List<CliMethodInfo>();
-        foreach (var method in type.GetMethods())
+
+        foreach (var method in methods)
         {
             if (false == IsCliMethod(method))
             {

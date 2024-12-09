@@ -23,7 +23,7 @@ public sealed class CliAction_Match_Should
     {
         Debug.WriteLine(commandLine);
         var cache = IMemoryCache.Create();
-        var action = CliAction.Create(
+        var action = CliActionOld.Create(
             null, 
             GetType()
                 .GetMethod(nameof(ProgramRun))!, 
