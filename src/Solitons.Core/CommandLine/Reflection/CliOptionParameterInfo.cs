@@ -11,7 +11,7 @@ namespace Solitons.CommandLine.Reflection;
 
 internal sealed class CliOptionParameterInfo : CliParameterInfo
 {
-    private readonly CliOptionAttribute _optionInfo;
+    private readonly CliOptionAttribute _optionAttribute;
     private readonly Regex _aliasExactRegex;
 
     public CliOptionParameterInfo(ParameterInfo parameter) 
@@ -45,7 +45,7 @@ internal sealed class CliOptionParameterInfo : CliParameterInfo
                 .First(d => d.IsPrintable())!
             ;
 
-        _optionInfo = attributes
+        _optionAttribute = attributes
                              .OfType<CliOptionAttribute>()
                              .SingleOrDefault()
                          ?? new CliOptionAttribute($"--{Name}", Description);
@@ -57,7 +57,7 @@ internal sealed class CliOptionParameterInfo : CliParameterInfo
             IsFlag = true;
             ValueConverter = null;
         }
-        else if (_optionInfo.CanAccept(underlyingType, out var converter))
+        else if (_optionAttribute.CanAccept(underlyingType, out var converter))
         {
             ValueConverter = converter;
         }
@@ -78,8 +78,8 @@ internal sealed class CliOptionParameterInfo : CliParameterInfo
         }
 
 
-        Aliases = [.. _optionInfo.Aliases];
-        _aliasExactRegex = new Regex($"^{_optionInfo.PipeSeparatedAliases}$");
+        Aliases = [.. _optionAttribute.Aliases];
+        _aliasExactRegex = new Regex($"^{_optionAttribute.PipeSeparatedAliases}$");
     }
 
 
@@ -90,9 +90,9 @@ internal sealed class CliOptionParameterInfo : CliParameterInfo
 
     public string Description { get; }
 
-    public string PipeSeparatedAliases => _optionInfo.PipeSeparatedAliases;
+    public string PipeSeparatedAliases => _optionAttribute.PipeSeparatedAliases;
 
-    public string OptionAliasesCsv => _optionInfo.OptionAliasesCsv;
+    public string OptionAliasesCsv => _optionAttribute.OptionAliasesCsv;
 
     public ImmutableArray<string> Aliases { get; }
 

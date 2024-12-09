@@ -47,6 +47,10 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
             {
                 cliParameters.Add(new CliArgumentParameterInfo(parameter, arg.Attribute, arg.CliRoutePosition));
             }
+            else if (CliOptionBundle.IsAssignableFrom(parameter.ParameterType))
+            {
+                cliParameters.Add(new CliOptionBundleParameterInfo(parameter));
+            }
             else
             {
                 cliParameters.Add(new CliOptionParameterInfo(parameter));

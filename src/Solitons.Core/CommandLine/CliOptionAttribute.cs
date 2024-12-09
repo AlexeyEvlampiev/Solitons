@@ -139,6 +139,7 @@ public class CliOptionAttribute : Attribute, ICliOptionMetadata
     public virtual bool CanAccept(Type optionType, out TypeConverter converter)
     {
         converter = TypeDescriptor.GetConverter(optionType);
+        
         if (optionType == typeof(TimeSpan))
         {
             converter = new MultiFormatTimeSpanConverter();
@@ -149,7 +150,35 @@ public class CliOptionAttribute : Attribute, ICliOptionMetadata
             converter = new CliCancellationTokenTypeConverter();
             ThrowIf.False(converter.CanConvertFrom(typeof(string)));
         }
-        return converter.SupportsCliOperandConversion();
+
+        if (converter.SupportsCliOperandConversion())
+        {
+            return true;
+        }
+
+        var valueConverter = optionType
+            .GetGenericDictionaryArgumentTypes()
+            .Where(args => args.Key == typeof(string))
+            .Select(args => args.Value)
+            .Union(optionType.GetGenericEnumerableArgumentTypes())
+            .SelectMany(type =>
+            {
+                if (CanAccept(type, out var valueConverter))
+                {
+                    return [valueConverter];
+                }
+
+                return Enumerable.Empty<TypeConverter>();
+            })
+            .FirstOrDefault();
+
+        if (valueConverter is not null)
+        {
+            converter = valueConverter;
+            return true;
+        }
+
+        return false;
     }
 
     public virtual StringComparer GetValueComparer() => StringComparer.OrdinalIgnoreCase;
