@@ -11,7 +11,7 @@ public interface ICliProcessor
 
     public sealed int Process2(string commandLine)
     {
-        var args = CliCommandLine.Parse(commandLine);
+        var args = CliCommandLine.FromArgs(commandLine);
 
         throw new NotImplementedException();
     }

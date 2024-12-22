@@ -12,6 +12,15 @@ namespace Solitons;
 
 public static partial class Extensions
 {
+
+    public static IEnumerable<T> DequeueWhile<T>(this Queue<T> self, Func<T, bool> condition)
+    {
+        while (self.TryPeek(out var head) && 
+               condition.Invoke(head))
+        {
+            yield return self.Dequeue();
+        }
+    }
     /// <summary>
     /// Returns the index of the first occurrence of the specified item in the list.
     /// </summary>

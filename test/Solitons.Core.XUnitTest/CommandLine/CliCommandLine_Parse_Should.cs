@@ -18,13 +18,12 @@ public sealed class CliCommandLine_Parse_Should
         string commandLine = "app.exe";
 
         // Act
-        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+        CliCommandLine parsedCommand = CliCommandLine.FromArgs(commandLine);
 
         // Assert
         Assert.NotNull(parsedCommand); // Ensure that the parsedCommand is not null
         Assert.Equal("app.exe", parsedCommand.ExecutableName);
         Assert.Equal("app.exe", parsedCommand.CommandLine);
-        Assert.Equal("app.exe", parsedCommand.Signature);
         Assert.Empty(parsedCommand.Segments); // No segments should be present
         Assert.Empty(parsedCommand.Options); // No options should be present
 
@@ -50,7 +49,7 @@ public sealed class CliCommandLine_Parse_Should
         string commandLine = "app.exe input.txt output.txt log.txt";
 
         // Act
-        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+        CliCommandLine parsedCommand = CliCommandLine.FromArgs(commandLine);
 
         // Assert
         Assert.NotNull(parsedCommand); // Ensure that the parsedCommand is not null
@@ -89,7 +88,7 @@ public sealed class CliCommandLine_Parse_Should
         string commandLine = @"app.exe ""C:\Program Files\input file.txt"" ""C:\Output Folder\output file.txt""";
         var signatureRegex = new Regex(@"app.exe \w{32} \w{32}");
         // Act
-        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+        CliCommandLine parsedCommand = CliCommandLine.FromArgs(commandLine);
 
         // Assert
         Assert.NotNull(parsedCommand); // Ensure that the parsedCommand is not null
@@ -145,7 +144,7 @@ public sealed class CliCommandLine_Parse_Should
         try
         {
             // Act
-            CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+            CliCommandLine parsedCommand = CliCommandLine.FromArgs(commandLine);
 
             // Assert
             Assert.NotNull(parsedCommand); // Ensure that the parsedCommand is not null
@@ -190,7 +189,7 @@ public sealed class CliCommandLine_Parse_Should
         string commandLine = "app.exe --verbose --debug -h";
 
         // Act
-        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+        CliCommandLine parsedCommand = CliCommandLine.FromArgs(commandLine);
 
         // Assert
         Assert.NotNull(parsedCommand); // Ensure that the parsedCommand is not null
@@ -237,7 +236,7 @@ public sealed class CliCommandLine_Parse_Should
         string commandLine = @"app.exe --output ""C:\Output Folder"" --level 5";
 
         // Act
-        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+        CliCommandLine parsedCommand = CliCommandLine.FromArgs(commandLine);
 
         // Assert
         Assert.NotNull(parsedCommand); // Ensure that the parsedCommand is not null
@@ -284,7 +283,7 @@ public sealed class CliCommandLine_Parse_Should
         string commandLine = "app.exe --files file1.txt file2.txt file3.txt";
 
         // Act
-        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+        CliCommandLine parsedCommand = CliCommandLine.FromArgs(commandLine);
 
         // Assert
         Assert.NotNull(parsedCommand); // Ensure that the parsedCommand is not null
@@ -325,7 +324,7 @@ public sealed class CliCommandLine_Parse_Should
         string commandLine = "app.exe --config[env] --config[debug]";
 
         // Act
-        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+        CliCommandLine parsedCommand = CliCommandLine.FromArgs(commandLine);
 
         // Assert
         Assert.NotNull(parsedCommand); // Ensure that the parsedCommand is not null
@@ -374,7 +373,7 @@ public sealed class CliCommandLine_Parse_Should
 
 
         // Act
-        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+        CliCommandLine parsedCommand = CliCommandLine.FromArgs(commandLine);
 
         // Assert
         Assert.NotNull(parsedCommand); // Ensure that the parsedCommand is not null
@@ -421,7 +420,7 @@ public sealed class CliCommandLine_Parse_Should
         string commandLine = @"app.exe input.txt --verbose --output ""C:\Output Folder""";
 
         // Act
-        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+        CliCommandLine parsedCommand = CliCommandLine.FromArgs(commandLine);
 
         // Assert
         Assert.NotNull(parsedCommand); // Ensure that the parsedCommand is not null
@@ -476,7 +475,7 @@ public sealed class CliCommandLine_Parse_Should
         string commandLine = @"app.exe deploy --environment production --force";
 
         // Act
-        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+        CliCommandLine parsedCommand = CliCommandLine.FromArgs(commandLine);
 
         // Assert
         Assert.NotNull(parsedCommand); // Ensure that the parsedCommand is not null
@@ -530,7 +529,7 @@ public sealed class CliCommandLine_Parse_Should
     public void Parse_EmptyCommandLine_Should_ThrowArgumentNullException(string commandLined)
     {
         // Act & Assert
-        Assert.Throws<ArgumentOutOfRangeException>(() => CliCommandLine.Parse(commandLined));
+        Assert.Throws<ArgumentOutOfRangeException>(() => CliCommandLine.FromArgs(commandLined));
     }
 
     /// <summary>
@@ -543,7 +542,7 @@ public sealed class CliCommandLine_Parse_Should
         string commandLine = @"app.exe --path C:\Path\With\Special\!@#$%^&*() chars";
 
         // Act
-        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+        CliCommandLine parsedCommand = CliCommandLine.FromArgs(commandLine);
 
         // Assert
         Assert.NotNull(parsedCommand);
@@ -570,7 +569,7 @@ public sealed class CliCommandLine_Parse_Should
         string commandLine = "app.exe --include file1.txt --include file2.txt";
 
         // Act
-        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+        CliCommandLine parsedCommand = CliCommandLine.FromArgs(commandLine);
 
         // Assert
         Assert.NotNull(parsedCommand);
@@ -601,7 +600,7 @@ public sealed class CliCommandLine_Parse_Should
         string commandLine = @"app.exe service start --force --timeout 30";
 
         // Act
-        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+        CliCommandLine parsedCommand = CliCommandLine.FromArgs(commandLine);
 
         // Assert
         Assert.NotNull(parsedCommand);
@@ -635,7 +634,7 @@ public sealed class CliCommandLine_Parse_Should
         string commandLine = @"app.exe --message ""こんにちは世界"" --path C:\データ";
 
         // Act
-        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+        CliCommandLine parsedCommand = CliCommandLine.FromArgs(commandLine);
 
         // Assert
         Assert.NotNull(parsedCommand);
@@ -665,7 +664,7 @@ public sealed class CliCommandLine_Parse_Should
         string commandLine = @"app.exe --enable-feature --set-level 3 --tags tag1 tag2 tag3 --config[env] production";
 
         // Act
-        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+        CliCommandLine parsedCommand = CliCommandLine.FromArgs(commandLine);
 
         // Assert
         Assert.NotNull(parsedCommand);
@@ -702,7 +701,7 @@ public sealed class CliCommandLine_Parse_Should
         string commandLine = "app.exe --database[host] localhost --database[port] 5432 --database[user] admin";
 
         // Act
-        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+        CliCommandLine parsedCommand = CliCommandLine.FromArgs(commandLine);
 
         // Assert
         Assert.NotNull(parsedCommand);
@@ -740,7 +739,7 @@ public sealed class CliCommandLine_Parse_Should
         string commandLine = "app.exe --config[env] production --config[servers] server1 server2 server3";
 
         // Act
-        CliCommandLine parsedCommand = CliCommandLine.Parse(commandLine);
+        CliCommandLine parsedCommand = CliCommandLine.FromArgs(commandLine);
 
         // Assert
         Assert.NotNull(parsedCommand);
@@ -769,7 +768,7 @@ public sealed class CliCommandLine_Parse_Should
         var commandLine = "dotnet.exe build";
 
         // Act
-        var result = CliCommandLine.Parse(commandLine);
+        var result = CliCommandLine.FromArgs(commandLine);
 
         // Assert
         Assert.Equal("dotnet.exe", result.ExecutableName);
@@ -786,7 +785,7 @@ public sealed class CliCommandLine_Parse_Should
         var commandLine = "\"My Program.exe\" arg1 arg2";
 
         // Act
-        var result = CliCommandLine.Parse(commandLine);
+        var result = CliCommandLine.FromArgs(commandLine);
 
         // Assert
         Assert.Equal("My Program.exe", result.ExecutableName);
@@ -801,7 +800,7 @@ public sealed class CliCommandLine_Parse_Should
         var commandLine = "app.exe %TEST_VAR%";
 
         // Act
-        var result = CliCommandLine.Parse(commandLine);
+        var result = CliCommandLine.FromArgs(commandLine);
 
         // Assert
         Assert.Equal("app.exe", result.ExecutableName);
@@ -816,7 +815,7 @@ public sealed class CliCommandLine_Parse_Should
     public void Parse_DifferentOptionTypes_CapturedCorrectly(string commandLine, Type expectedType)
     {
         // Act
-        var result = CliCommandLine.Parse(commandLine);
+        var result = CliCommandLine.FromArgs(commandLine);
 
         // Assert
         Assert.Single(result.Options);
@@ -830,7 +829,7 @@ public sealed class CliCommandLine_Parse_Should
         var commandLine = "app.exe --config[env] prod --settings[log] debug info warn";
 
         // Act
-        var result = CliCommandLine.Parse(commandLine);
+        var result = CliCommandLine.FromArgs(commandLine);
 
         // Assert
         Assert.Equal(2, result.Options.Length);
@@ -853,7 +852,7 @@ public sealed class CliCommandLine_Parse_Should
         var commandLine = @"tool.exe subcommand ""quoted arg"" --flag --scalar value --list item1 item2 --config[env] prod --multi[tags] tag1 tag2";
 
         // Act
-        var result = CliCommandLine.Parse(commandLine);
+        var result = CliCommandLine.FromArgs(commandLine);
 
         // Assert
         Assert.Equal("tool.exe", result.ExecutableName);
@@ -873,7 +872,7 @@ public sealed class CliCommandLine_Parse_Should
     {
         // Arrange
         var commandLine = "app.exe arg --flag";
-        var parsed = CliCommandLine.Parse(commandLine);
+        var parsed = CliCommandLine.FromArgs(commandLine);
 
         // Act & Assert
         Assert.Equal(commandLine, parsed.ToString());

@@ -37,7 +37,7 @@ public sealed class CliCommandLine : IFormattable
     /// Thrown when the command line format is invalid or when the executable name cannot be extracted properly.
     /// </exception>
     /// <remarks>
-    /// The <see cref="Parse"/> method processes the input command line string through a series of transformation steps to extract the executable name,
+    /// The <see cref="FromArgs"/> method processes the input command line string through a series of transformation steps to extract the executable name,
     /// environment variables, quoted strings, keyed options, and other options. It ensures that the command line adheres to the expected format
     /// and encodes specific components to maintain consistency and avoid conflicts during parsing.
     /// 
@@ -45,11 +45,84 @@ public sealed class CliCommandLine : IFormattable
     /// stopping, providing a smoother debugging experience by avoiding stepping into boilerplate code.
     /// </remarks>
     [DebuggerStepThrough]
-    public static CliCommandLine Parse(string commandLine) => ThrowIf
+    public static CliCommandLine FromArgs(string commandLine) => ThrowIf
             .ArgumentNullOrWhiteSpace(commandLine)
             .Trim()
-            .Convert(text => new CliCommandLine(text));
+            .Convert(cl =>
+            {
+                if (Regex.IsMatch(cl, @"^""[^""]*"""))
+                {
+                    return new CliCommandLine([cl.Trim('"')]);
+                }
 
+                var args = new List<string>();
+                for (var match = Regex.Match(cl, @"(?:""[^""\-]*""|\S+)"); match.Success; match = match.NextMatch())
+                {
+                    var part = match.Value.Trim('"');
+                    args.Add(part);
+                }
+                return new CliCommandLine(args.ToArray());
+            });
+
+    [DebuggerStepThrough]
+    public static CliCommandLine FromArgs(string[] args)
+    {
+        return new CliCommandLine(args);
+    }
+
+    private CliCommandLine(string[] args)
+    {
+        var queue = new Queue<string>(args);
+        ExecutableName = queue.Dequeue();
+        Segments = [
+            ..queue
+                .DequeueWhile(arg => false == arg.StartsWith("-"))
+                .Select(arg => arg.Trim('"'))
+        ];
+        var options = new List<CliOptionCapture>();
+        var values = new List<string>();
+        while (queue.Any())
+        {
+            var optionName = queue.Dequeue();
+            optionName = Regex.Replace(optionName, @"\[([^\[\]]+)\]$", m => $@".{m.Groups[1]}");
+            values.Clear();
+            values.AddRange(queue
+                .DequeueWhile(arg => false == arg.StartsWith("-"))
+                .Select(v => v.Trim('"')));
+            var match = Regex.Match(optionName, @"(?<option>\S+?)\.(?<key>[^\.]+)$");
+            if (match.Success)
+            {
+                optionName = match.Groups["option"].Value;
+                var key = match.Groups["key"].Value;
+                if (values.Count == 0)
+                {
+                    options.Add(new CliKeyFlagOptionCapture(optionName, key));
+                }
+                else if (values.Count == 1)
+                {
+                    options.Add(new CliKeyValueOptionCapture(optionName, key, values.Single()));
+                }
+                else
+                {
+                    options.Add(new CliKeyCollectionOptionCapture(optionName, key, [.. values]));
+                }
+            }
+            else if(values.Count == 0)
+            {
+                options.Add(new CliFlagOptionCapture(optionName));
+            }
+            else if (values.Count == 1)
+            {
+                options.Add(new CliScalarOptionCapture(optionName, values.Single()));
+            }
+            else
+            {
+                options.Add(new CliCollectionOptionCapture(optionName, [.. values]));
+            }
+        }
+
+        Options = [.. options];
+    }
     private CliCommandLine(string originalCommand)
     {
         CommandLine = originalCommand;
@@ -70,7 +143,6 @@ public sealed class CliCommandLine : IFormattable
             originalCommand = transformer.Invoke(originalCommand, context);
         }
 
-        Signature = originalCommand.Trim();
         ExecutableName = ThrowIf.NullOrWhiteSpace(context.ExecutableName).Trim();
         Segments = [..context.Segments];
         Options = [..context.Options];
@@ -93,22 +165,6 @@ public sealed class CliCommandLine : IFormattable
     /// A <see cref="string"/> representing the raw command line input.
     /// </value>
     public string CommandLine { get; }
-
-    /// <summary>
-    /// Gets the normalized signature of the command line, used for handler selection.
-    /// </summary>
-    /// <remarks>
-    /// The <see cref="Signature"/> property represents a simplified and standardized version of the original
-    /// command line. It strips away unnecessary details and normalizes subcommands, arguments, and options
-    /// to create a consistent format. This normalized signature is instrumental in selecting the most
-    /// appropriate handler by matching it against predefined regular expressions associated with each handler.
-    /// By using the <see cref="Signature"/>, the system ensures accurate and efficient handler matching,
-    /// enhancing both performance and reliability.
-    /// </remarks>
-    /// <value>
-    /// A <see cref="string"/> containing the normalized command line signature used for matching handlers.
-    /// </value>
-    public string Signature { get; }
 
     /// <summary>
     /// Gets a collection of parsed options extracted from the command line.
@@ -158,7 +214,7 @@ public sealed class CliCommandLine : IFormattable
         if (string.Equals(format, "S", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(format, "Signature", StringComparison.OrdinalIgnoreCase))
         {
-            return Signature;
+            throw new NotImplementedException();
         }
 
         throw new FormatException($"The format string '{format}' is not supported.");
