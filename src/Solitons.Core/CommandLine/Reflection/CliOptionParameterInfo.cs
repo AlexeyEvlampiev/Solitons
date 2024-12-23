@@ -74,7 +74,11 @@ internal sealed class CliOptionParameterInfo : CliParameterInfo
                 HasDefaultValue = true;
                 DefaultValue = null;
             }
-            
+        }
+        else if(parameter.HasDefaultValue)
+        {
+            IsOptional = true;
+            DefaultValue = parameter.DefaultValue;
         }
 
 
@@ -103,6 +107,7 @@ internal sealed class CliOptionParameterInfo : CliParameterInfo
     public override bool HasDefaultValue { get; }
 
     public override object? DefaultValue { get; }
+
     public override object Parse(string arg)
     {
         if (IsFlag)

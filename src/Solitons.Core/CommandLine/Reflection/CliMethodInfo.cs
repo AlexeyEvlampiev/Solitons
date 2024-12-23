@@ -93,7 +93,7 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
     }
 
 
-    public int Invoke(object? instance, CliCommandLine? commandLine)
+    public int Invoke(object? instance, CliCommandLine commandLine)
     {
         var args = ToMethodArguments(commandLine);
         var result = Invoke(instance, args);
