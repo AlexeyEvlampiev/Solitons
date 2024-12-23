@@ -15,7 +15,7 @@ internal class CliOptionBundleParameterInfo : CliParameterInfo
         CliOptionBundleType = parameter.ParameterType;
         var properties = CliOptionBundleType
             .GetProperties(BindingFlags.Instance | BindingFlags.Public)
-            .Where(p => p.GetCustomAttributes<CliOptionAttribute>().Any())
+            .Where(CliOptionBundlePropertyInfo.IsBundleProperty)
             .Select(p => new CliOptionBundlePropertyInfo(p))
             .ToList();
         _properties = [.. properties];
@@ -32,6 +32,13 @@ internal class CliOptionBundleParameterInfo : CliParameterInfo
 
     public object? GetValue(CliCommandLine commandLine)
     {
-        throw new NotImplementedException();
+        var bundle = Activator.CreateInstance(CliOptionBundleType);
+        foreach (var property in _properties)
+        {
+            var value = property.Materialize(commandLine);
+            property.SetValue(bundle, value);
+
+        }
+        return bundle;
     }
 }

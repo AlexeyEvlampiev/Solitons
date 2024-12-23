@@ -1,6 +1,9 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -19,12 +22,16 @@ internal class CliOptionBundlePropertyInfo : PropertyInfoDecorator,  ICliOptionM
         _optionAttribute = attributes.OfType<CliOptionAttribute>().Single();
         _aliasExactRegex = new Regex($"^{_optionAttribute.PipeSeparatedAliases}$");
         IsOptional = attributes.OfType<RequiredAttribute>().Any() == false;
+
+        OptionType = ICliOptionMemberInfo.GetOptionType(property.PropertyType, _optionAttribute, out var valueConverter);
+        ValueConverter = valueConverter;
+
     }
 
 
+    public TypeConverter ValueConverter { get; }
     public bool IsFlag { get; }
 
-    public TypeConverter? ValueConverter { get; }
 
     public string Description { get; }
 
@@ -32,11 +39,20 @@ internal class CliOptionBundlePropertyInfo : PropertyInfoDecorator,  ICliOptionM
 
     public string OptionAliasesCsv => _optionAttribute.OptionAliasesCsv;
     public bool IsOptional { get; }
+    public object? DefaultValue { get; }
 
     public ImmutableArray<string> Aliases { get; }
 
-    public bool IsOptionAlias(string arg) => _aliasExactRegex.IsMatch(arg);
 
 
     public bool IsMatch(string optionName) => _aliasExactRegex.IsMatch(optionName);
+    public Type OptionType { get; }
+
+    public static bool IsBundleProperty(PropertyInfo propertyInfo)
+    {
+        return propertyInfo.GetCustomAttribute<CliOptionAttribute>() is not null;
+    }
+
+    [DebuggerStepThrough]
+    public object? Materialize(CliCommandLine commandLine) => ((ICliOptionMemberInfo)this).Materialize(commandLine);
 }

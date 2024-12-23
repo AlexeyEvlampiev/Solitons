@@ -50,6 +50,9 @@ internal sealed class CliOptionParameterInfo : CliParameterInfo, ICliOptionMembe
                              .SingleOrDefault()
                          ?? new CliOptionAttribute($"--{Name}", Description);
 
+        OptionType = ICliOptionMemberInfo.GetOptionType(ParameterType,_optionAttribute, out var valueConverter);
+        ValueConverter = valueConverter;
+
         var underlyingType = Nullable.GetUnderlyingType(ParameterType) ?? ParameterType;
         if (underlyingType == typeof(Unit) ||
             underlyingType == typeof(CliFlag))
@@ -83,9 +86,10 @@ internal sealed class CliOptionParameterInfo : CliParameterInfo, ICliOptionMembe
 
 
         Aliases = [.. _optionAttribute.Aliases];
+        
         _aliasExactRegex = new Regex($"^{_optionAttribute.PipeSeparatedAliases}$");
-    }
 
+    }
 
 
     public bool IsFlag { get; }
@@ -95,6 +99,7 @@ internal sealed class CliOptionParameterInfo : CliParameterInfo, ICliOptionMembe
     public string Description { get; }
 
     public bool IsMatch(string optionName) => _aliasExactRegex.IsMatch(optionName);
+    public Type OptionType { get; }
 
     public string PipeSeparatedAliases => _optionAttribute.PipeSeparatedAliases;
 
