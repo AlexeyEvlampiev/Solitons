@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine.Mercury;
 
@@ -11,7 +12,7 @@ public abstract class CliProcessorBase
     public int Process(string commandLine)
     {
         var commandLineObject = CliCommandLine.FromArgs(commandLine);
-        return Process(commandLineObject);
+        return SafeProcess(commandLineObject);
     }
 
 
@@ -35,15 +36,20 @@ public abstract class CliProcessorBase
 
     private int Process(CliCommandLine commandLine)
     {
-        if (IsHelpRequest(commandLine))
+        if (IsGeneralHelpRequest(commandLine))
         {
-            ShowHelp(commandLine);
+            ShowGeneralHelp(commandLine);
             return 0;
         }
 
         var actions = Match(commandLine);
         if (actions.Length == 1)
         {
+            if (IsActionHelpRequest(commandLine))
+            {
+                actions[0].ShowHelp(commandLine);
+                return 0;
+            }
             return Process(commandLine, actions[0]);
         }
 
@@ -57,6 +63,9 @@ public abstract class CliProcessorBase
 
         throw new NotImplementedException();
     }
+
+
+    protected abstract bool IsActionHelpRequest(CliCommandLine commandLine);
 
 
     private int Process(CliCommandLine commandLine, CliAction action)
@@ -77,14 +86,23 @@ public abstract class CliProcessorBase
     protected virtual void OnActionNotFound(CliCommandLine commandLine)
     {
         PrintError("Not found");
-        ShowHelp(commandLine);
+        ShowGeneralHelp(commandLine);
     }
 
     protected virtual void PrintError(string message) => Console.Error.WriteLine(message);
 
-    protected abstract void ShowHelp(CliCommandLine commandLine);
+    protected abstract void ShowGeneralHelp(CliCommandLine commandLine);
 
-    protected abstract bool IsHelpRequest(CliCommandLine commandLine);
+    protected virtual bool IsGeneralHelpRequest(CliCommandLine commandLine)
+    {
+        if (commandLine.Segments.Length != 1)
+        {
+            return false;
+        }
+
+        var segment = commandLine.Segments[0];
+        return Regex.IsMatch(segment, @"(?xis)^(?:--help|help|-?h|-?\?|)$");
+    }
 
 
     protected abstract IEnumerable<CliAction> GetActions();
@@ -105,5 +123,6 @@ public abstract class CliProcessorBase
         public abstract bool IsMatch(CliCommandLine commandLine);
         public abstract double Rank(CliCommandLine commandLine);
         public abstract int Process(CliCommandLine commandLine);
+        public abstract void ShowHelp(CliCommandLine commandLine);
     }
 }

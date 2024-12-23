@@ -9,8 +9,9 @@ public  sealed class Program : Solitons.CommandLine.Common.CliRouteTest<IPgUpPro
 {
     public static int Main(params string[] args)
     {
-        var processor = new CliProcessorVNext();
-        processor.Process("pgup init . --parameters[dbname] mydb --parameters.dbowner mydbadmin --help");
+        var processor = CliProcessorVNext
+            .Process<Solitons.Postgres.PgUp.Program>("pgup init . --parameters[dbname] mydb --parameters.dbowner mydbadmin --help");
+
         //var program = new Program();
         //program.TestExamples(example => throw new InvalidOperationException($"Not invoked: {example.Example}"));
         return 0;

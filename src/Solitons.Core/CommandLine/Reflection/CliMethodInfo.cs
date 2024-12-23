@@ -13,6 +13,8 @@ namespace Solitons.CommandLine.Reflection;
 internal sealed class CliMethodInfo : MethodInfoDecorator
 {
     private readonly ImmutableArray<ParameterInfoDecorator> _parameters;
+    private readonly ImmutableArray<object> _routeSegments;
+
 
     private CliMethodInfo(
         CliRouteAttribute[] baseRoutes,
@@ -21,7 +23,7 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
         Debug.Assert(IsCliMethod(method));
         var parameters = base.GetParameters();
         var attributes = GetCustomAttributes(true).OfType<Attribute>().ToList();
-        var routeParts = ExtractRouteParts(attributes);
+        _routeSegments = [..ExtractRouteParts(attributes)];
         
 
 
@@ -32,7 +34,7 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
             {
                 Parameter = parameters.FirstOrDefault(attribute.References),
                 Attribute = attribute,
-                CliRoutePosition = routeParts.IndexOf(attribute)
+                CliRoutePosition = _routeSegments.IndexOf(attribute)
             })
             .ToList();
 
@@ -114,7 +116,8 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
                     return Regex
                         .Split(route.RouteDeclaration, @"\s+")
                         .Where(r => r.IsPrintable())
-                        .Select(r => (object)r.Trim());
+                        .Select(r => r.Trim())
+                        .Select(r => (object)new Regex(r, RegexOptions.IgnoreCase));
                 }
 
                 if (attribute is CliArgumentAttribute argument)
@@ -125,5 +128,45 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
                 return [];
             })
             .ToList();
+    }
+
+    public bool IsMatch(CliCommandLine commandLine)
+    {
+        if (_routeSegments.Length != commandLine.Segments.Length)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < _routeSegments.Length; ++i)
+        {
+            var route = _routeSegments[i];
+            var segment = commandLine.Segments[i];
+            if (route is Regex rgx && 
+                false == rgx.IsMatch(segment))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public double Rank(CliCommandLine commandLine)
+    {
+        double result = 0;
+
+
+        for (int i = 0; i < _routeSegments.Length; ++i)
+        {
+            var route = _routeSegments[i];
+            var segment = commandLine.Segments[i];
+            if (route is Regex rgx &&
+                false == rgx.IsMatch(segment))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
