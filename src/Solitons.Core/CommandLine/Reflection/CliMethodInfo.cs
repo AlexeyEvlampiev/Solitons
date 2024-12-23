@@ -96,29 +96,51 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
     public int Invoke(object? instance, CliCommandLine commandLine)
     {
         var args = ToMethodArguments(commandLine);
-        var result = Invoke(instance, args);
-        if (result is Task task)
+        try
         {
-            Debug.WriteLine($"Awaiting '{Name}' returned task");
-            task.GetAwaiter().GetResult();
-            var resultProperty = task.GetType().GetProperty("Result");
-            if (resultProperty != null)
+            var result = Invoke(instance, args);
+            if (result is Task task)
             {
-                result = resultProperty.GetValue(task) ?? 0;
-                Debug.WriteLine($"'{Name}' returned task result is '{result}'");
+                Debug.WriteLine($"Awaiting '{Name}' returned task");
+                task.GetAwaiter().GetResult();
+                var resultProperty = task.GetType().GetProperty("Result");
+                if (resultProperty != null)
+                {
+                    result = resultProperty.GetValue(task) ?? 0;
+                    Debug.WriteLine($"'{Name}' returned task result is '{result}'");
+                }
+            }
+
+            if (result is int exitCode)
+            {
+                return exitCode;
             }
         }
-
-        if (result is int exitCode)
+        catch (TargetInvocationException e)
         {
-            return exitCode;
+            throw e.InnerException ?? new CliExitException("Internal error");
         }
+
 
         return 0;
     }
 
     private object?[] ToMethodArguments(CliCommandLine commandLine)
     {
+        var optionInfos = GetOptions().ToList();
+
+        var unrecognizedOptionsCsv = commandLine.Options
+            .Where(o => false == optionInfos.Any(info => info.IsMatch(o.Name)))
+            .Select(o => o.Name)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Order(StringComparer.OrdinalIgnoreCase)
+            .Join(",");
+
+        if (unrecognizedOptionsCsv.IsPrintable())
+        {
+            throw new CliExitException($"Unrecognized option(s): {unrecognizedOptionsCsv}");
+        }
+
         object?[] args = new object?[_parameters.Length];
         for (int i = 0; i < args.Length; ++i)
         {
@@ -131,6 +153,10 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
             else if(parameter is CliOptionParameterInfo optionInfo)
             {
                 args[i] = optionInfo.GetValue(commandLine);
+            }
+            else if(parameter is CliOptionBundleParameterInfo optionBundleInfo)
+            {
+                args[i] = optionBundleInfo.GetValue(commandLine);
             }
         }
 
@@ -244,12 +270,18 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
         var optionInfos = GetOptions().ToList();
 
         var matchedOptions = optionInfos
-                .Count(optionInfo => commandLine.Options.Any(actualOption => optionInfo.IsMatch(actualOption.Name)));
+                .Count(optionInfo => optionInfo.IsIn(commandLine));
         yield return matchedOptions;
 
-        var unmatchedOptions = commandLine.Options
-            .Count(actualOption => false == optionInfos.Any(info => info.IsMatch(actualOption.Name)));
 
-        yield return -unmatchedOptions;
+        var missingOptions = optionInfos
+            .Where(info => info.IsOptional == false)
+            .Count(optionInfo => optionInfo.IsNotIn(commandLine));
+        yield return missingOptions;
+
+        var unrecognizedOptions = commandLine.Options
+            .Count(optionCapture => false == optionInfos.Any(info => info.IsMatch(optionCapture.Name)));
+
+        yield return -unrecognizedOptions;
     }
 }

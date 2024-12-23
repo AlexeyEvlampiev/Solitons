@@ -9,7 +9,7 @@ using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine.Reflection;
 
-internal sealed class CliOptionParameterInfo : CliParameterInfo
+internal sealed class CliOptionParameterInfo : CliParameterInfo, ICliOptionMemberInfo
 {
     private readonly CliOptionAttribute _optionAttribute;
     private readonly Regex _aliasExactRegex;
@@ -93,6 +93,8 @@ internal sealed class CliOptionParameterInfo : CliParameterInfo
     public TypeConverter? ValueConverter { get; }
 
     public string Description { get; }
+
+    public bool IsMatch(string optionName) => _aliasExactRegex.IsMatch(optionName);
 
     public string PipeSeparatedAliases => _optionAttribute.PipeSeparatedAliases;
 

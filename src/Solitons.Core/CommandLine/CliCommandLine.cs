@@ -501,6 +501,7 @@ public abstract record CliOptionCapture
     /// A <see cref="string"/> representing the name of the command-line option.
     /// </value>
     public string Name { get; }
+
 }
 
 /// <summary>

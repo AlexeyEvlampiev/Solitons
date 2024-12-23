@@ -28,6 +28,14 @@ public abstract class CliProcessorBase
         {
             return Process(commandLine);
         }
+        catch (CliExitException e)
+        {
+            if (e.Message.IsPrintable())
+            {
+                Console.WriteLine(e.Message);
+            }
+            return e.ExitCode;
+        }
         catch (Exception e)
         {
             return 5;

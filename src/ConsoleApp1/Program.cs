@@ -10,7 +10,14 @@ public  sealed class Program : Solitons.CommandLine.Common.CliRouteTest<IPgUpPro
     public static int Main(params string[] args)
     {
         var processor = CliProcessorVNext
-            .Process<Solitons.Postgres.PgUp.Program>("pgup init . --parameters[dbname] mydb --parameters.dbowner mydbadmin");
+            //.Process<Solitons.Postgres.PgUp.Program>("pgup init . ");
+            .Process<Solitons.Postgres.PgUp.Program>(@"
+            pgup deploy project.json 
+            --host localhost
+            --user alexey
+            --password hello-world
+            --parameter[dbname] mydb 
+            --parameter.dbowner mydbadmin");
 
         //var program = new Program();
         //program.TestExamples(example => throw new InvalidOperationException($"Not invoked: {example.Example}"));
