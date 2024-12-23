@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Solitons.Collections;
 using Solitons.Reflection;
 
@@ -92,14 +93,71 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
     }
 
 
-    public int Invoke(object?  instance, CliCommandLine? commandLine)
+    public int Invoke(object? instance, CliCommandLine? commandLine)
     {
-        throw new NotImplementedException();
+        var args = ToMethodArguments(commandLine);
+        var result = Invoke(instance, args);
+        if (result is Task task)
+        {
+            Debug.WriteLine($"Awaiting '{Name}' returned task");
+            task.GetAwaiter().GetResult();
+            var resultProperty = task.GetType().GetProperty("Result");
+            if (resultProperty != null)
+            {
+                result = resultProperty.GetValue(task) ?? 0;
+                Debug.WriteLine($"'{Name}' returned task result is '{result}'");
+            }
+        }
+
+        if (result is int exitCode)
+        {
+            return exitCode;
+        }
+
+        return 0;
+    }
+
+    private object?[] ToMethodArguments(CliCommandLine commandLine)
+    {
+        object?[] args = new object?[_parameters.Length];
+        for (int i = 0; i < args.Length; ++i)
+        {
+            var parameter = _parameters[i];
+            if (parameter is CliArgumentParameterInfo argument)
+            {
+                var segment = commandLine.Segments[argument.CliRoutePosition];
+                args[i] = segment;
+            }
+            else if(parameter is CliOptionParameterInfo optionInfo)
+            {
+                args[i] = optionInfo.GetValue(commandLine);
+            }
+        }
+
+        return args;
     }
 
     public new ImmutableArray<ParameterInfoDecorator> GetParameters() => _parameters;
 
     public ImmutableArray<CliCommandExampleAttribute> Examples { get; }
+
+    public IEnumerable<ICliOptionMemberInfo> GetOptions()
+    {
+        foreach (var parameter in _parameters)
+        {
+            if (parameter is CliOptionParameterInfo optionParameter)
+            {
+                yield return optionParameter;
+            }
+            else if(parameter is CliOptionBundleParameterInfo optionBundleParameter)
+            {
+                foreach (var o in optionBundleParameter.GetOptions())
+                {
+                    yield return o;
+                }
+            }
+        }
+    }
 
     private static bool IsCliMethod(MethodInfo methodInfo)
     {
@@ -153,20 +211,45 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
 
     public double Rank(CliCommandLine commandLine)
     {
-        double result = 0;
+        return RankSequence(commandLine).Sum();
+    }
 
-
-        for (int i = 0; i < _routeSegments.Length; ++i)
+    private IEnumerable<double> RankSequence(CliCommandLine commandLine)
+    {
+        var length = Math.Max(commandLine.Segments.Length, _routeSegments.Length);
+        for (int i = 0; i < length; ++i)
         {
-            var route = _routeSegments[i];
-            var segment = commandLine.Segments[i];
-            if (route is Regex rgx &&
-                false == rgx.IsMatch(segment))
+            if (i >= commandLine.Segments.Length ||
+                i >= _routeSegments.Length)
             {
-                return false;
+                yield return -1;
+                continue;
+            }
+
+            var segment = commandLine.Segments[i];
+            var route = _routeSegments[i];
+            if (route is Regex rgx)
+            {
+                yield return rgx.IsMatch(segment) ? (+1) : (-1);
+                continue;
+            }
+
+            if (route is CliArgumentAttribute arg)
+            {
+                var matchesAnyRoute = _routeSegments.OfType<Regex>().Any(r => r.IsMatch(segment));
+                yield return matchesAnyRoute ? -1 : +1;
             }
         }
 
-        return true;
+        var optionInfos = GetOptions().ToList();
+
+        var matchedOptions = optionInfos
+                .Count(optionInfo => commandLine.Options.Any(actualOption => optionInfo.IsMatch(actualOption.Name)));
+        yield return matchedOptions;
+
+        var unmatchedOptions = commandLine.Options
+            .Count(actualOption => false == optionInfos.Any(info => info.IsMatch(actualOption.Name)));
+
+        yield return -unmatchedOptions;
     }
 }

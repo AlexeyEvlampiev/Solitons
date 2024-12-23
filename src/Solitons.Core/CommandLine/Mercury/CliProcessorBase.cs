@@ -65,7 +65,21 @@ public abstract class CliProcessorBase
     }
 
 
-    protected abstract bool IsActionHelpRequest(CliCommandLine commandLine);
+    protected virtual bool IsActionHelpRequest(CliCommandLine commandLine)
+    {
+        var regex = new Regex(@"(?xis)^(?:--help|help|-?h|-?\?|)$");
+        if (commandLine.Segments.Any(segment => regex.IsMatch(segment)))
+        {
+            return true;
+        }
+
+        if (commandLine.Options.Any(o => regex.IsMatch(o.Name)))
+        {
+            return true;
+        }
+
+        return false;
+    }
 
 
     private int Process(CliCommandLine commandLine, CliAction action)
@@ -77,11 +91,11 @@ public abstract class CliProcessorBase
     }
 
 
-    protected abstract void OnProcessed(CliCommandLine commandLine, int exitCode);
+    protected virtual void OnProcessed(CliCommandLine commandLine, int exitCode){}
 
 
 
-    protected abstract void OnProcessing(CliCommandLine commandLine);
+    protected virtual void OnProcessing(CliCommandLine commandLine){}
 
     protected virtual void OnActionNotFound(CliCommandLine commandLine)
     {

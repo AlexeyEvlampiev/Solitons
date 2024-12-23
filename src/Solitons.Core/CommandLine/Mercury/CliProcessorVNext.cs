@@ -51,20 +51,8 @@ public sealed class CliProcessorVNext : CliProcessorBase
         return Create<T>().Process(commandLine);
     }
 
-    protected override bool IsActionHelpRequest(CliCommandLine commandLine)
-    {
-        throw new System.NotImplementedException();
-    }
 
-    protected override void OnProcessed(CliCommandLine commandLine, int exitCode)
-    {
-        throw new System.NotImplementedException();
-    }
 
-    protected override void OnProcessing(CliCommandLine commandLine)
-    {
-        throw new System.NotImplementedException();
-    }
 
     protected override void ShowGeneralHelp(CliCommandLine commandLine)
     {
@@ -85,10 +73,8 @@ public sealed class CliProcessorVNext : CliProcessorBase
         [DebuggerStepThrough]
         public override double Rank(CliCommandLine commandLine) => method.Rank(commandLine);
 
-        public override int Process(CliCommandLine commandLine)
-        {
-            throw new System.NotImplementedException();
-        }
+        [DebuggerStepThrough]
+        public override int Process(CliCommandLine commandLine) => method.Invoke(instance, commandLine);
 
         public override void ShowHelp(CliCommandLine commandLine)
         {

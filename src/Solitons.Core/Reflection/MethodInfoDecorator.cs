@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System;
+using System.Diagnostics;
 using System.Reflection;
 
 namespace Solitons.Reflection;
@@ -83,6 +84,7 @@ public abstract class MethodInfoDecorator(MethodInfo method)
     /// <param name="obj">The object on which to invoke the method.</param>
     /// <param name="parameters">An array of arguments to pass to the method.</param>
     /// <returns>The return value of the method, or <c>null</c> for methods that return void.</returns>
+    [DebuggerStepThrough]
     public virtual object? Invoke(object? obj, object?[]? parameters) => _method.Invoke(obj, parameters);
 
     /// <summary>

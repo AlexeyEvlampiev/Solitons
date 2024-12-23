@@ -122,4 +122,18 @@ internal sealed class CliOptionParameterInfo : CliParameterInfo
             throw new InvalidOperationException("Oops...");
         }
     }
+
+    public object? GetValue(CliCommandLine commandLine)
+    {
+        var options = commandLine.Options.Where(o => IsMatch(o.Name)).ToList();
+        if (options.Any() == false)
+        {
+            if (IsOptional)
+            {
+                return DefaultValue;
+            }
+        }
+
+        throw new NotImplementedException();
+    }
 }
