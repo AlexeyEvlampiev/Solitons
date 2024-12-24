@@ -5,7 +5,7 @@ using Solitons.Postgres.PgUp;
 
 namespace ConsoleApp1;
 
-public  sealed class Program : Solitons.CommandLine.Common.CliRouteTest<IPgUpProgram>
+public  sealed class Program : Solitons.CommandLine.Common.CliContractValidator<IProgram>
 {
     public static int Main(params string[] args)
     {

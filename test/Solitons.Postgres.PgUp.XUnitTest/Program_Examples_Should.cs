@@ -1,22 +1,21 @@
-﻿using Moq;
+﻿using System.Diagnostics;
+using Solitons.CommandLine;
 using Solitons.CommandLine.Common;
 
-namespace Solitons.Postgres.PgUp;
+
 
 // ReSharper disable once InconsistentNaming
-public class Program_Examples_Should : CliCommandExamplesValidationTest
+public class Program_Examples_Should : CliContractValidator<Solitons.Postgres.PgUp.IProgram>
 {
-    private readonly Mock<IPgUpProgram> _programMock = new();
 
     [Fact]
-    public void BeValid() => Validate();
-
-
-    protected override void OnResult(string commandLine, int expectedInvocationsCount)
+    public void ImplementPgUpCliContract()
     {
-        Assert.True(_programMock.Invocations.Count == 1, $"No method was called for the example: {commandLine}");
-        _programMock.Invocations.Clear();
+        Validate(OnFailure);
     }
 
-    protected override object Program => _programMock.Object;
+    private void OnFailure(CliCommandExampleAttribute failedInvocation)
+    {
+        throw new NotImplementedException();
+    }
 }

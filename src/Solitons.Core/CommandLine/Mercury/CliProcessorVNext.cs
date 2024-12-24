@@ -16,19 +16,30 @@ public sealed class CliProcessorVNext : CliProcessorBase
         _actions = [.. actions];
     }
 
-    public static CliProcessorVNext Create<T>()
+    [DebuggerStepThrough]
+    public static CliProcessorVNext From<T>() => From(typeof(T));
+
+
+    public static CliProcessorVNext From(Type type)
+    {
+        if (type.IsInterface ||
+            type.IsAbstract)
+        {
+            throw new ArgumentException("Oops...");
+        }
+
+        var instance = Activator.CreateInstance(type);
+        return From(type, instance);
+    }
+
+    [DebuggerStepThrough]
+    public static CliProcessorVNext From(object program) => From(program.GetType(), program);
+
+
+    private  static CliProcessorVNext From(Type type, object? instance)
     {
         var methods = CliMethodInfo
-            .Get(typeof(T));
-
-        var targets = methods
-            .Where(m => m is { IsStatic: false, DeclaringType: { IsAbstract: false, IsInterface: false } })
-            .Select(m => m.DeclaringType!)
-            .Union([typeof(T)])
-            .Distinct()
-            .Select(Activator.CreateInstance)
-            .SkipNulls()
-            .ToList();
+            .Get(type);
 
         var actions = methods
             .Select(m =>
@@ -38,17 +49,20 @@ public sealed class CliProcessorVNext : CliProcessorBase
                     return new CliActionVNext(m, null);
                 }
 
-                var target = targets.Single(t => m.DeclaringType!.IsInstanceOfType(t));
-                return new CliActionVNext(m, target);
+                ThrowIf.NullReference(instance);
+                return new CliActionVNext(m, instance);
             })
             .ToArray();
         return new CliProcessorVNext(actions);
     }
 
+
+
+
     [DebuggerStepThrough]
     public static int Process<T>(string commandLine)
     {
-        return Create<T>().Process(commandLine);
+        return From<T>().Process(commandLine);
     }
 
 

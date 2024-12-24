@@ -99,7 +99,7 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
         try
         {
             var args = ToMethodArguments(commandLine);
-            var result = Invoke(instance, args);
+            object result = Invoke(instance, args);
             if (result is Task task)
             {
                 Debug.WriteLine($"Awaiting '{Name}' returned task");

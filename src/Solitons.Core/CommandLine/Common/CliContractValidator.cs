@@ -3,28 +3,30 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
+using Solitons.CommandLine.Mercury;
 
 namespace Solitons.CommandLine.Common;
 
-public abstract class CliRouteTest<T> where T : class
+public abstract class CliContractValidator<T> where T : class
 {
-    protected CliRouteTest()
-    {
-        var contract = typeof(T);
-        if (false == contract.IsInterface)
-        {
-            throw new InvalidOperationException($"{typeof(T).Name} must be an interface.");
-        }
-    }
-
-    protected void TestExamples(
+    protected void Validate(
         Action<CliCommandExampleAttribute> onNotInvoked,
         Action<CliCommandExampleAttribute>? onInvoked = default)
     {
+        var type = typeof(T);
+        if (false == type.IsInterface)
+        {
+            throw new InvalidOperationException("Oops");
+        }
+
         onInvoked ??= (tc) => Debug.WriteLine($"Passed: {tc.Example}");
 
         var testCases = typeof(T)
-            .GetMethods()
+            .GetInterfaces()
+            .Union([typeof(T)])
+            .SelectMany(t => t.GetMethods())
+            .Distinct()
             .SelectMany(mi => mi.GetCustomAttributes(true)
                 .OfType<CliCommandExampleAttribute>())
             .ToArray();
@@ -36,10 +38,8 @@ public abstract class CliRouteTest<T> where T : class
 
         T proxy = DispatchProxy.Create<T, CliRouteProxy>();
 
-        var processor = ICliProcessor
-            .Setup(config => config
-                .UseDescription("Test")
-                .UseCommandsFrom(proxy));
+        var processor = CliProcessorVNext
+            .From(proxy);
 
         foreach (var testCase in testCases)
         {
@@ -47,7 +47,7 @@ public abstract class CliRouteTest<T> where T : class
             Debug.WriteLine(testCase.Description);
 
             var commandLine = $"program {testCase.Example}";
-            int result = processor.Process2($"program {testCase.Example}");
+            int result = processor.Process($"program {testCase.Example}");
             if (result == 0)
             {
                 onInvoked(testCase);
@@ -82,9 +82,25 @@ public abstract class CliRouteTest<T> where T : class
                 return Activator.CreateInstance(targetMethod.ReturnType);
             }
 
+            if (typeof(Task).IsAssignableFrom(targetMethod.ReturnType))
+            {
+                if (targetMethod.ReturnType == typeof(Task))
+                {
+                    return Task.CompletedTask;
+                }
+                else if (targetMethod.ReturnType.IsGenericType &&
+                         targetMethod.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
+                {
+                    var resultType = targetMethod.ReturnType.GetGenericArguments()[0];
+                    var defaultResult = Activator.CreateInstance(resultType);
+                    return typeof(Task).GetMethod(nameof(Task.FromResult))?
+                        .MakeGenericMethod(resultType)
+                        .Invoke(null, new[] { defaultResult });
+                }
+            }
             return 0;
         }
 
-        public override string ToString() => typeof(CliRouteTest<T>).ToString();
+        public override string ToString() => typeof(CliContractValidator<T>).ToString();
     }
 }

@@ -2,12 +2,12 @@
 
 namespace Solitons.Postgres.PgUp;
 
-public sealed class TestCliRouteTest : CliRouteTest<IPgUpProgram>
+public sealed class TestCliContractValidator : CliContractValidator<IProgram>
 {
     [Fact]
     public void Run()
     {
-        TestExamples(testCase =>
+        Validate(testCase =>
         {
             Assert.Fail($"Not invoked: {testCase.Example}");
         });
