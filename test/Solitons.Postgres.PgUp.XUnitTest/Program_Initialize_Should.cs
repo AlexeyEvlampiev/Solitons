@@ -11,9 +11,8 @@ public class Program_Initialize_Should
     public void BeInvokedByCliProcessor(string commandLine, string template)
     {
         var program = new Mock<IProgram>();
-        var processor = ICliProcessor
-            .Setup(config => config
-                .UseCommandsFrom(program.Object));
+        var processor = CliProcessor
+            .From(program.Object);
 
         processor.Process(commandLine);
         program.Verify(m => m.Initialize(".", template), Times.Once);

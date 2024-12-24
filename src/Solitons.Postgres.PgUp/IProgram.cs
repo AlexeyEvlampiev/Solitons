@@ -2,6 +2,7 @@
 using System.Reactive;
 using Npgsql;
 using Solitons.CommandLine;
+using Solitons.CommandLine.Reflection;
 
 namespace Solitons.Postgres.PgUp;
 

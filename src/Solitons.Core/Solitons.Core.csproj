@@ -77,31 +77,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Compile Update="CommandLine\CliActionHelpRtt.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>CliActionHelpRtt.tt</DependentUpon>
-    </Compile>
-    <Compile Update="CommandLine\CliActionRegexMatchRankerRtt.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>CliActionRegexMatchRankerRtt.tt</DependentUpon>
-    </Compile>
-    <Compile Update="CommandLine\CliActionRegularExpressionRtt.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>CliActionRegularExpressionRtt.tt</DependentUpon>
-    </Compile>
-    <Compile Update="CommandLine\CliHelpRtt.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>CliHelpRtt.tt</DependentUpon>
-    </Compile>
-    <Compile Update="CommandLine\Models\Formatters\CliGeneralHelpRtt.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>CliGeneralHelpRtt.tt</DependentUpon>
-    </Compile>
     <Compile Update="Common\Azure\ResourceManager\AutoScaleSettingsRtt.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -139,26 +114,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <None Update="CommandLine\CliActionHelpRtt.tt">
-      <Generator>TextTemplatingFilePreprocessor</Generator>
-      <LastGenOutput>CliActionHelpRtt.cs</LastGenOutput>
-    </None>
-    <None Update="CommandLine\CliActionRegexMatchRankerRtt.tt">
-      <Generator>TextTemplatingFilePreprocessor</Generator>
-      <LastGenOutput>CliActionRegexMatchRankerRtt.cs</LastGenOutput>
-    </None>
-    <None Update="CommandLine\CliActionRegularExpressionRtt.tt">
-      <Generator>TextTemplatingFilePreprocessor</Generator>
-      <LastGenOutput>CliActionRegularExpressionRtt.cs</LastGenOutput>
-    </None>
-    <None Update="CommandLine\Models\Formatters\CliGeneralHelpRtt.tt">
-      <Generator>TextTemplatingFilePreprocessor</Generator>
-      <LastGenOutput>CliGeneralHelpRtt.cs</LastGenOutput>
-    </None>
-    <None Update="CommandLine\CliHelpRtt.tt">
-      <Generator>TextTemplatingFilePreprocessor</Generator>
-      <LastGenOutput>CliHelpRtt.cs</LastGenOutput>
-    </None>
     <None Update="Common\Azure\ResourceManager\AutoScaleSettingsRtt.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>
       <LastGenOutput>AutoScaleSettingsRtt.cs</LastGenOutput>

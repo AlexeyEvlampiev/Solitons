@@ -1,20 +1,20 @@
-﻿using System;
+﻿using Solitons;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Reactive;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
 
-namespace Solitons.CommandLine;
+namespace Solitons.CommandLine.Reflection;
 
 /// <summary>
 /// Attribute to define command line options for a method or property.
 /// </summary>
 [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)]
-public class CliOptionAttribute : Attribute, ICliOptionMetadata
+public class CliOptionAttribute : Attribute
 {
     private static readonly Regex SpecificationRegex;
     private static readonly Regex OptionRegex;
@@ -144,13 +144,13 @@ public class CliOptionAttribute : Attribute, ICliOptionMetadata
     public virtual bool CanAccept(Type optionType, out TypeConverter converter)
     {
         converter = TypeDescriptor.GetConverter(optionType);
-        
+
         if (optionType == typeof(TimeSpan))
         {
             converter = new MultiFormatTimeSpanConverter();
             ThrowIf.False(converter.CanConvertFrom(typeof(string)));
         }
-        else if(optionType == typeof(CancellationToken))
+        else if (optionType == typeof(CancellationToken))
         {
             converter = new CliCancellationTokenTypeConverter();
             ThrowIf.False(converter.CanConvertFrom(typeof(string)));
@@ -188,28 +188,6 @@ public class CliOptionAttribute : Attribute, ICliOptionMetadata
 
     public virtual StringComparer GetValueComparer() => StringComparer.OrdinalIgnoreCase;
 
-    protected bool CanAcceptIfIsFlags(Type optionType, out TypeConverter converter)
-    {
-        if (optionType == typeof(Unit))
-        {
-            converter = new UnitConverter();
-            return true;
-        }
-
-        if (optionType == typeof(CliFlag))
-        {
-            converter = new CliFlagConverter();
-            return true;
-        }
-
-        converter = TypeDescriptor.GetConverter(optionType);
-        return false;
-    }
-
-    public static CliOptionAttribute GenerateFor(ParameterInfo parameter)
-    {
-        throw new NotImplementedException();
-    }
 
 
     public static CliOptionAttribute Get(PropertyInfo property, Attribute[] attributes)

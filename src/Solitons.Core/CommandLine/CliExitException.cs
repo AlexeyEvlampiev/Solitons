@@ -46,7 +46,7 @@ public class CliExitException(string message) : Exception(message)
             $"A key is missing for the value '{valueGroup.Value}' in the dictionary option '{option}'. " +
             "Please provide a corresponding key for this value and try again.");
 
-    internal static CliExitException MissingRequiredOption(CliOptionInfo option) => new($"The required option '{option.AliasPipeExpression}' is missing. Please provide this option and try again.");
+  
 
     public static Func<Exception, IObservable<T>> AsObservable<T>(string message)
     {

@@ -7,14 +7,13 @@ public class UnitTest1
     [Fact]
     public void Test1()
     {
-        var processor = ICliProcessor
-            .Setup(options => options
-                .UseCommandsFrom(new Program()));
+        var processor = CliProcessor
+            .From(new Program());
         var templates = PgUpTemplateManager
             .GetTemplateDirectories()
                 .ToList();
         Assert.True(templates.Count > 0);
-            
+
         foreach (var template in templates)
         {
             var workingDir = Path

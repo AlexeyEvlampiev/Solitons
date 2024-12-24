@@ -1,10 +1,10 @@
 ﻿
+using Solitons.CommandLine.Reflection;
 using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Solitons.CommandLine.Mercury;
 
 namespace Solitons.CommandLine.Common;
 
@@ -38,7 +38,7 @@ public abstract class CliContractValidator<T> where T : class
 
         T proxy = DispatchProxy.Create<T, CliRouteProxy>();
 
-        var processor = CliProcessorVNext
+        var processor = CliProcessor
             .From(proxy);
 
         foreach (var testCase in testCases)

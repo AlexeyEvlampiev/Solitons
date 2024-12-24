@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Solitons.CommandLine;
+namespace Solitons.CommandLine.Reflection;
 
 /// <summary>
 /// Defines a CLI command that can be composed of multiple subcommands.

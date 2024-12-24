@@ -3,7 +3,7 @@ using System.ComponentModel;
 using System.Reflection;
 using System.Threading;
 
-namespace Solitons.CommandLine;
+namespace Solitons.CommandLine.Reflection;
 
 /// <summary>
 /// Attribute to reference a parameter of the target method, describing its purpose and usage in CLI commands.
@@ -17,12 +17,12 @@ public class CliArgumentAttribute : Attribute
     /// <param name="parameterName">The name of the parameter this attribute is associated with.</param>
     /// <param name="description">A description of what the parameter is used for.</param>
     public CliArgumentAttribute(
-        string parameterName, 
+        string parameterName,
         string description)
     {
         ParameterName = ThrowIf
             .ArgumentNullOrWhiteSpace(parameterName)
-            .Trim(); 
+            .Trim();
         Description = description
             .DefaultIfNullOrWhiteSpace(ParameterName);
         Name = ParameterName;

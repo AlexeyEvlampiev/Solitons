@@ -1,10 +1,11 @@
-﻿using System;
+﻿using Solitons;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace Solitons.CommandLine.Mercury;
+namespace Solitons.CommandLine.Common;
 
 public abstract class CliProcessorBase
 {
@@ -99,11 +100,11 @@ public abstract class CliProcessorBase
     }
 
 
-    protected virtual void OnProcessed(CliCommandLine commandLine, int exitCode){}
+    protected virtual void OnProcessed(CliCommandLine commandLine, int exitCode) { }
 
 
 
-    protected virtual void OnProcessing(CliCommandLine commandLine){}
+    protected virtual void OnProcessing(CliCommandLine commandLine) { }
 
     protected virtual void OnActionNotFound(CliCommandLine commandLine)
     {
