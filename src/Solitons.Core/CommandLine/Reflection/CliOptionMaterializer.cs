@@ -26,7 +26,7 @@ public abstract class CliOptionMaterializer
     /// <param name="isOptional"></param>
     /// <param name="defaultValue"></param>
     /// <returns>A <see cref="CliOptionMaterializer"/> instance.</returns>
-    /// <exception cref="InvalidOperationException">Thrown if a materializer cannot be created.</exception>
+    /// <exception cref="CliConfigurationException">Thrown if a materializer cannot be created.</exception>
     public static CliOptionMaterializer CreateOrThrow(
         CliOptionAttribute attribute,
         Type declaredType,
@@ -39,7 +39,9 @@ public abstract class CliOptionMaterializer
             CliScalarOptionMaterializer.TryCreateMaterializer(attribute, declaredType, isOptional, defaultValue);
         if (materializer is null)
         {
-            throw new InvalidOperationException();
+            throw new CliConfigurationException(
+                $"Unable to create materializer for type '{declaredType.FullName}' with the attribute '{attribute}'. Ensure the type is supported.");
+
         }
 
         return materializer;
@@ -219,7 +221,10 @@ internal sealed class CliScalarOptionMaterializer : CliOptionMaterializer
     {
         if (false == attribute.CanAccept(declaredType, out var typeConverter))
         {
-            throw new InvalidOperationException("Oops");
+            throw new CliConfigurationException(
+                $"The attribute of type '{attribute.GetType().Name}' cannot accept the declared type '{declaredType.FullName}'. " +
+                $"Refer to the attribute's aliases: '{attribute.PipeSeparatedAliases}' to identify the problematic configuration. " +
+                "Ensure the declared type is compatible with the attribute's requirements.");
         }
 
         object ParseValue(string value)
