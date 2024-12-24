@@ -10,7 +10,6 @@ using Solitons.Caching;
 using Solitons.CommandLine.Models;
 using Solitons.CommandLine.Models.Formatters;
 using Solitons.CommandLine.Reflection;
-using Solitons.Data;
 
 namespace Solitons.CommandLine;
 

@@ -504,6 +504,11 @@ public abstract record CliOptionCapture
 
 }
 
+public interface ICliMapOptionCapture
+{
+    string Key { get; }
+}
+
 /// <summary>
 /// Represents a captured command-line flag option (e.g., <c>--verbose</c>).
 /// </summary>
@@ -542,7 +547,7 @@ public sealed record CliCollectionOptionCapture(string Name, ImmutableArray<stri
 /// This is typically used for options where the key is paired with a flag (e.g., <c>--config[env]</c>) without an associated value.
 /// The `Key` property represents the key part of the option, while the `Name` property represents the option itself.
 /// </remarks>
-public sealed record CliKeyFlagOptionCapture(string Name, string Key) : CliOptionCapture(Name);
+public sealed record CliKeyFlagOptionCapture(string Name, string Key) : CliOptionCapture(Name), ICliMapOptionCapture;
 
 /// <summary>
 /// Represents a captured command-line option with a key and a value (e.g., <c>--config[env] production</c>).
@@ -552,7 +557,7 @@ public sealed record CliKeyFlagOptionCapture(string Name, string Key) : CliOptio
 /// This is typically used for options where the key is paired with a value (e.g., <c>--config[env] production</c>).
 /// The `Key` property holds the key part of the option, and the `Value` property holds the value associated with the key.
 /// </remarks>
-public sealed record CliKeyValueOptionCapture(string Name, string Key, string Value) : CliOptionCapture(Name);
+public sealed record CliKeyValueOptionCapture(string Name, string Key, string Value) : CliOptionCapture(Name), ICliMapOptionCapture;
 
 /// <summary>
 /// Represents a captured command-line option with a key and multiple associated values (e.g., <c>--config[env] test qa prod</c>).
@@ -562,4 +567,4 @@ public sealed record CliKeyValueOptionCapture(string Name, string Key, string Va
 /// This is typically used for options where the key is paired with multiple values (e.g., <c>--config[env] test qa prod</c>).
 /// The `Key` property holds the key part of the option (e.g., <c>env</c> in <c>--config[env]</c>), and the `Values` property holds the collection of values associated with the key (e.g., <c>test</c>, <c>qa</c>, and <c>prod</c>).
 /// </remarks>
-public sealed record CliKeyCollectionOptionCapture(string Name, string Key, ImmutableArray<string> Values) : CliOptionCapture(Name);
+public sealed record CliKeyCollectionOptionCapture(string Name, string Key, ImmutableArray<string> Values) : CliOptionCapture(Name), ICliMapOptionCapture;

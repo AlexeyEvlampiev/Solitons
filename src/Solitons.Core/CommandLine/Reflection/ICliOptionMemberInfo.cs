@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.ComponentModel;
 using System.Linq;
-using System.Reactive;
 
 namespace Solitons.CommandLine.Reflection;
 
@@ -37,6 +35,8 @@ public interface ICliOptionMemberInfo
 
         return false;
     }
+
+
 
 
     bool IsNotIn(CliCommandLine commandLine) => (false == IsIn(commandLine));
@@ -76,32 +76,4 @@ public interface ICliOptionMemberInfo
         throw new NotImplementedException();
     }
 
-
-
-    static Type GetOptionType(Type declaredType, CliOptionAttribute attribute, out TypeConverter? valueConverter)
-    {
-        var mapSpecs = declaredType.GetGenericDictionaryArgumentTypes().ToList();
-        if (mapSpecs.Count == 1)
-        {
-            var specs = mapSpecs[0];
-            if (attribute.CanAccept(specs.Value, out valueConverter))
-            {
-                return typeof(Dictionary<,>).MakeGenericType([specs.Key, specs.Value]);
-            }
-
-            throw new NotImplementedException();
-        }
-
-        if (CliFlag.IsFlagType(declaredType, out valueConverter))
-        {
-            return declaredType;
-        }
-
-        if (attribute.CanAccept(declaredType, out valueConverter))
-        {
-            return declaredType;
-        }
-
-        throw new NotImplementedException();
-    }
 }

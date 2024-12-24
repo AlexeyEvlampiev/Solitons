@@ -17,22 +17,21 @@ public sealed class CliFlag
     internal static bool IsFlagType(Type type) => type == typeof(CliFlag) || type == typeof(Unit);
 
 
-    internal static bool IsFlagType(Type type, out TypeConverter? valueConverter)
+    internal static bool IsFlagType(Type type, out object defaultValue)
     {
         var underlyingType = Nullable.GetUnderlyingType(type) ?? type;
+        defaultValue = Default;
         if (underlyingType == typeof(CliFlag))
         {
-            valueConverter = new CliFlagTypeConverter();
+            defaultValue = Default;
             return true;
         }
 
         if (underlyingType == typeof(Unit))
         {
-            valueConverter = new UnitTypeConverter();
+            defaultValue = Unit.Default;
             return true;
         }
-
-        valueConverter = null;
         return false;
     }
 

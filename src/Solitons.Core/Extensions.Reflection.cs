@@ -1,11 +1,58 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace Solitons;
 
 public static partial class Extensions
 {
+
+    public static bool IsNullable(this PropertyInfo self)
+    {
+        // Check if it's a nullable value type
+        if (self.PropertyType.IsValueType &&
+            Nullable.GetUnderlyingType(self.PropertyType) is not null)
+        {
+            return true;
+        }
+
+        return CheckNullableAttributes(self);
+    }
+
+    public static bool IsNullable(this ParameterInfo self)
+    {
+        // Check if it's a nullable value type
+        if (self.ParameterType.IsValueType &&
+            Nullable.GetUnderlyingType(self.ParameterType) is not null)
+        {
+            return true;
+        }
+
+        return CheckNullableAttributes(self);
+    }
+
+    private static bool CheckNullableAttributes(ICustomAttributeProvider attributeProvider)
+    {
+        foreach (var attribute in attributeProvider.GetCustomAttributes(true))
+        {
+            if (attribute is System.Runtime.CompilerServices.NullableAttribute nullableAttribute)
+            {
+                var nullableFlag = nullableAttribute.NullableFlags.FirstOrDefault();
+                if (nullableFlag == 2)
+                {
+                    return true;
+                }
+            }
+            else if (attribute is System.Runtime.CompilerServices.NullableContextAttribute { Flag: 2 })
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /// <summary>
     /// Retrieves the key and value types of all generic <see cref="IDictionary{TKey, TValue}"/>
     /// interfaces implemented by the specified type.

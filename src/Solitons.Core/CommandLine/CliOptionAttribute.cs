@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Reactive;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
 
@@ -199,5 +200,37 @@ public class CliOptionAttribute : Attribute, ICliOptionMetadata
 
         converter = TypeDescriptor.GetConverter(optionType);
         return false;
+    }
+
+    public static CliOptionAttribute GenerateFor(ParameterInfo parameter)
+    {
+        throw new NotImplementedException();
+    }
+
+    public static CliOptionAttribute Get(ParameterInfo parameter, Attribute[] attributes)
+    {
+        var option = attributes.OfType<CliOptionAttribute>().SingleOrDefault();
+        var defaultDescription = option?.Description.DefaultIfNullOrWhiteSpace($"{parameter.Name} parameter")!;
+        var defaultSpecification = $"--{parameter.Name.DefaultIfNullOrWhiteSpace("parameter")}";
+        var descriptionOverride = attributes
+            .OfType<DescriptionAttribute>()
+            .Select(a => a.Description)
+            .SingleOrDefault(defaultDescription);
+        return new CliOptionAttribute(defaultSpecification, defaultDescription);
+    }
+
+    public static CliOptionAttribute Get(PropertyInfo property, Attribute[] attributes)
+    {
+        var option = attributes.OfType<CliOptionAttribute>().Single();
+        var descriptionOverride = attributes
+            .OfType<DescriptionAttribute>()
+            .Select(a => a.Description)
+            .SingleOrDefault(option.Description);
+        return new CliOptionAttribute(option.PipeSeparatedAliases, descriptionOverride);
+    }
+
+    public bool IsMatch(string optionName)
+    {
+        throw new NotImplementedException();
     }
 }
