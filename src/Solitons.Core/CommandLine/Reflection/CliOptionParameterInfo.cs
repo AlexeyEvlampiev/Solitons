@@ -16,7 +16,10 @@ internal sealed class CliOptionParameterInfo : CliParameterInfo, ICliOptionMembe
         : base(parameter)
     {
         var attributes = GetCustomAttributes(true).OfType<Attribute>().ToArray();
-        _optionAttribute = CliOptionAttribute.Get(parameter, attributes);
+        _optionAttribute = attributes
+            .OfType<CliOptionAttribute>()
+            .Union([new CliOptionAttribute($"--{parameter.Name}")])
+            .First();
         
 
         IsOptional = parameter.HasDefaultValue || parameter.IsNullable();

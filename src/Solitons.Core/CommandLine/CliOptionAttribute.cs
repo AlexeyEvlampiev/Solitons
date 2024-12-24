@@ -211,17 +211,6 @@ public class CliOptionAttribute : Attribute, ICliOptionMetadata
         throw new NotImplementedException();
     }
 
-    public static CliOptionAttribute Get(ParameterInfo parameter, Attribute[] attributes)
-    {
-        var option = attributes.OfType<CliOptionAttribute>().SingleOrDefault();
-        var defaultDescription = option?.Description.DefaultIfNullOrWhiteSpace($"{parameter.Name} parameter")!;
-        var defaultSpecification = $"--{parameter.Name.DefaultIfNullOrWhiteSpace("parameter")}";
-        var descriptionOverride = attributes
-            .OfType<DescriptionAttribute>()
-            .Select(a => a.Description)
-            .SingleOrDefault(defaultDescription);
-        return new CliOptionAttribute(defaultSpecification, defaultDescription);
-    }
 
     public static CliOptionAttribute Get(PropertyInfo property, Attribute[] attributes)
     {

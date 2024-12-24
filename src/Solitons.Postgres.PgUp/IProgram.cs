@@ -89,7 +89,7 @@ public interface IProgram
 }
 
 sealed class PgUpParametersOptionAttribute()
-    : CliOptionAttribute("--parameter|-p", "Defines parameters for customizing deployment scripts.")
+    : CliOptionAttribute("--parameters|--parameter|-p", "Defines parameters for customizing deployment scripts.")
 {
     public override StringComparer GetValueComparer() => StringComparer.OrdinalIgnoreCase;
 }
