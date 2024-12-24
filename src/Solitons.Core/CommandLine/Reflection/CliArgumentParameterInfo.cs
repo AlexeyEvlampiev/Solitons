@@ -45,7 +45,8 @@ internal sealed class CliArgumentParameterInfo : CliParameterInfo
 
     public string CliArgumentName => _argument.Name;
 
-    public override object Parse(string arg)
+
+    public override object? Materialize(CliCommandLine commandLine)
     {
         throw new NotImplementedException();
     }

@@ -23,19 +23,24 @@ internal class CliOptionBundleParameterInfo : CliParameterInfo
 
     public Type CliOptionBundleType { get; }
 
-    public override object Parse(string arg)
-    {
-        throw new System.NotImplementedException();
-    }
 
     public IEnumerable<CliOptionBundlePropertyInfo> GetOptions() => _properties;
 
-    public object? GetValue(CliCommandLine commandLine)
+
+    public override object? Materialize(CliCommandLine commandLine)
     {
         var bundle = Activator.CreateInstance(CliOptionBundleType);
         foreach (var property in _properties)
         {
             var value = property.Materialize(commandLine);
+            if (value is null && property.IsOptional)
+            {
+                value = property.GetValue(bundle);
+                if (value is not null)
+                {
+                    continue;
+                }
+            }
             property.SetValue(bundle, value);
 
         }

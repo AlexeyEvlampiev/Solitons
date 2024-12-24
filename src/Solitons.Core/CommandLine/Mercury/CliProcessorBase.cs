@@ -131,13 +131,27 @@ public abstract class CliProcessorBase
 
     protected virtual CliAction[] Match(CliCommandLine commandLine)
     {
-        return GetActions()
-        .Where(a => a.IsMatch(commandLine))
+        var matches = GetActions()
+            .Where(a => a.IsMatch(commandLine))
+            .ToList();
+
+        if (!matches.Any())
+        {
+            return [];
+        }
+
+        var groupedByRank = matches
             .GroupBy(a => Math.Round(a.Rank(commandLine), 3))
             .OrderByDescending(topMatches => topMatches.Key)
+            .ToList();
+
+        var selected = groupedByRank
             .Take(1)
-            .SelectMany(topMatches => topMatches)
+            .SelectMany(all => all)
             .ToArray();
+
+        return selected;
+
     }
 
     protected abstract class CliAction

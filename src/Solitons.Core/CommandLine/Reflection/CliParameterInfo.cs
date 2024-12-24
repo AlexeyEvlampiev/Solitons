@@ -5,5 +5,5 @@ namespace Solitons.CommandLine.Reflection;
 
 internal abstract class CliParameterInfo(ParameterInfo parameter) : ParameterInfoDecorator(parameter)
 {
-    public abstract object Parse(string arg);
+    public abstract object? Materialize(CliCommandLine commandLine);
 }

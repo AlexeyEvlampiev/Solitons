@@ -16,8 +16,8 @@ public  sealed class Program : Solitons.CommandLine.Common.CliRouteTest<IPgUpPro
             --host localhost
             --user alexey
             --password hello-world
-            --parameter[dbname] mydb 
-            --parameter.dbowner mydbadmin");
+            --parameters[dbname] mydb 
+            --parameters.dbowner mydbadmin");
 
         //var program = new Program();
         //program.TestExamples(example => throw new InvalidOperationException($"Not invoked: {example.Example}"));

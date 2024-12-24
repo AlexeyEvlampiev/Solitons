@@ -95,9 +95,9 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
 
     public int Invoke(object? instance, CliCommandLine commandLine)
     {
-        var args = ToMethodArguments(commandLine);
         try
         {
+            var args = ToMethodArguments(commandLine);
             var result = Invoke(instance, args);
             if (result is Task task)
             {
@@ -115,6 +115,10 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
             {
                 return exitCode;
             }
+        }
+        catch (CliOptionMaterializationException e)
+        {
+            throw new CliExitException(e.Message);
         }
         catch (TargetInvocationException e)
         {
@@ -152,11 +156,11 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
             }
             else if(parameter is CliOptionParameterInfo optionInfo)
             {
-                args[i] = optionInfo.GetValue(commandLine);
+                args[i] = optionInfo.Materialize(commandLine);
             }
             else if(parameter is CliOptionBundleParameterInfo optionBundleInfo)
             {
-                args[i] = optionBundleInfo.GetValue(commandLine);
+                args[i] = optionBundleInfo.Materialize(commandLine);
             }
         }
 

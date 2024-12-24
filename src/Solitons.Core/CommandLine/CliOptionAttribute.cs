@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Reactive;
 using System.Reflection;
@@ -17,6 +18,7 @@ public class CliOptionAttribute : Attribute, ICliOptionMetadata
 {
     private static readonly Regex SpecificationRegex;
     private static readonly Regex OptionRegex;
+    private readonly Regex _optionRegex;
 
     static CliOptionAttribute()
     {
@@ -99,6 +101,8 @@ public class CliOptionAttribute : Attribute, ICliOptionMetadata
             .Select(o => $"-{o}")
             .Union(LongOptionNames.Select(o => $"--{o}"))
             .Join(", ");
+
+        _optionRegex = new Regex($"(?xis-m)^(?:{PipeSeparatedAliases})$");
     }
 
     /// <summary>
@@ -229,8 +233,6 @@ public class CliOptionAttribute : Attribute, ICliOptionMetadata
         return new CliOptionAttribute(option.PipeSeparatedAliases, descriptionOverride);
     }
 
-    public bool IsMatch(string optionName)
-    {
-        throw new NotImplementedException();
-    }
+    [DebuggerNonUserCode]
+    public bool IsMatch(string optionName) => _optionRegex.IsMatch(optionName);
 }

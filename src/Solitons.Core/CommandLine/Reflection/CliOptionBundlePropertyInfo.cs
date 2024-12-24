@@ -5,7 +5,6 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using Solitons.Reflection;
 
 namespace Solitons.CommandLine.Reflection;
@@ -13,18 +12,17 @@ namespace Solitons.CommandLine.Reflection;
 internal class CliOptionBundlePropertyInfo : PropertyInfoDecorator,  ICliOptionMemberInfo
 {
     private readonly CliOptionAttribute _optionAttribute;
-    private readonly Regex _aliasExactRegex;
+    private readonly CliOptionMaterializer _materializer;
 
     public CliOptionBundlePropertyInfo(PropertyInfo property) : base(property)
     {
         var attributes = property.GetCustomAttributes().ToList();
         _optionAttribute = attributes.OfType<CliOptionAttribute>().Single();
-        _aliasExactRegex = new Regex($"^{_optionAttribute.PipeSeparatedAliases}$");
-        IsOptional = attributes.OfType<RequiredAttribute>().Any() == false;
 
-        OptionType = ICliOptionMemberInfo.GetOptionType(property.PropertyType, _optionAttribute, out var valueConverter);
-        ValueConverter = valueConverter;
-
+        IsOptional = 
+            false == attributes.OfType<RequiredAttribute>().Any() || 
+            property.IsNullable();
+        _materializer = CliOptionMaterializer.CreateOrThrow(_optionAttribute, property.PropertyType, IsOptional, null);
     }
 
 
@@ -44,8 +42,7 @@ internal class CliOptionBundlePropertyInfo : PropertyInfoDecorator,  ICliOptionM
 
 
 
-    public bool IsMatch(string optionName) => _aliasExactRegex.IsMatch(optionName);
-    public Type OptionType { get; }
+    public bool IsMatch(string optionName) => _optionAttribute.IsMatch(optionName);
 
     public static bool IsBundleProperty(PropertyInfo propertyInfo)
     {
@@ -53,5 +50,7 @@ internal class CliOptionBundlePropertyInfo : PropertyInfoDecorator,  ICliOptionM
     }
 
     [DebuggerStepThrough]
-    public object? Materialize(CliCommandLine commandLine) => ((ICliOptionMemberInfo)this).Materialize(commandLine);
+    public object? Materialize(CliCommandLine commandLine) => _materializer.Materialize(commandLine);
+
+    public override string ToString() => _optionAttribute.PipeSeparatedAliases;
 }
