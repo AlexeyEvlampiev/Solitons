@@ -81,6 +81,9 @@ public sealed class CliProcessorVNext : CliProcessorBase
             throw new System.NotImplementedException();
         }
 
+        [DebuggerStepThrough]
+        public override double RankByOptions(CliCommandLine commandLine) => method.RankByOptions(commandLine);
+
         public override string ToString() => method.ToString();
     }
 }

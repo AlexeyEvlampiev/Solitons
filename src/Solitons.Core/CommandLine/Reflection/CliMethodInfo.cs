@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Solitons.Collections;
@@ -287,5 +288,46 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
             .Count(optionCapture => false == optionInfos.Any(info => info.IsMatch(optionCapture.Name)));
 
         yield return -unrecognizedOptions;
+    }
+
+    public override string ToString()
+    {
+        var builder = new StringBuilder(Name);
+        var parameters = 
+            GetParameters()
+                .Select(p =>
+                {
+                    if (p is CliArgumentParameterInfo)
+                    {
+                        return $"arg: {p.Name}";
+                    }
+
+                    if (p is CliOptionBundleParameterInfo)
+                    {
+                        return $"bundle: {p.Name}";
+                    }
+
+                    return p.Name;
+                })!
+                .Join(", ");
+        builder.Append($"({parameters})");
+        return builder.ToString();
+    }
+
+    public double RankByOptions(CliCommandLine commandLine)
+    {
+        var optionInfos = GetOptions().ToList();
+
+        var matchedOptions = optionInfos
+            .Count(optionInfo => optionInfo.IsIn(commandLine));
+        
+        var missingOptions = optionInfos
+            .Where(info => info.IsOptional == false)
+            .Count(optionInfo => optionInfo.IsNotIn(commandLine));
+
+        var unrecognizedOptions = commandLine.Options
+            .Count(optionCapture => false == optionInfos.Any(info => info.IsMatch(optionCapture.Name)));
+
+        return matchedOptions - missingOptions - unrecognizedOptions;
     }
 }

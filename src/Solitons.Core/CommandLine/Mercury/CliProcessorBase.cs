@@ -141,7 +141,7 @@ public abstract class CliProcessorBase
         }
 
         var groupedByRank = matches
-            .GroupBy(a => Math.Round(a.Rank(commandLine), 3))
+            .GroupBy(a => Math.Round(a.RankByOptions(commandLine), 3))
             .OrderByDescending(topMatches => topMatches.Key)
             .ToList();
 
@@ -160,5 +160,7 @@ public abstract class CliProcessorBase
         public abstract double Rank(CliCommandLine commandLine);
         public abstract int Process(CliCommandLine commandLine);
         public abstract void ShowHelp(CliCommandLine commandLine);
+
+        public abstract double RankByOptions(CliCommandLine commandLine);
     }
 }
