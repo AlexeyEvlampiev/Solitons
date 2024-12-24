@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using Solitons.CommandLine;
+﻿using Solitons.CommandLine;
 using Solitons.CommandLine.Common;
 
 

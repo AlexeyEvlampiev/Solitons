@@ -5,7 +5,9 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
+using Solitons.Collections;
 using Solitons.Text.RegularExpressions;
 
 namespace Solitons.CommandLine;
@@ -19,10 +21,9 @@ namespace Solitons.CommandLine;
 /// arguments, and various options. This class ensures that the command line adheres to the expected format
 /// and throws descriptive exceptions if any discrepancies are found.
 /// </remarks>
+[DebuggerDisplay(@"{ToString(""D"")}")]
 public sealed class CliCommandLine : IFormattable
 {
-    private delegate string Transformer(string commandLine, ParsingContext context);
-
     /// <summary>
     /// Parses the specified command line string and returns a <see cref="CliCommandLine"/> instance representing its components.
     /// </summary>
@@ -65,10 +66,10 @@ public sealed class CliCommandLine : IFormattable
             });
 
     [DebuggerStepThrough]
-    public static CliCommandLine FromArgs(string[] args)
-    {
-        return new CliCommandLine(args);
-    }
+    public static CliCommandLine FromArgs(string[] args) => new(args);
+
+    [DebuggerStepThrough]
+    public static CliCommandLine FromArgs() => new(Environment.GetCommandLineArgs());
 
     private CliCommandLine(string[] args)
     {
@@ -122,33 +123,8 @@ public sealed class CliCommandLine : IFormattable
         }
 
         Options = [.. options];
+        CommandLine = ToString("g");
     }
-    private CliCommandLine(string originalCommand)
-    {
-        CommandLine = originalCommand;
-        var context = new ParsingContext(originalCommand);
-
-        var transformers = new Transformer[]
-        {
-            ProcessCommandName,
-            ProcessEnvironmentVariables,
-            ProcessQuotedStrings,
-            FormatKeyedOptions,
-            CaptureSegments,
-            ExtractOptions
-        };
-
-        foreach (var transformer in transformers)
-        {
-            originalCommand = transformer.Invoke(originalCommand, context);
-        }
-
-        ExecutableName = ThrowIf.NullOrWhiteSpace(context.ExecutableName).Trim();
-        Segments = [..context.Segments];
-        Options = [..context.Options];
-    }
-
-
 
     /// <summary>
     /// Gets the name of the executable extracted from the command line.
@@ -206,18 +182,61 @@ public sealed class CliCommandLine : IFormattable
     /// </exception>
     public string ToString(string? format, IFormatProvider? formatProvider = null)
     {
-        if (string.IsNullOrEmpty(format) || string.Equals(format, "G", StringComparison.OrdinalIgnoreCase))
+        var builder = new StringBuilder(FluentList
+            .Create(ExecutableName).AddRange(Segments)
+            .Select(item => RegexUtils.HasWhiteSpaces(item) ? item.Quote() : item)
+            .Join(" "));
+
+        if (string.Equals(format, "D", StringComparison.OrdinalIgnoreCase))
         {
-            return CommandLine;
+            Options
+                .OfType<CliFlagOptionCapture>()
+                .Select(o => o.Name.ToLower())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ForEach(o => builder.Append($" {o}"));
+
+            Options
+                .OfType<ICliCollectionCapture>()
+                .Select(o => o.Name.ToLower())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ForEach(o => builder.Append($" {o} .."));
+
+            Options
+                .OfType<ICliMapOptionCapture>()
+                .Select(o => o.Name.ToLower())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ForEach(o => builder.Append($" {o}[..] .."));
+        }
+        else
+        {
+            string QuoteIfHasWhiteSpaces(string value) => RegexUtils.HasWhiteSpaces(value) ? value.Quote() : value;
+            Options
+                .OfType<CliFlagOptionCapture>()
+                .Select(o => o.Name.ToLower())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ForEach(o => builder.Append($" {o}"));
+
+            Options
+                .OfType<ICliCollectionCapture>()
+                .GroupBy(o => o.Name.ToLowerInvariant(), o => o.Values, StringComparer.OrdinalIgnoreCase)
+                .Select(grp => new
+                {
+                    Name = grp.Key,
+                    Values = grp
+                        .AsEnumerable()
+                        .SelectMany(values => values)
+                        .Select(QuoteIfHasWhiteSpaces)
+                        .Join(" ")
+                })
+                .ForEach(o => builder.Append($" {o.Name} {o.Values}"));
+
+            Options
+                .OfType<CliKeyValueOptionCapture>()
+                .ForEach(o => builder.Append($" {o.Name}[{QuoteIfHasWhiteSpaces(o.Key)}] {QuoteIfHasWhiteSpaces(o.Value)}"));
         }
 
-        if (string.Equals(format, "S", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(format, "Signature", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new NotImplementedException();
-        }
 
-        throw new FormatException($"The format string '{format}' is not supported.");
+        return builder.ToString();
     }
 
     /// <summary>
@@ -243,209 +262,6 @@ public sealed class CliCommandLine : IFormattable
     /// by calling its <see cref="ToString"/> method, which returns the original command line.
     /// </remarks>
     public static implicit operator string(CliCommandLine commandLine) => commandLine.ToString();
-
-    private static string ProcessCommandName(string commandLine, ParsingContext context)
-    {
-        var match = @"(?xis-m)^(?<executable>""[^""]+""|\S+)(?:\s+(?<input>.*))?$"
-            .Convert(pattern => new Regex(pattern))
-            .Match(commandLine.Trim());
-        if (false == match.Success)
-        {
-            throw CliCommandLineFormatException.GeneralFormatMismatch();
-        }
-
-        var executable = match.Groups["executable"].Value.Trim('"');
-        var input = match.Groups["input"].Value.Trim();
-        try
-        {
-            executable = Path.GetFileName(executable);
-        }
-        catch (Exception e)
-        {
-            throw CliCommandLineFormatException.InvalidExecutableName(e);
-        }
-
-        context.ExecutableName = executable;
-
-        if (RegexUtils.HasWhiteSpaces(executable))
-        {
-            var encoded = context.Encode(executable);
-            return $"{encoded} {input}";
-        }
-
-        return $"{executable} {input}";
-    }
-
-    private string ProcessEnvironmentVariables(string commandline, ParsingContext context)
-    {
-        return @"%[\w_]+%"
-            .Replace("$variable", @"%[\w_]+%")
-            .Convert(pattern => new Regex(pattern))
-            .Replace(commandline, match =>
-            {
-
-                var value = match.Value
-                    .Trim('"')
-                    .Trim('%');
-                var envVariable = Environment.GetEnvironmentVariable(value);
-                if (envVariable.IsPrintable())
-                {
-                    var key = context.Encode(envVariable!);
-                    return key;
-
-                }
-
-                return match.Value;
-            });
-    }
-
-    private string ProcessQuotedStrings(string commandLine, ParsingContext context)
-    {
-        return @"""[^""]*"""
-            .Convert(pattern => new Regex(pattern))
-            .Replace(commandLine, match =>
-            {
-                var value = match.Value.Trim('"');
-                return context.Encode(value);
-            });
-    }
-
-    private string FormatKeyedOptions(string commandline, ParsingContext context)
-    {
-        commandline = @"(?<option>-{1,}$option)\s*\[\s*(?<key>$key)\s*\]"
-            .Replace("$option", @"[^\[\s]+")
-            .Replace("$key", @"[^\[\]\s]+")
-            .Convert(pattern => new Regex(pattern))
-            .Replace(commandline, match => match.Result("${option}.${key}"));
-
-        return commandline;
-    }
-
-    private string CaptureSegments(string commandline, ParsingContext context)
-    {
-        Debug.Assert(context.ExecutableName.IsPrintable());
-        var segments = @"^(?<executable>\S+)\s+(?:(?<segment>[^-\s]\S*)\s*)*"
-                .Convert(pattern => new Regex(pattern))
-                .Match(commandline)
-                .Convert(m => m.Groups["segment"].Captures)
-                .Select(c => c.Value)
-                .ToArray();
-        context.RegisterSegments(segments);
-        return commandline;
-    }
-
-    private string ExtractOptions(string commandline, ParsingContext context)
-    {
-        commandline = @"(?xis-m)(?<=\s|^)
-            (?<option>(?<name>-{1,2}[^\.\s]+) (?:\.(?<key>\S*))?)   
-            (?:\s+(?<value>[^-\s]\S*))*"
-            .Convert(pattern => new Regex(pattern))
-            .Replace(commandline, match =>
-            {
-                var option = match.Groups["option"];
-                var name = match.Groups["name"];
-                var key = match.Groups["key"];
-                var values = match.Groups["value"].Captures.Select(c => c.Value).ToArray();
-                Debug.Assert(option.Success);
-                Debug.Assert(name.Success);
-                if (key.Success)
-                {
-                    context.AddKeyedOption(name.Value, key.Value, values);
-                }
-                else
-                {
-                    context.AddOption(name.Value, values);
-                }
-                
-                return name.Value;
-            });
-        return commandline;
-    }
-
-    sealed class ParsingContext(string commandLine)
-    {
-        [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
-        private readonly Dictionary<string, string> _encodings = new(StringComparer.Ordinal);
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly string _commandLine = commandLine;
-
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly List<CliOptionCapture> _options = new();
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private int _index = 0;
-
-        public string ExecutableName { get; set; } = String.Empty;
-
-        public string[] Segments { get; private set; } = [];
-
-        public string Encode(string value)
-        {
-            var key = Guid.NewGuid().ToString("N");
-            _encodings.Add(key, value);
-            return key;
-        }
-
-        private string Decode(string input)
-        {
-            while (_encodings.Keys.Any(input.Contains))
-            {
-                foreach (var pair in _encodings)
-                {
-                    input = input.Replace(pair.Key, pair.Value);
-                }
-            }
-            return _encodings.GetValueOrDefault(input, input);
-        }
-
-        public ImmutableArray<CliOptionCapture> Options => [.._options];
-        public IReadOnlyDictionary<string, string> Encodings => _encodings;
-
-
-        public void AddKeyedOption(string name, string key, string[] values)
-        {
-            Debug.Assert(name.IsPrintable());
-            Debug.Assert(key.IsPrintable());
-            name = Decode(name);
-            key = Decode(key);
-            switch (values.Length)
-            {
-                case 0:
-                    _options.Add(new CliKeyFlagOptionCapture(name, key));
-                    break;
-                case 1:
-                    _options.Add(new CliKeyValueOptionCapture(name, key, values.Select(Decode).Single()));
-                    break;
-                default:
-                    _options.Add(new CliKeyCollectionOptionCapture(name, key, [.. values.Select(Decode)]));
-                    break;
-            }
-        }
-
-        internal void AddOption(string name, string[] values)
-        {
-            Debug.Assert(name.IsPrintable());
-            name = Decode(name);
-            switch (values.Length)
-            {
-                case 0:
-                    _options.Add(new CliFlagOptionCapture(name));
-                    break;
-                case 1:
-                    _options.Add(new CliScalarOptionCapture(name, Decode(values[0])));
-                    break;
-                default:
-                    _options.Add(new CliCollectionOptionCapture(name, [..values.Select(Decode)]));
-                    break;
-            }
-        }
-
-        public void RegisterSegments(string[] segments)
-        {
-            Debug.Assert(ExecutableName.IsPrintable());
-            Debug.Assert(Segments.Length == 0);
-            Segments = segments.Select(Decode).ToArray();
-        }
-    }
 
 }
 
@@ -479,6 +295,22 @@ public sealed class CliCommandLineFormatException : FormatException
         "Failed to extract executable name.", innerException);
 }
 
+public interface ICliOptionCapture
+{
+    string Name { get; }
+}
+
+public interface ICliMapOptionCapture : ICliOptionCapture
+{
+    string Key { get; }
+}
+
+public interface ICliCollectionCapture : ICliOptionCapture
+{
+    IEnumerable<string> Values { get; }
+}
+
+
 /// <summary>
 /// Represents a captured command-line option, which can be a flag, value, or collection of values.
 /// </summary>
@@ -501,13 +333,9 @@ public abstract record CliOptionCapture
     /// A <see cref="string"/> representing the name of the command-line option.
     /// </value>
     public string Name { get; }
-
 }
 
-public interface ICliMapOptionCapture
-{
-    string Key { get; }
-}
+
 
 /// <summary>
 /// Represents a captured command-line flag option (e.g., <c>--verbose</c>).
@@ -527,7 +355,10 @@ public sealed record CliFlagOptionCapture(string Name) : CliOptionCapture(Name);
 /// single value. This is typically used for options where a single argument follows the option (e.g., <c>--output file.txt</c>).
 /// The `Value` property holds the associated value for the option.
 /// </remarks>
-public sealed record CliScalarOptionCapture(string Name, string Value) : CliOptionCapture(Name);
+public sealed record CliScalarOptionCapture(string Name, string Value) : CliOptionCapture(Name), ICliCollectionCapture
+{
+    public IEnumerable<string> Values => FluentEnumerable.Yield(Value);
+}
 
 /// <summary>
 /// Represents a captured command-line option that has multiple associated values (e.g., <c>--files file1.txt file2.txt</c>).

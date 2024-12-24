@@ -1,5 +1,6 @@
 ﻿
 
+using Solitons.CommandLine;
 using Solitons.CommandLine.Mercury;
 using Solitons.Postgres.PgUp;
 
@@ -9,6 +10,8 @@ public  sealed class Program : Solitons.CommandLine.Common.CliContractValidator<
 {
     public static int Main(params string[] args)
     {
+        var cl = CliCommandLine.FromArgs("prog --flag --value a --map.aaa bbb");
+
         var processor = CliProcessorVNext
             //.Process<Solitons.Postgres.PgUp.Program>("pgup init . ");
             .Process<Solitons.Postgres.PgUp.Program>(@"
