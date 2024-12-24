@@ -46,24 +46,18 @@ public sealed class CliCommandLine : IFormattable
     /// stopping, providing a smoother debugging experience by avoiding stepping into boilerplate code.
     /// </remarks>
     [DebuggerStepThrough]
-    public static CliCommandLine FromArgs(string commandLine) => ThrowIf
+    public static CliCommandLine FromArgs(string commandLine)
+    {
+        commandLine = ThrowIf
             .ArgumentNullOrWhiteSpace(commandLine)
-            .Trim()
-            .Convert(cl =>
-            {
-                if (Regex.IsMatch(cl, @"^""[^""]*"""))
-                {
-                    return new CliCommandLine([cl.Trim('"')]);
-                }
+            .Trim();
+        if (Regex.IsMatch(commandLine, @"^""[^""]*"""))
+        {
+            return new CliCommandLine([commandLine.Trim('"')]);
+        }
 
-                var args = new List<string>();
-                for (var match = Regex.Match(cl, @"(?:""[^""\-]*""|\S+)"); match.Success; match = match.NextMatch())
-                {
-                    var part = match.Value.Trim('"');
-                    args.Add(part);
-                }
-                return new CliCommandLine(args.ToArray());
-            });
+        return new CliCommandLine(SplitCommandLine(commandLine).ToArray());
+    }
 
     [DebuggerStepThrough]
     public static CliCommandLine FromArgs(string[] args) => new(args);
@@ -163,6 +157,15 @@ public sealed class CliCommandLine : IFormattable
     /// These segments provide additional context or instructions for the command being executed.
     /// </remarks>
     public ImmutableArray<string> Segments { get; }
+
+    internal static IEnumerable<string> SplitCommandLine(string commandLine)
+    {
+        var rgx = new Regex(@"(?:(?<!\\)"".*?(?<!\\)""|\S+)");
+        for (Match match = rgx.Match(commandLine); match.Success; match = match.NextMatch())
+        {
+            yield return match.Value;
+        }
+    }
 
     /// <summary>
     /// Returns a string representation of the command line based on the specified format.
