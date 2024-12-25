@@ -2,7 +2,7 @@ name: DEV:Solitons
 
 on:
   push:
-    branches: [ develop ]
+    branches: [ features/command-line ]
   pull_request:
     branches: [ develop ]
 
