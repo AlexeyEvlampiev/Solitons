@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Reactive;
-using Solitons.CommandLine;
+using Solitons.Postgres.PgUp.CommandLine;
+using Solitons.Postgres.PgUp.Core;
 
 namespace Solitons.Postgres.PgUp;
 

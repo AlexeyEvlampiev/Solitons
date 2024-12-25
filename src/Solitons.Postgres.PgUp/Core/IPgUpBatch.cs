@@ -1,6 +1,6 @@
-﻿using Solitons.Postgres.PgUp.Models;
+﻿using Solitons.Postgres.PgUp.Core.Models;
 
-namespace Solitons.Postgres.PgUp;
+namespace Solitons.Postgres.PgUp.Core;
 
 public interface IPgUpBatch
 {

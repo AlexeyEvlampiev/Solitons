@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Solitons.Postgres.PgUp {
+namespace Solitons.Postgres.PgUp.CommandLine {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace Solitons.Postgres.PgUp {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Solitons.Postgres.PgUp.PgUpResource", typeof(PgUpResource).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Solitons.Postgres.PgUp.CommandLine.PgUpResource", typeof(PgUpResource).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;

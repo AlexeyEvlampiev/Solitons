@@ -12,14 +12,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\Solitons.SQLite\README.md">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-    <None Include="..\Solitons.SQLite\Solitons.png">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
+    <None Remove="README.md" />
+    <None Remove="Solitons.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -33,22 +27,22 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="Formatting\PgUpConnectionDisplayRtt.cs">
+    <Compile Update="Core\Formatting\PgUpConnectionDisplayRtt.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>PgUpConnectionDisplayRtt.tt</DependentUpon>
     </Compile>
-    <Compile Update="Formatting\PgUpScriptDisplayRtt.cs">
+    <Compile Update="Core\Formatting\PgUpScriptDisplayRtt.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>PgUpScriptDisplayRtt.tt</DependentUpon>
     </Compile>
-    <Compile Update="Formatting\PgUpTransactionDelimiterRtt.cs">
+    <Compile Update="Core\Formatting\PgUpTransactionDelimiterRtt.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>PgUpTransactionDelimiterRtt.tt</DependentUpon>
     </Compile>
-    <Compile Update="PgUpResource.Designer.cs">
+    <Compile Update="CommandLine\PgUpResource.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>PgUpResource.resx</DependentUpon>
@@ -56,15 +50,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Formatting\PgUpConnectionDisplayRtt.tt">
+    <None Update="Core\Formatting\PgUpConnectionDisplayRtt.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>
       <LastGenOutput>PgUpConnectionDisplayRtt.cs</LastGenOutput>
     </None>
-    <None Update="Formatting\PgUpScriptDisplayRtt.tt">
+    <None Update="Core\Formatting\PgUpScriptDisplayRtt.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>
       <LastGenOutput>PgUpScriptDisplayRtt.cs</LastGenOutput>
     </None>
-    <None Update="Formatting\PgUpTransactionDelimiterRtt.tt">
+    <None Update="Core\Formatting\PgUpTransactionDelimiterRtt.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>
       <LastGenOutput>PgUpTransactionDelimiterRtt.cs</LastGenOutput>
     </None>
@@ -90,7 +84,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Update="PgUpResource.resx">
+    <EmbeddedResource Update="CommandLine\PgUpResource.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>PgUpResource.Designer.cs</LastGenOutput>
     </EmbeddedResource>

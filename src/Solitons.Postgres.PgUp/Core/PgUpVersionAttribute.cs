@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using Solitons.Collections;
 
-namespace Solitons.Postgres.PgUp;
+namespace Solitons.Postgres.PgUp.Core;
 
 [AttributeUsage(AttributeTargets.Class)]
 public sealed class PgUpVersionAttribute : Attribute
@@ -19,7 +19,7 @@ public sealed class PgUpVersionAttribute : Attribute
         Version = version;
     }
 
-    public Version Version { get;  }
+    public Version Version { get; }
 
     public static PgUpVersionAttribute FromJson(string pgUpJson)
     {

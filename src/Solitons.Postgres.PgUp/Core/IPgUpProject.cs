@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace Solitons.Postgres.PgUp;
+namespace Solitons.Postgres.PgUp.Core;
 
 public interface IPgUpProject
 {
@@ -15,7 +15,7 @@ public interface IPgUpProject
     void SetDefaultParameterValue(string parameterKey, string parameterValue);
 
     public static async Task<IPgUpProject> LoadAsync(
-        string projectFilePath,  
+        string projectFilePath,
         Dictionary<string, string> parameters,
         CancellationToken cancellation = default)
     {

@@ -1,10 +1,8 @@
 ﻿using System.ComponentModel;
 using System.Reactive;
-using Npgsql;
-using Solitons.CommandLine;
 using Solitons.CommandLine.Reflection;
 
-namespace Solitons.Postgres.PgUp;
+namespace Solitons.Postgres.PgUp.CommandLine;
 
 public interface IProgram
 {
@@ -87,66 +85,4 @@ public interface IProgram
         [CliOption("--force")] Unit? forceOverride = null,
         [PgUpParametersOption] Dictionary<string, string>? parameters = null,
         [CliOption("--timeout")] TimeSpan? timeout = null);
-}
-
-sealed class PgUpParametersOptionAttribute()
-    : CliOptionAttribute("--parameters|--parameter|-p", "Defines parameters for customizing deployment scripts.")
-{
-    public override StringComparer GetValueComparer() => StringComparer.OrdinalIgnoreCase;
-}
-
-
-
-sealed class PgUpProjectDirectoryArgumentAttribute : CliArgumentAttribute
-{
-    public PgUpProjectDirectoryArgumentAttribute(string parameterName)
-        : base(parameterName, "PgUp project directory.")
-    {
-        Name = "PROJECTDIR";
-    }
-
-    public override bool CanAccept(Type argumentType, out TypeConverter converter)
-    {
-        if (argumentType == typeof(string))
-        {
-            converter = new StringConverter();
-            return true;
-        }
-
-        converter = TypeDescriptor.GetConverter(argumentType);
-        return false;
-    }
-}
-
-
-
-public sealed class PgUpConnectionOptionsBundle : CliOptionBundle
-{
-    [CliOption("--host", "Specifies the PostgreSQL server hostname or IP address.")]
-    public string Host { get; set; } = "localhost";
-
-    [CliOption("--port", "Specifies the port number on which the PostgreSQL server is listening.")]
-    public int Port { get; set; } = 5432;
-
-    [CliOption("--maintenance-database|-mdb", "The name of the maintenance database used for administrative tasks, typically postgres.")]
-    public string MaintenanceDatabase { get; set; } = "postgres";
-
-    [CliOption("--username|--user|-usr|-u", "The username to connect to the PostgreSQL maintenance database.")]
-    public string Username { get; set; } = "postgres";
-
-    [CliOption("--password|-pwd", "The password associated with the specified PostgreSQL user.")]
-    public string Password { get; set; } = "postgres";
-
-    public override string ToString()
-    {
-        return new NpgsqlConnectionStringBuilder()
-            {
-                Host = Host,
-                Port = Port,
-                Database = MaintenanceDatabase,
-                Username = Username,
-                Password = Password
-            }
-            .ConnectionString;
-    }
 }

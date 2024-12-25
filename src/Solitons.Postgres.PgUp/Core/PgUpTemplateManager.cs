@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace Solitons.Postgres.PgUp;
+namespace Solitons.Postgres.PgUp.Core;
 
 internal sealed class PgUpTemplateManager
 {

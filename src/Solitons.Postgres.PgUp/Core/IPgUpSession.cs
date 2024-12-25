@@ -1,4 +1,4 @@
-﻿namespace Solitons.Postgres.PgUp;
+﻿namespace Solitons.Postgres.PgUp.Core;
 
 public interface IPgUpSession
 {
@@ -10,7 +10,7 @@ public interface IPgUpSession
 
     Task ProvisionDatabaseAsync(
         string connectionString,
-        string databaseName, 
+        string databaseName,
         string databaseOwner);
 
     Task ExecuteAsync(

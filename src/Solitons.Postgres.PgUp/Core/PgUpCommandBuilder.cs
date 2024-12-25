@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 using Npgsql;
 using NpgsqlTypes;
 
-namespace Solitons.Postgres.PgUp;
+namespace Solitons.Postgres.PgUp.Core;
 
 public sealed class PgUpCommandBuilder
 {
@@ -14,7 +14,7 @@ public sealed class PgUpCommandBuilder
     public PgUpCommandBuilder(string? customExecCommandText)
     {
         _customExecCommandText = customExecCommandText;
-        
+
         if (customExecCommandText.IsPrintable())
         {
             var matches = Regex.Matches(customExecCommandText ?? "", @"(?<=@)\w+");
@@ -41,8 +41,8 @@ public sealed class PgUpCommandBuilder
 
     //[DebuggerStepThrough]
     public NpgsqlCommand Build(
-        string filePath, 
-        string commandText, 
+        string filePath,
+        string commandText,
         string checksum,
         NpgsqlConnection connection)
     {

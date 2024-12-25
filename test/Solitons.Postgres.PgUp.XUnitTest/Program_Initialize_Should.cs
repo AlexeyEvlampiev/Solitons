@@ -1,5 +1,6 @@
 using Moq;
 using Solitons.CommandLine;
+using Solitons.Postgres.PgUp.CommandLine;
 
 namespace Solitons.Postgres.PgUp;
 

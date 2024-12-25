@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Solitons.Postgres.PgUp.Models;
+namespace Solitons.Postgres.PgUp.Core.Models;
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum PgUpScriptDiscoveryMode

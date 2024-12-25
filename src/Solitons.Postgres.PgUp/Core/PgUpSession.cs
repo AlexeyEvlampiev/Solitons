@@ -4,11 +4,12 @@ using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using Npgsql;
+using Solitons;
 using Solitons.CommandLine;
 using Solitons.Data;
-using Solitons.Postgres.PgUp.Formatting;
+using Solitons.Postgres.PgUp.Core.Formatting;
 
-namespace Solitons.Postgres.PgUp;
+namespace Solitons.Postgres.PgUp.Core;
 
 public sealed class PgUpSession(string databaseOwner, TimeSpan timeout) : IPgUpSession
 {
@@ -33,7 +34,7 @@ public sealed class PgUpSession(string databaseOwner, TimeSpan timeout) : IPgUpS
 
     private async Task CreateDatabaseIfNotExistsAsync(
         string connectionString,
-        string databaseName, 
+        string databaseName,
         string databaseOwner)
     {
         await using var connection = new NpgsqlConnection(connectionString);
@@ -100,7 +101,7 @@ public sealed class PgUpSession(string databaseOwner, TimeSpan timeout) : IPgUpS
     {
         _cancellation.ThrowIfCancellationRequested();
         return Observable
-            .FromAsync(() => this.TestConnectionAsync(connectionString))
+            .FromAsync(() => TestConnectionAsync(connectionString))
             .Catch((ArgumentException e) => PgUpExitException.InvalidConnectionString(e).AsObservable<Unit>())
             .Catch((FormatException e) => PgUpExitException.InvalidConnectionString(e).AsObservable<Unit>())
             .WithRetryTrigger(trigger => trigger

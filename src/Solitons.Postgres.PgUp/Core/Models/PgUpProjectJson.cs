@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
 using Solitons.Data;
 
-namespace Solitons.Postgres.PgUp.Models;
+namespace Solitons.Postgres.PgUp.Core.Models;
 
 
 [Guid("2654b3b3-7603-453d-a43f-5d288e9491d5")]
@@ -48,7 +48,7 @@ public sealed class PgUpProjectJson : BasicJsonDataTransferObject, IPgUpProject
         [JsonPropertyName("scriptDir")] public string WorkingDirectory { get; set; } = ".";
         [JsonPropertyName("discoveryMode")] public PgUpScriptDiscoveryMode PgUpScriptDiscoveryMode { get; set; }
         [JsonPropertyName("executionOrder"), JsonRequired] public string[] ScriptFiles { get; set; } = [];
-        [JsonPropertyName("customCommand")] public string? CustomExecCommandText{ get; set; }
+        [JsonPropertyName("customCommand")] public string? CustomExecCommandText { get; set; }
 
         [DebuggerHidden]
         IEnumerable<string> IPgUpBatch.GetRunOrder() => ScriptFiles;

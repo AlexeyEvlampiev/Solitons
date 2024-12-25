@@ -1,6 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace Solitons.Postgres.PgUp;
+namespace Solitons.Postgres.PgUp.Core;
 
 internal sealed class PgUpSerializer
 {
@@ -8,14 +8,14 @@ internal sealed class PgUpSerializer
 
 
     public static IPgUpProject Deserialize(
-        string pgUpJson, 
+        string pgUpJson,
         Dictionary<string, string> parameters)
     {
         var version = PgUpVersionAttribute.FromJson(pgUpJson);
         pgUpJson = SubstitudeParameters(pgUpJson, parameters);
         var project = version.Deserialize(pgUpJson);
 
-        for (int i = 0;; ++i)
+        for (int i = 0; ; ++i)
         {
             if (i > 1000)
             {
@@ -31,7 +31,7 @@ internal sealed class PgUpSerializer
                 {
                     continue;
                 }
-     
+
                 parameters[key] = value!;
                 resolvedParametersCount++;
             }

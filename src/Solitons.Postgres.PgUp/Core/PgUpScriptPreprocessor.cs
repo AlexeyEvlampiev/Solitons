@@ -1,6 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace Solitons.Postgres.PgUp;
+namespace Solitons.Postgres.PgUp.Core;
 
 public class PgUpScriptPreprocessor(IReadOnlyDictionary<string, string> parameters)
 {

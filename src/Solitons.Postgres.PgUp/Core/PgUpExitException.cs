@@ -1,7 +1,7 @@
 ﻿using Npgsql;
 using Solitons.CommandLine;
 
-namespace Solitons.Postgres.PgUp;
+namespace Solitons.Postgres.PgUp.Core;
 
 internal sealed class PgUpExitException(string message) : CliExitException(message)
 {

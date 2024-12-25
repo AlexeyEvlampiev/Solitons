@@ -1,11 +1,12 @@
 ﻿using System.Diagnostics;
 using System.Reactive.Linq;
 using Npgsql;
+using Solitons;
 using Solitons.CommandLine;
-using Solitons.Postgres.PgUp.Formatting;
+using Solitons.Postgres.PgUp.Core.Formatting;
 using Solitons.Reactive;
 
-namespace Solitons.Postgres.PgUp;
+namespace Solitons.Postgres.PgUp.Core;
 
 public sealed class PgUpDatabaseManager
 {
@@ -57,7 +58,7 @@ public sealed class PgUpDatabaseManager
             })
             .Catch(CliExitException.AsObservable<NpgsqlConnectionStringBuilder>(
                 "Invalid connection string."));
-        
+
         Console.WriteLine(PgUpConnectionDisplayRtt.Build(builder));
         Console.WriteLine();
 
@@ -67,7 +68,7 @@ public sealed class PgUpDatabaseManager
             IPgUpSession session = new PgUpSession(project.DatabaseOwner, timeout);
             await session.TestConnectionAsync(connectionString);
 
-            
+
             if (overwrite)
             {
                 if (false == forceOverwrite)
@@ -89,7 +90,7 @@ public sealed class PgUpDatabaseManager
             var instance = new PgUpDatabaseManager(project, session, builder, parameters);
             return await instance.DeployAsync(workingDir);
         }
-        catch (Exception e) when(e is OperationCanceledException ||
+        catch (Exception e) when (e is OperationCanceledException ||
                                  e is TaskCanceledException ||
                                  e is TimeoutException)
         {
@@ -112,7 +113,7 @@ public sealed class PgUpDatabaseManager
             var preProcessor = new PgUpScriptPreprocessor(_parameters);
 
             var pgUpTransactions = _project.GetTransactions(workingDir, preProcessor);
-            
+
 
             int transactionCounter = 0;
             var connectionString = _connectionStringBuilder

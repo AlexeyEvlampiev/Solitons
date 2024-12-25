@@ -1,9 +1,10 @@
 ﻿using System.IO.Compression;
 using System.Text.RegularExpressions;
+using Solitons;
 using Solitons.Data;
-using Solitons.Postgres.PgUp.Models;
+using Solitons.Postgres.PgUp.Core.Models;
 
-namespace Solitons.Postgres.PgUp;
+namespace Solitons.Postgres.PgUp.Core;
 
 public sealed class PgUpBatch
 {
@@ -68,11 +69,11 @@ public sealed class PgUpBatch
                     var requiredFileFullName = fi.FullName.Replace("\\", "/");
                     return IsMatch;
                     bool IsMatch(string fileFullName)
-                    { 
+                    {
                         var result = requiredFileFullName.Equals(fileFullName, StringComparison.OrdinalIgnoreCase);
                         return result;
                     }
-                        
+
                 }
 
                 try

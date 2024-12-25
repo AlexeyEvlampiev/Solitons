@@ -7,7 +7,7 @@
 //     the code is regenerated.
 // </auto-generated>
 // ------------------------------------------------------------------------------
-namespace Solitons.Postgres.PgUp.Formatting
+namespace Solitons.Postgres.PgUp.Core.Formatting
 {
     using System.Linq;
     using System.Text;
@@ -18,16 +18,21 @@ namespace Solitons.Postgres.PgUp.Formatting
     /// Class to produce the template output
     /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.TextTemplating", "17.0.0.0")]
-    internal partial class PgUpTransactionDelimiterRtt : Solitons.Text.RuntimeTextTemplate
+    internal partial class PgUpConnectionDisplayRtt : Solitons.Text.RuntimeTextTemplate
     {
         /// <summary>
         /// Create the template output
         /// </summary>
         public override string TransformText()
         {
-            this.Write("  _____ ___ __  __\r\n |_   _| _ \\\\ \\/ /\r\n   | | |   / >  <   ");
-            this.Write(this.ToStringHelper.ToStringWithCulture(DisplayName));
-            this.Write(" \r\n   |_| |_|_\\/_/\\_\\");
+            this.Write("host:     ");
+            this.Write(this.ToStringHelper.ToStringWithCulture(_builder.Host));
+            this.Write(":");
+            this.Write(this.ToStringHelper.ToStringWithCulture(_builder.Port));
+            this.Write("\r\ndatabase: ");
+            this.Write(this.ToStringHelper.ToStringWithCulture(_builder.Database));
+            this.Write("\r\nusername: ");
+            this.Write(this.ToStringHelper.ToStringWithCulture(_builder.Username));
             return this.GenerationEnvironment.ToString();
         }
     }
