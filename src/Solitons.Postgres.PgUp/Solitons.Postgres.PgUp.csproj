@@ -74,7 +74,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Templates\Basic\migrations\migration.00-00-00.sql">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Templates\Basic\post-deployment\post-deployment.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
