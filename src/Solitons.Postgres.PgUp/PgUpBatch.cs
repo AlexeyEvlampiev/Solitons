@@ -44,6 +44,11 @@ public sealed class PgUpBatch
         _batchWorkingDirectory = new DirectoryInfo(Path.Combine(pgUpWorkingDirectory.FullName, batch.GetWorkingDirectory()));
         if (false == _batchWorkingDirectory.Exists)
         {
+            Console.WriteLine("Oops...");
+            foreach (var info in pgUpWorkingDirectory.EnumerateFileSystemInfos("*", SearchOption.AllDirectories))
+            {
+                Console.WriteLine(info.FullName);
+            }
             throw new PgUpExitException(
                 $"The pgup batch working directory '{_batchWorkingDirectory.FullName}' was not found. " +
                 $"Please ensure the directory exists and try again.");
