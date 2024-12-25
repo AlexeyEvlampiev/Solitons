@@ -16,7 +16,7 @@ public class VanillaTemplates_Should
         var templates = PgUpTemplateManager
             .GetTemplateDirectories()
                 .ToList();
-        Assert.True(templates.Count > 0);
+        Assert.True(templates.Count > 0, "The should be at least one template registered.");
 
         foreach (var template in templates)
         {
@@ -26,10 +26,11 @@ public class VanillaTemplates_Should
                 .Convert(Directory.CreateDirectory);
 
             var exitCode = processor.Process($@"pgup init ""{workingDir.FullName}""  --template {template.Name}");
-            Assert.Equal(0, exitCode);
+            Assert.True(exitCode == 0, $"Template initialization failed with exit code {exitCode}");
+
             var pgUpProjectPath = Path.Combine(workingDir.FullName, "pgup.json");
             exitCode = processor.Process($@"pgup deploy ""{pgUpProjectPath}"" --overwrite --force --connection ""%{ConnectionStringKey}%""");
-            Assert.Equal(0, exitCode);
+            Assert.True(exitCode == 0, $"Database deployment failed with exit code {exitCode}");
         }
     }
 }

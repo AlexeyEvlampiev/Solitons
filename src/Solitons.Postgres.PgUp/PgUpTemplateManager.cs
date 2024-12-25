@@ -1,4 +1,6 @@
-﻿namespace Solitons.Postgres.PgUp;
+﻿using System.Diagnostics;
+
+namespace Solitons.Postgres.PgUp;
 
 internal sealed class PgUpTemplateManager
 {
@@ -23,7 +25,7 @@ internal sealed class PgUpTemplateManager
             throw new PgUpExitException($"'{targetDir.Name}' directory is not empty..");
         }
 
-        var root = new DirectoryInfo("templates");
+        var root = new DirectoryInfo("Templates");
         var sourceDir = root
             .EnumerateDirectories("*", SearchOption.AllDirectories)
             .Where(di =>
@@ -39,27 +41,27 @@ internal sealed class PgUpTemplateManager
             throw new PgUpExitException($"The '{template}' template is not found.");
         }
 
+
+        Console.WriteLine(@"=======================================================================");
+
+        foreach (var xxx in sourceDir.GetFileSystemInfos("*", SearchOption.AllDirectories))
+        {
+            Console.WriteLine(xxx.FullName);
+        }
+
         sourceDir.CopyContentsTo(targetDir, includeSubdirectories: true);
     }
 
     public static IEnumerable<Template> GetTemplateDirectories()
     {
-        return Directory
-            .EnumerateDirectories(".", "templates", SearchOption.AllDirectories)
-            .Select(path => new DirectoryInfo(path))
-            .GroupBy(root => root, root => root
-                .GetDirectories("*", SearchOption.AllDirectories)
-                .Where(di => di.Exists && di.EnumerateFiles("pgup.json", SearchOption.TopDirectoryOnly)
-                    .Any()))
-            .SelectMany(group =>
-            {
-                var root = group.Key;
-                return group
-                    .SelectMany(t => t)
-                    .Select(di => new Template(
-                        Path.GetRelativePath(root.FullName, di.FullName).ToLower(),
-                        di));
-            });
+        var dir = new DirectoryInfo(Path.Combine(".", "Templates"));
+        Debug.Assert(dir.Exists);
+        return dir
+            .EnumerateDirectories("*", SearchOption.AllDirectories)
+            .Where(subDir => subDir
+                .GetFiles("*", SearchOption.TopDirectoryOnly)
+                .Any(f => f.Name.Equals("pgup.json")))
+            .Select(templateDir => new Template(templateDir.Name.ToLower(), templateDir));
     }
 
     public sealed record Template(string Name, DirectoryInfo Root);

@@ -12,12 +12,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="templates\azure\**" />
-    <EmbeddedResource Remove="templates\azure\**" />
-    <None Remove="templates\azure\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Include="..\Solitons.SQLite\README.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
@@ -70,24 +64,24 @@
       <Generator>TextTemplatingFilePreprocessor</Generator>
       <LastGenOutput>PgUpScriptDisplayRtt.cs</LastGenOutput>
     </None>
-    <None Update="templates\basic\pgup.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="templates\basic\migrations\migration.00-00-00.sql">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="templates\basic\post-deployment\post-deployment.sql">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="templates\basic\pre-deployment\pre-deployment.sql">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="templates\basic\setup\setup.sql">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="Formatting\PgUpTransactionDelimiterRtt.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>
       <LastGenOutput>PgUpTransactionDelimiterRtt.cs</LastGenOutput>
+    </None>
+    <None Update="Templates\Basic\migrations\migration.00-00-00.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Templates\Basic\pgup.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Templates\Basic\post-deployment\post-deployment.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Templates\Basic\pre-deployment\pre-deployment.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Templates\Basic\setup\setup.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 

@@ -20,15 +20,6 @@ public class Program : IProgram
         //    .Process();
     }
 
-    public void ShowVersion(CliFlag showVersion)
-    {
-        var version = GetType()
-            .Assembly
-            .GetName()
-            .Version ?? Version.Parse("1.0");
-        Console.WriteLine(@$"PgUp version {version.ToString(3)}");
-    }
-
     [DebuggerStepThrough]
     public void Initialize(
         string projectDir,

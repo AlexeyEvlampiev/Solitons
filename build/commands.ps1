@@ -1,7 +1,7 @@
 ﻿$version = [Version]::Parse("1.1.0")
 $authors = "Alexey Evlampiev"
 $company = "Solitons"
-$licenseExp = "MPL"
+$licenseExp = "MPL-2.0"  
 $ticks = ((New-TimeSpan -Start (Get-Date "1/1/2024") -End (Get-Date)).Ticks)
 
 function Ensure-XmlNode {
