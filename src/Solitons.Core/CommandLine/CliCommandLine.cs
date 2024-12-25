@@ -68,7 +68,11 @@ public sealed class CliCommandLine : IFormattable
     private CliCommandLine(string[] args)
     {
         var queue = new Queue<string>(args);
-        ExecutableName = Path.GetFileName(queue.Dequeue().Trim('"'));
+        ExecutableName = queue
+            .Dequeue()
+            .Trim('"')
+            .Convert(path => path.Replace('\\', Path.DirectorySeparatorChar))
+            .Convert(Path.GetFileName)!;
         Segments = [
             ..queue
                 .DequeueWhile(arg => false == arg.StartsWith("-"))

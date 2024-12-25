@@ -7,6 +7,7 @@ WORKDIR /app
 
 # Copy solution file
 COPY solitons.sln ./
+COPY Solitons.png ./
 
 # Copy source and test projects
 COPY src/ src/
