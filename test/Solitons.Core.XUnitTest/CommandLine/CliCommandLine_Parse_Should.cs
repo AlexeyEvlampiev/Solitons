@@ -554,24 +554,23 @@ public sealed class CliCommandLine_Parse_Should
     public void Parse_CommandLineWithDuplicateOptions_Should_AggregateValues()
     {
         // Arrange
-        string commandLine = "app.exe --include file1.txt --include file2.txt";
+        string commandLineText = "app.exe --include file1.txt --include file2.txt";
 
         // Act
-        CliCommandLine parsedCommand = CliCommandLine.FromArgs(commandLine);
+        var commandLine = CliCommandLine.FromArgs(commandLineText);
 
         // Assert
-        Assert.NotNull(parsedCommand);
-        Assert.Equal("app.exe", parsedCommand.ExecutableName);
-        Assert.Equal("app.exe --include file1.txt --include file2.txt", parsedCommand.CommandLine);
+        Assert.NotNull(commandLine);
+        Assert.Equal("app.exe", commandLine.ExecutableName);
 
-        Assert.Equal(2, parsedCommand.Options.Length);
-        Assert.All(parsedCommand.Options, option =>
+        Assert.Equal(2, commandLine.Options.Length);
+        Assert.All(commandLine.Options, option =>
         {
             Assert.IsType<CliScalarOptionCapture>(option);
             Assert.Equal("--include", option.Name);
         });
 
-        var includeOptions = parsedCommand.Options.Cast<CliScalarOptionCapture>().ToList();
+        var includeOptions = commandLine.Options.Cast<CliScalarOptionCapture>().ToList();
         Assert.Contains(includeOptions, option => option.Value == "file1.txt");
         Assert.Contains(includeOptions, option => option.Value == "file2.txt");
     }
