@@ -21,7 +21,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Build Docker Image
+    - name: Build and Publish to NuGet
       shell: pwsh
       run: |
         docker build -t solitons-build `

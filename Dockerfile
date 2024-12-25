@@ -41,7 +41,9 @@ RUN dotnet pack src/Solitons.Core/Solitons.Core.csproj -c Release --no-build -o 
     dotnet pack src/Solitons.SQLite/Solitons.SQLite.csproj -c Release --no-build -o /app/packages && \
     dotnet pack src/Solitons.Azure/Solitons.Azure.csproj -c Release --no-build -o /app/packages
 
-RUN dotnet nuget push "/app/packages/Solitons.Core.*.nupkg" --api-key ${NUGET_API_KEY} --source https://api.nuget.org/v3/index.json 
+RUN dotnet nuget push "/app/packages/Solitons.Core.*.nupkg" --api-key ${NUGET_API_KEY} --source https://api.nuget.org/v3/index.json && \
+    dotnet nuget push "/app/packages/Solitons.Azure.*.nupkg" --api-key ${NUGET_API_KEY} --source https://api.nuget.org/v3/index.json && \
+    dotnet nuget push "/app/packages/Solitons.Postgres.PgUp.*.nupkg" --api-key ${NUGET_API_KEY} --source https://api.nuget.org/v3/index.json 
 
 # Final stage to hold the packages
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
