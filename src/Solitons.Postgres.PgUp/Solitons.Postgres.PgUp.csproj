@@ -68,6 +68,18 @@
       <Generator>TextTemplatingFilePreprocessor</Generator>
       <LastGenOutput>PgUpTransactionDelimiterRtt.cs</LastGenOutput>
     </None>
+    <None Update="Templates\Basic\migrations\migration.00-00-00.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Templates\Basic\post-deployment\post-deployment.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Templates\Basic\pre-deployment\pre-deployment.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Templates\Basic\setup\setup.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
