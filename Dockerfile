@@ -1,6 +1,9 @@
 # Base build image
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 
+# Define build arguments
+ARG STAGING_TYPE=Alpha
+ARG SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING
 
 # Set working directory
 WORKDIR /app
@@ -12,6 +15,9 @@ COPY Solitons.png ./
 # Copy source and test projects
 COPY src/ src/
 COPY test/ test/
+COPY build/ build/
+
+RUN pwsh -Command ". ./build/commands.ps1; Config-Packages -staging '${STAGING_TYPE}' -searchRoot './src/'"
 
 # Restore dependencies
 RUN dotnet restore solitons.sln
@@ -20,7 +26,6 @@ RUN dotnet restore solitons.sln
 RUN dotnet build solitons.sln -c Release --no-restore
 
 # Run tests
-ARG SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING
 ENV SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING=${SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING}
 RUN dotnet test solitons.sln -c Release --no-build --verbosity normal
 

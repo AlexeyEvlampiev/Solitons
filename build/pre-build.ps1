@@ -19,7 +19,7 @@ catch {
 }
 
 #. ".\build\commands.ps1"
-#Config-Packages -staging 'Live' -searchRoot "." 
+#Config-Packages -staging 'Alpha' -searchRoot "." 
 
 
 docker build -t solitons-build --build-arg SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING=$env:SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING .
