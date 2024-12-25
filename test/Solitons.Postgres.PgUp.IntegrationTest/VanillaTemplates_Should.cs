@@ -2,11 +2,14 @@ using Solitons.CommandLine;
 
 namespace Solitons.Postgres.PgUp;
 
-public class UnitTest1
+// ReSharper disable once InconsistentNaming
+public class VanillaTemplates_Should
 {
     [Fact]
-    public void Test1()
+    public async Task InitializeAndDeploy()
     {
+        await EnvironmentInfo.TestConnectionAsync();
+
         var processor = CliProcessor
             .From(new Program());
         var templates = PgUpTemplateManager
