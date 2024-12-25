@@ -16,7 +16,7 @@ public class VanillaTemplates_Should
         var templates = PgUpTemplateManager
             .GetTemplateDirectories()
                 .ToList();
-        Assert.True(templates.Count > 0);
+        Assert.True(templates.Count > 0, "The should be at least one template registered.");
 
         foreach (var template in templates)
         {
