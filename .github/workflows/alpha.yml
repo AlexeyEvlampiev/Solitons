@@ -10,6 +10,7 @@ on:
 
 env:
   POSTGRES_CONNECTION: ${{ secrets.SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING }}
+  NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
   STAGING_TYPE: Alpha
 
 jobs:
@@ -26,4 +27,5 @@ jobs:
         docker build -t solitons-build `
           --build-arg STAGING_TYPE=${{ env.STAGING_TYPE }} `
           --build-arg SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING="${{ env.POSTGRES_CONNECTION }}" `
+          --build-arg NUGET_API_KEY="${{ env.NUGET_API_KEY }}" `
           .

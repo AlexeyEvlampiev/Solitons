@@ -4,6 +4,11 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 # Define build arguments
 ARG STAGING_TYPE=Alpha
 ARG SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING
+ARG NUGET_API_KEY
+
+# Set environment variables
+ENV SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING=${SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING}
+ENV NUGET_API_KEY=${NUGET_API_KEY}
 
 # Set working directory
 WORKDIR /app
@@ -26,7 +31,7 @@ RUN dotnet restore solitons.sln
 RUN dotnet build solitons.sln -c Release --no-restore
 
 # Run tests
-ENV SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING=${SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING}
+
 RUN dotnet test solitons.sln -c Release --no-build --verbosity normal
 
 # Create NuGet packages
@@ -35,6 +40,8 @@ RUN dotnet pack src/Solitons.Core/Solitons.Core.csproj -c Release --no-build -o 
     dotnet pack src/Solitons.Postgres.PgUp/Solitons.Postgres.PgUp.csproj -c Release --no-build -o /app/packages && \
     dotnet pack src/Solitons.SQLite/Solitons.SQLite.csproj -c Release --no-build -o /app/packages && \
     dotnet pack src/Solitons.Azure/Solitons.Azure.csproj -c Release --no-build -o /app/packages
+
+RUN dotnet nuget push "/app/packages/Solitons.Core.*.nupkg" --api-key ${NUGET_API_KEY} --source https://api.nuget.org/v3/index.json 
 
 # Final stage to hold the packages
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
