@@ -20,21 +20,23 @@ public class Program : IProgram
         //    .Process();
     }
 
-    public void ShowVersion(CliFlag showVersion)
-    {
-        var version = GetType()
-            .Assembly
-            .GetName()
-            .Version ?? Version.Parse("1.0");
-        Console.WriteLine(@$"PgUp version {version.ToString(3)}");
-    }
-
     [DebuggerStepThrough]
     public void Initialize(
         string projectDir,
         string template)
     {
-        PgUpTemplateManager.Initialize(projectDir, template);
+        Console.Write("DEBUG: Initializing");
+        Trace.Listeners.Add(new ConsoleTraceListener(true));
+        try
+        {
+            PgUpTemplateManager.Initialize(projectDir, template);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(ex);
+            throw;
+        }
+
     }
 
     [DebuggerStepThrough]
