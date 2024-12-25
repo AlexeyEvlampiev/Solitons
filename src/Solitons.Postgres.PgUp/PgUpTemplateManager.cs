@@ -45,7 +45,7 @@ internal sealed class PgUpTemplateManager
     public static IEnumerable<Template> GetTemplateDirectories()
     {
         return Directory
-            .EnumerateDirectories(".", "templates", SearchOption.AllDirectories)
+            .EnumerateDirectories(".", "Templates", SearchOption.AllDirectories)
             .Select(path => new DirectoryInfo(path))
             .GroupBy(root => root, root => root
                 .GetDirectories("*", SearchOption.AllDirectories)
