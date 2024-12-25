@@ -6,12 +6,25 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>pgup</AssemblyName>
+    <PackageIcon>Solitons.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Remove="templates\azure\**" />
     <EmbeddedResource Remove="templates\azure\**" />
     <None Remove="templates\azure\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\Solitons.SQLite\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\Solitons.SQLite\Solitons.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

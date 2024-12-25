@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <PackageId>Solitons.Core</PackageId>
     <VersionPrefix>1.1.0</VersionPrefix>
@@ -39,6 +39,9 @@
     <DocumentationFile>
     </DocumentationFile>
   </PropertyGroup>
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/"/>
+  </ItemGroup>
   <ItemGroup>
     <Compile Remove="Data\Web\**" />
     <Compile Remove="Net\Http\Common\**" />
