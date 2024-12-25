@@ -153,6 +153,7 @@ public static partial class Extensions
         // If includeSubdirectories is true, copy each subdirectory recursively
         if (includeSubdirectories)
         {
+            Console.WriteLine(sourceDirectory.GetDirectories().Select(x => x.Name).Join(" %%% "));
             foreach (DirectoryInfo subdirectory in sourceDirectory.GetDirectories())
             {
                 DirectoryInfo destinationSubdirectory = destinationDirectory.CreateSubdirectory(subdirectory.Name);
