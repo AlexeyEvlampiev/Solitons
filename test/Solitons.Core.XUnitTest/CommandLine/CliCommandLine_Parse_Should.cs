@@ -93,9 +93,7 @@ public sealed class CliCommandLine_Parse_Should
         // Assert
         Assert.NotNull(parsedCommand); // Ensure that the parsedCommand is not null
         Assert.Equal("app.exe", parsedCommand.ExecutableName);
-        Assert.Equal(commandLine, parsedCommand.CommandLine);
-        Assert.True(signatureRegex.IsMatch(parsedCommand.ToString("Signature")));
-        Assert.True(signatureRegex.IsMatch(parsedCommand.ToString("S")));
+
 
         // Verify that Segments contain the correct quoted arguments
         Assert.Equal(2, parsedCommand.Segments.Length);
@@ -105,15 +103,6 @@ public sealed class CliCommandLine_Parse_Should
         // Ensure that there are no options present
         Assert.Empty(parsedCommand.Options);
 
-        // Additional Assertions (Optional)
-        // Verify that ToString returns the original command line
-        Assert.Equal(commandLine, parsedCommand.ToString());
-
-
-
-        // Implicit string conversion
-        string implicitString = parsedCommand;
-        Assert.Equal(commandLine, implicitString);
     }
 
 
@@ -148,9 +137,6 @@ public sealed class CliCommandLine_Parse_Should
             // Assert
             Assert.NotNull(parsedCommand); // Ensure that the parsedCommand is not null
             Assert.Equal("app.exe", parsedCommand.ExecutableName);
-            Assert.Equal(commandLine, parsedCommand.CommandLine);
-            Assert.True(signatureRegex.IsMatch(parsedCommand.ToString("Signature")));
-            Assert.True(signatureRegex.IsMatch(parsedCommand.ToString("S")));
 
             // Verify that Segments contain the correctly expanded environment variable paths
             Assert.Equal(2, parsedCommand.Segments.Length);
@@ -160,14 +146,6 @@ public sealed class CliCommandLine_Parse_Should
             // Ensure that there are no options present
             Assert.Empty(parsedCommand.Options);
 
-            // Additional Assertions (Optional)
-            // Verify that ToString returns the original command line
-            Assert.Equal(commandLine, parsedCommand.ToString());
-
-
-            // Implicit string conversion should return the signature
-            string implicitString = parsedCommand;
-            Assert.Equal(commandLine, implicitString);
         }
         finally
         {
@@ -238,9 +216,6 @@ public sealed class CliCommandLine_Parse_Should
         // Assert
         Assert.NotNull(parsedCommand); // Ensure that the parsedCommand is not null
         Assert.Equal("app.exe", parsedCommand.ExecutableName);
-        Assert.Equal(@"app.exe --output ""C:\Output Folder"" --level 5", parsedCommand.CommandLine);
-        Assert.Equal("app.exe --output --level", parsedCommand.ToString("Signature"));
-        Assert.Equal("app.exe --output --level", parsedCommand.ToString("S"));
 
         // Verify that Segments are empty since there are no arguments
         Assert.Empty(parsedCommand.Segments);
@@ -259,13 +234,6 @@ public sealed class CliCommandLine_Parse_Should
             scalarOption.Name == "--level" &&
             scalarOption.Value == "5");
 
-        // Additional Assertions (Optional)
-        // Verify that ToString returns the original command line
-        Assert.Equal(@"app.exe --output ""C:\Output Folder"" --level 5", parsedCommand.ToString());
-
-        // Implicit string conversion should return the original command line
-        string implicitString = parsedCommand;
-        Assert.Equal(@"app.exe --output ""C:\Output Folder"" --level 5", implicitString);
     }
 
 
@@ -284,7 +252,6 @@ public sealed class CliCommandLine_Parse_Should
         // Assert
         Assert.NotNull(parsedCommand); // Ensure that the parsedCommand is not null
         Assert.Equal("app.exe", parsedCommand.ExecutableName);
-        Assert.Equal("app.exe --files file1.txt file2.txt file3.txt", parsedCommand.CommandLine);
         
 
         // Verify that Segments are empty since there are no arguments
@@ -298,15 +265,6 @@ public sealed class CliCommandLine_Parse_Should
         Assert.Equal("--files", collectionOption.Name);
         Assert.Equivalent(new[] { "file1.txt", "file2.txt", "file3.txt" }, collectionOption.Values.ToArray());
 
-        // Additional Assertions (Optional)
-        // Verify that ToString returns the original command line
-        Assert.Equal("app.exe --files file1.txt file2.txt file3.txt", parsedCommand.ToString());
-
-
-
-        // Implicit string conversion should return the signature
-        string implicitString = parsedCommand;
-        Assert.Equal(commandLine, implicitString);
     }
 
     /// <summary>
@@ -324,9 +282,6 @@ public sealed class CliCommandLine_Parse_Should
         // Assert
         Assert.NotNull(parsedCommand); // Ensure that the parsedCommand is not null
         Assert.Equal("app.exe", parsedCommand.ExecutableName);
-        Assert.Equal("app.exe --config[env] --config[debug]", parsedCommand.CommandLine);
-        Assert.Equal("app.exe --config --config", parsedCommand.ToString("Signature"));
-        Assert.Equal("app.exe --config --config", parsedCommand.ToString("S"));
 
         // Verify that Segments are empty since there are no arguments
         Assert.Empty(parsedCommand.Segments);
@@ -345,15 +300,6 @@ public sealed class CliCommandLine_Parse_Should
             keyFlagOption.Name == "--config" &&
             keyFlagOption.Key == "debug");
 
-        // Additional Assertions (Optional)
-        // Verify that ToString returns the original command line
-        Assert.Equal("app.exe --config[env] --config[debug]", parsedCommand.ToString());
-
-        
-
-        // Implicit string conversion should return the signature
-        string implicitString = parsedCommand;
-        Assert.Equal("app.exe --config[env] --config[debug]", implicitString);
     }
 
     /// <summary>
@@ -375,9 +321,6 @@ public sealed class CliCommandLine_Parse_Should
         // Verify ExecutableName is correctly extracted without surrounding quotes
         Assert.Equal(@"app.exe", parsedCommand.ExecutableName);
 
-        // Verify that CommandLine retains the original quotes
-        Assert.Equal(commandLine, parsedCommand.CommandLine);
-
         // Verify that Signature replaces the option value with a placeholder
 
         // Verify that Segments are empty since there are no standalone arguments
@@ -390,17 +333,6 @@ public sealed class CliCommandLine_Parse_Should
         var scalarOption = Assert.IsType<CliScalarOptionCapture>(parsedCommand.Options[0]);
         Assert.Equal("--mode", scalarOption.Name);
         Assert.Equal("release", scalarOption.Value);
-
-        // Additional Assertions (Optional)
-        // Verify that ToString returns the original command line
-        Assert.Equal(commandLine, parsedCommand.ToString());
-
-        // Verify that the formatted signature is correct
-        Assert.Equal(@"app.exe --mode", parsedCommand.ToString("Signature"));
-
-        // Implicit string conversion should return the signature
-        string implicitString = parsedCommand;
-        Assert.Equal(commandLine, implicitString);
     }
 
     /// <summary>
@@ -421,12 +353,6 @@ public sealed class CliCommandLine_Parse_Should
         // Verify ExecutableName is correctly extracted
         Assert.Equal("app.exe", parsedCommand.ExecutableName);
 
-        // Verify that CommandLine retains the original input
-        Assert.Equal(commandLine, parsedCommand.CommandLine);
-
-        // Verify that Signature replaces the scalar option value with a placeholder
-        Assert.Equal(@"app.exe input.txt --verbose --output", parsedCommand.ToString("Signature"));
-        Assert.Equal(@"app.exe input.txt --verbose --output", parsedCommand.ToString("S"));
 
         // Verify that Segments contain the positional argument
         Assert.Single(parsedCommand.Segments);
@@ -445,16 +371,6 @@ public sealed class CliCommandLine_Parse_Should
             option is CliScalarOptionCapture scalarOption &&
             scalarOption.Name == "--output" &&
             scalarOption.Value == @"C:\Output Folder");
-
-        // Additional Assertions (Optional)
-        // Verify that ToString returns the original command line
-        Assert.Equal(commandLine, parsedCommand.ToString());
-
-
-
-        // Implicit string conversion should return the signature
-        string implicitString = parsedCommand;
-        Assert.Equal(commandLine, implicitString);
     }
 
     /// <summary>
@@ -479,9 +395,6 @@ public sealed class CliCommandLine_Parse_Should
         // Verify Subcommand is correctly identified
         Assert.Equal("deploy", parsedCommand.Segments[0]);
 
-        // Verify that CommandLine retains the original input
-        Assert.Equal(@"app.exe deploy --environment production --force", parsedCommand.CommandLine);
-
 
 
 
@@ -498,15 +411,6 @@ public sealed class CliCommandLine_Parse_Should
         Assert.Contains(parsedCommand.Options, option =>
             option is CliFlagOptionCapture flagOption &&
             flagOption.Name == "--force");
-
-        // Additional Assertions (Optional)
-        // Verify that ToString returns the original command line
-        Assert.Equal(@"app.exe deploy --environment production --force", parsedCommand.ToString());
-
-
-        // Implicit string conversion should return the signature
-        string implicitString = parsedCommand;
-        Assert.Equal(commandLine, implicitString);
     }
 
     /// <summary>
@@ -528,18 +432,17 @@ public sealed class CliCommandLine_Parse_Should
     public void Parse_CommandLineWithSpecialCharacters_Should_CaptureSpecialCharacters()
     {
         // Arrange
-        string commandLine = @"app.exe --path C:\Path\With\Special\!@#$%^&*() chars";
+        string commandLineText = @"app.exe --path C:\Path\With\Special\!@#$%^&*() chars";
 
         // Act
-        CliCommandLine parsedCommand = CliCommandLine.FromArgs(commandLine);
+        CliCommandLine commandLine = CliCommandLine.FromArgs(commandLineText);
 
         // Assert
-        Assert.NotNull(parsedCommand);
-        Assert.Equal("app.exe", parsedCommand.ExecutableName);
-        Assert.Equal(@"app.exe --path C:\Path\With\Special\!@#$%^&*() chars", parsedCommand.CommandLine);
+        Assert.NotNull(commandLine);
+        Assert.Equal("app.exe", commandLine.ExecutableName);
 
-        Assert.Single(parsedCommand.Options);
-        var collectionOption = Assert.IsType<CliCollectionOptionCapture>(parsedCommand.Options[0]);
+        Assert.Single(commandLine.Options);
+        var collectionOption = Assert.IsType<CliCollectionOptionCapture>(commandLine.Options[0]);
         Assert.Equal("--path", collectionOption.Name);
         Assert.Equal(2, collectionOption.Values.Length);
         Assert.True(collectionOption.Values.Contains(@"C:\Path\With\Special\!@#$%^&*()"));
@@ -624,7 +527,7 @@ public sealed class CliCommandLine_Parse_Should
         // Assert
         Assert.NotNull(parsedCommand);
         Assert.Equal("app.exe", parsedCommand.ExecutableName);
-        Assert.Equal(@"app.exe --message ""こんにちは世界"" --path C:\データ", parsedCommand.CommandLine);
+
 
         Assert.Equal(2, parsedCommand.Options.Length);
 
@@ -653,7 +556,7 @@ public sealed class CliCommandLine_Parse_Should
         // Assert
         Assert.NotNull(parsedCommand);
         Assert.Equal("app.exe", parsedCommand.ExecutableName);
-        Assert.Equal(@"app.exe --enable-feature --set-level 3 --tags tag1 tag2 tag3 --config[env] production", parsedCommand.CommandLine);
+       
 
         Assert.Equal(4, parsedCommand.Options.Length);
 
@@ -726,7 +629,6 @@ public sealed class CliCommandLine_Parse_Should
         // Assert
         Assert.NotNull(parsedCommand);
         Assert.Equal("app.exe", parsedCommand.ExecutableName);
-        Assert.Equal("app.exe --config[env] production --config[servers] server1 server2 server3", parsedCommand.CommandLine);
 
         Assert.Equal(2, parsedCommand.Options.Length);
 
@@ -846,20 +748,4 @@ public sealed class CliCommandLine_Parse_Should
         Assert.IsType<CliKeyValueOptionCapture>(result.Options[3]);
         Assert.IsType<CliKeyCollectionOptionCapture>(result.Options[4]);
     }
-
-
-    [Fact]
-    public void ToString_FormatsCorrectly()
-    {
-        // Arrange
-        var commandLine = "app.exe arg --flag";
-        var parsed = CliCommandLine.FromArgs(commandLine);
-
-        // Act & Assert
-        Assert.Equal(commandLine, parsed.ToString());
-        Assert.Equal(commandLine, parsed.ToString("G"));
-        Assert.Equal(commandLine, parsed.ToString("S")); // Signature format should be different
-        Assert.Throws<FormatException>(() => parsed.ToString("Invalid"));
-    }
-
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -50,7 +51,7 @@ public sealed class CliCommandLine : IFormattable
         commandLine = ThrowIf
             .ArgumentNullOrWhiteSpace(commandLine)
             .Trim();
-        if (Regex.IsMatch(commandLine, @"^""[^""]*"""))
+        if (Regex.IsMatch(commandLine, @"^""[^""]*""$"))
         {
             return new CliCommandLine([commandLine.Trim('"')]);
         }
@@ -67,7 +68,7 @@ public sealed class CliCommandLine : IFormattable
     private CliCommandLine(string[] args)
     {
         var queue = new Queue<string>(args);
-        ExecutableName = queue.Dequeue();
+        ExecutableName = Path.GetFileName(queue.Dequeue().Trim('"'));
         Segments = [
             ..queue
                 .DequeueWhile(arg => false == arg.StartsWith("-"))
@@ -159,10 +160,22 @@ public sealed class CliCommandLine : IFormattable
 
     internal static IEnumerable<string> SplitCommandLine(string commandLine)
     {
-        var rgx = new Regex(@"(?:(?<!\\)"".*?(?<!\\)""|\S+)");
-        for (Match match = rgx.Match(commandLine); match.Success; match = match.NextMatch())
+        var argRegex = new Regex(@"(?:(?<!\\)"".*?(?<!\\)""|\S+)");
+        var envRegex = new Regex(@"(?is-m)%[a-z_]+%");
+        for (Match match = argRegex.Match(commandLine); match.Success; match = match.NextMatch())
         {
-            yield return match.Value;
+            var arg = match.Value;
+            arg = envRegex.Replace(arg, match =>
+            {
+                var key = match.Value.Trim('%');
+                var value = Environment.GetEnvironmentVariable(key);
+                if (value.IsPrintable())
+                {
+                    return value;
+                }
+                return match.Value;
+            });
+            yield return arg;
         }
     }
 
