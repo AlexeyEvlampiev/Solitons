@@ -1,6 +1,7 @@
 using Solitons.CommandLine;
 
 namespace Solitons.Postgres.PgUp;
+using static EnvironmentInfo;
 
 // ReSharper disable once InconsistentNaming
 public class VanillaTemplates_Should
@@ -8,7 +9,7 @@ public class VanillaTemplates_Should
     [Fact]
     public async Task InitializeAndDeploy()
     {
-        await EnvironmentInfo.TestConnectionAsync();
+        await TestConnectionAsync();
 
         var processor = CliProcessor
             .From(new Program());
@@ -27,7 +28,7 @@ public class VanillaTemplates_Should
             var exitCode = processor.Process($@"pgup init ""{workingDir.FullName}""  --template {template.Name}");
             Assert.Equal(0, exitCode);
             var pgUpProjectPath = Path.Combine(workingDir.FullName, "pgup.json");
-            exitCode = processor.Process($@"pgup deploy ""{pgUpProjectPath}"" --connection ""%DEV_POSTGRES_CONNECTION_STRING%"" --overwrite --force");
+            exitCode = processor.Process($@"pgup deploy ""{pgUpProjectPath}"" --overwrite --force --connection ""%{ConnectionStringKey}%""");
             Assert.Equal(0, exitCode);
         }
     }
