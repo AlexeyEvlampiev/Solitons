@@ -22,7 +22,7 @@ public class Program : IProgram
     }
 
     [DebuggerStepThrough]
-    public void Initialize(
+    void IProgram.Initialize(
         string projectDir,
         string template)
     {
@@ -30,11 +30,10 @@ public class Program : IProgram
     }
 
     [DebuggerStepThrough]
-    public Task<int> DeployAsync(
+    Task<int> IProgram.DeployAsync(
         string projectFile,
         PgUpConnectionOptionsBundle pgUpConnection,
-        Dictionary<string, string>? parameters,
-        TimeSpan? timeout)
+        PgUpDeploymentCommonOptionBundle common)
     {
         return PgUpDatabaseManager
             .DeployAsync(
@@ -42,19 +41,20 @@ public class Program : IProgram
                 pgUpConnection.ToString(),
                 false,
                 false,
-                parameters ?? [],
-                timeout ?? DefaultActionTimeout);
+                common.Parameters,
+                common.Timeout ?? DefaultActionTimeout);
     }
+
+  
 
 
     [DebuggerStepThrough]
-    public  Task<int> DeployAsync(
+    Task<int> IProgram.DeployAsync(
         string projectFile,
         PgUpConnectionOptionsBundle pgUpConnection,
+        PgUpDeploymentCommonOptionBundle common,
         Unit overwrite,
-        Unit? forceOverride,
-        Dictionary<string, string>? parameters,
-         TimeSpan? timeout)
+        Unit? forceOverride)
     {
         return PgUpDatabaseManager
             .DeployAsync(
@@ -62,16 +62,15 @@ public class Program : IProgram
                 pgUpConnection.ToString(),
                 false,
                 false,
-                parameters ?? [],
-                timeout ?? DefaultActionTimeout);
+                common.Parameters,
+                common.Timeout ?? DefaultActionTimeout);
     }
 
     [DebuggerStepThrough]
-    public Task<int> DeployAsync(
+    Task<int> IProgram.DeployAsync(
         string projectFile,
         string connectionString,
-        Dictionary<string, string>? parameters,
-        TimeSpan? timeout)
+        PgUpDeploymentCommonOptionBundle common)
     {
         return PgUpDatabaseManager
             .DeployAsync(
@@ -79,18 +78,19 @@ public class Program : IProgram
                 connectionString,
                 false,
                 false,
-                parameters ?? [],
-                timeout ?? DefaultActionTimeout);
+                common.Parameters,
+                common.Timeout ?? DefaultActionTimeout);
     }
+
+
 
     [DebuggerStepThrough]
     public Task<int> DeployAsync(
         string projectFile,
         string connectionString,
+        PgUpDeploymentCommonOptionBundle common,
         Unit overwrite,
-        Unit? forceOverride,
-        Dictionary<string, string>? parameters,
-        TimeSpan? timeout)
+        Unit? forceOverride)
     {
 
         return PgUpDatabaseManager
@@ -99,8 +99,8 @@ public class Program : IProgram
                 connectionString,
                 false,
                 false,
-                parameters ?? [],
-                timeout ?? DefaultActionTimeout);
+                common.Parameters,
+                common.Timeout ?? DefaultActionTimeout);
     }
 
 }

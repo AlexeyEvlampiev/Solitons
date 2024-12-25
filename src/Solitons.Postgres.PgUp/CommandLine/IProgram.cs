@@ -34,8 +34,7 @@ public interface IProgram
     Task<int> DeployAsync(
         string projectFile,
         PgUpConnectionOptionsBundle pgUpConnection,
-        [PgUpParametersOption] Dictionary<string, string>? parameters = null,
-        [CliOption("--timeout")] TimeSpan? timeout = null);
+        PgUpDeploymentCommonOptionBundle commonOptionBundle);
 
 
     [CliRoute("deploy")]
@@ -51,10 +50,9 @@ public interface IProgram
     Task<int> DeployAsync(
         string projectFile,
         PgUpConnectionOptionsBundle pgUpConnection,
+        PgUpDeploymentCommonOptionBundle commonOptionBundle,
         [CliOption("--overwrite")] Unit overwrite,
-        [CliOption("--force")] Unit? forceOverride = null,
-        [PgUpParametersOption] Dictionary<string, string>? parameters = null,
-        [CliOption("--timeout")] TimeSpan? timeout = null);
+        [CliOption("--force")] Unit? forceOverride = null);
 
 
     [CliRoute("deploy")]
@@ -67,8 +65,7 @@ public interface IProgram
     Task<int> DeployAsync(
         string projectFile,
         [CliOption("--connection")] string connectionString,
-        [PgUpParametersOption] Dictionary<string, string>? parameters = null,
-        [CliOption("--timeout")] TimeSpan? timeout = null);
+        PgUpDeploymentCommonOptionBundle commonOptionBundle);
 
 
     [CliRoute("deploy")]
@@ -81,8 +78,7 @@ public interface IProgram
     Task<int> DeployAsync(
         string projectFile,
         [CliOption("--connection")] string connectionString,
+        PgUpDeploymentCommonOptionBundle commonOptionBundle,
         [CliOption("--overwrite")] Unit overwrite,
-        [CliOption("--force")] Unit? forceOverride = null,
-        [PgUpParametersOption] Dictionary<string, string>? parameters = null,
-        [CliOption("--timeout")] TimeSpan? timeout = null);
+        [CliOption("--force")] Unit? forceOverride = null);
 }
