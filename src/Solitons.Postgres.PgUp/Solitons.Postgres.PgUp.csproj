@@ -8,6 +8,7 @@
     <AssemblyName>pgup</AssemblyName>
     <PackageIcon>Solitons.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageId>Solitons.Postgres.PgUp</PackageId>
   </PropertyGroup>
 
   <ItemGroup>

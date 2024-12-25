@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <PackageIcon>Solitons.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageId>Solitons.Postgres</PackageId>
   </PropertyGroup>
 
   <ItemGroup>
