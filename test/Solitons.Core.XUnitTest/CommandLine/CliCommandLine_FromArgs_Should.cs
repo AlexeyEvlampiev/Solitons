@@ -6,7 +6,7 @@ using Xunit;
 namespace Solitons.CommandLine;
 
 // ReSharper disable once InconsistentNaming
-public sealed class CliCommandLine_Parse_Should
+public sealed class CliCommandLine_FromArgs_Should
 {
     /// <summary>
     /// Tests that parsing a simple executable with no options or arguments correctly populates the properties.

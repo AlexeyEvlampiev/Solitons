@@ -22,4 +22,4 @@ catch {
 #Config-Packages -staging 'Live' -searchRoot "." 
 
 
-docker build -t solitons-build .
+docker build -t solitons-build --build-arg SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING=$env:SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING .

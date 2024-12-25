@@ -45,7 +45,7 @@ END $$;
 
 
 
-
+ALTER SCHEMA "public" OWNER TO ${databaseOwner};
 
 
 -- Create schemas to organize database objects effectively.

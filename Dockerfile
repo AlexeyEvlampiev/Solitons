@@ -1,6 +1,7 @@
 # Base build image
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 
+
 # Set working directory
 WORKDIR /app
 
@@ -18,6 +19,8 @@ RUN dotnet restore solitons.sln
 RUN dotnet build solitons.sln -c Release --no-restore
 
 # Run tests
+ARG SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING
+ENV SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING=${SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING}
 RUN dotnet test solitons.sln -c Release --no-build --verbosity normal
 
 # Create NuGet packages
