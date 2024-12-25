@@ -1,4 +1,4 @@
-name: .NET CI/CD for Solitons.SQLite
+name: DEV:Solitons
 
 on:
   push:
@@ -6,55 +6,24 @@ on:
   pull_request:
     branches: [ develop ]
 
+
+
+env:
+  POSTGRES_CONNECTION: ${{ secrets.SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING }}
+  STAGING_TYPE: Alpha
+
 jobs:
-  build-and-publish:
+  build:
     runs-on: ubuntu-latest
-    env:
-      solutionpath: ./solitons.sln
-      sqlitecsproj: ./src/Solitons.SQLite/Solitons.SQLite.csproj
-      commandlinecsproj: ./src/Solitons.CommandLine/Solitons.CommandLine.csproj
-      azurecsproj: ./src/Solitons.Azure/Solitons.Azure.csproj
-      buildconfiguration: release
-      outputpath: pkgout
-      runId: ${{github.run_id}}
-      versionsuffix: 'alpha.${{github.run_id}}'
-      nugetsource: https://api.nuget.org/v3/index.json
+    
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-    - name: Setup .NET 8
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: '8.x'
-
-    - name: Cache NuGet packages
-      uses: actions/cache@v2
-      with:
-        path: ~/.nuget/packages
-        key: nuget-${{ hashFiles('**/*.csproj') }}
-        restore-keys: nuget-
-
-    - name: Restore dependencies
-      run: dotnet restore ${{env.solutionpath}}
-
-    - name: Build
-      run: dotnet build ${{env.solutionpath}} --no-restore --configuration ${{env.buildconfiguration}}
-
-    - name: Test
-      run: dotnet test ${{env.solutionpath}} --no-build --verbosity normal
-
-    - name: Pack Solitons.SQLite
-      run: dotnet pack ${{env.sqlitecsproj}} --configuration ${{env.buildconfiguration}} --output ${{env.outputpath}} --version-suffix ${{env.versionsuffix}} --no-build --no-restore
-
-    - name: Pack Solitons.CommandLine
-      run: dotnet pack ${{env.commandlinecsproj}} --configuration ${{env.buildconfiguration}} --output ${{env.outputpath}} --version-suffix ${{env.versionsuffix}} --no-build --no-restore
-
-    - name: Pack Solitons.Azure
-      run: dotnet pack ${{env.azurecsproj}} --configuration ${{env.buildconfiguration}} --output ${{env.outputpath}} --version-suffix ${{env.versionsuffix}} --no-build --no-restore
-
-
-    - name: Push to NuGet
-      env:
-        NUGET_API_KEY: ${{secrets.NUGET_API_KEY}}
-      run: dotnet nuget push ${{env.outputpath}}/*.nupkg --api-key ${{env.NUGET_API_KEY}} --source ${{env.nugetsource}} --skip-duplicate
+    - name: Build Docker Image
+      shell: pwsh
+      run: |
+        docker build -t solitons-build `
+          --build-arg STAGING_TYPE=${{ env.STAGING_TYPE }} `
+          --build-arg SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING="${{ env.POSTGRES_CONNECTION }}" `
+          .
