@@ -39,6 +39,14 @@ internal sealed class PgUpTemplateManager
             throw new PgUpExitException($"The '{template}' template is not found.");
         }
 
+
+        Console.WriteLine(@"=======================================================================");
+
+        foreach (var xxx in sourceDir.GetFileSystemInfos("*", SearchOption.AllDirectories))
+        {
+            Console.WriteLine(xxx.FullName);
+        }
+
         sourceDir.CopyContentsTo(targetDir, includeSubdirectories: true);
     }
 
