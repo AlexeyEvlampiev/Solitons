@@ -11,7 +11,7 @@ public class Program_Initialize_Should
     [InlineData("pgup init . --template basic", "basic")]
     public void BeInvokedByCliProcessor(string commandLine, string template)
     {
-        var program = new Mock<IProgram>();
+        var program = new Mock<IPgUpCommandLineContract>();
         var processor = CliProcessor
             .From(program.Object);
 

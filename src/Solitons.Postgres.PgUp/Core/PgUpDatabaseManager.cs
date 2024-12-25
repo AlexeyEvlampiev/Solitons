@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Reactive.Linq;
 using Npgsql;
-using Solitons;
 using Solitons.CommandLine;
 using Solitons.Postgres.PgUp.Core.Formatting;
 using Solitons.Reactive;

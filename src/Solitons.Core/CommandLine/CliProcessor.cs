@@ -5,16 +5,22 @@ using System.Diagnostics;
 using System.Linq;
 using Solitons.CommandLine.Common;
 using Solitons.CommandLine.Reflection;
+using static Solitons.Diagnostics.BufferedAsyncLogger;
 
 namespace Solitons.CommandLine;
 
-public sealed class CliProcessor : CliProcessorBase
+public class CliProcessor : CliProcessorBase
 {
     private readonly ImmutableArray<CliActionVNext> _actions;
 
     private CliProcessor(CliActionVNext[] actions)
     {
         _actions = [.. actions];
+    }
+
+    protected CliProcessor() 
+    {
+        _actions = [.. GetActions(GetType(), this)];
     }
 
     [DebuggerStepThrough]
@@ -39,6 +45,12 @@ public sealed class CliProcessor : CliProcessorBase
 
     private static CliProcessor From(Type type, object? instance)
     {
+        var actions = GetActions(type, instance);
+        return new CliProcessor(actions);
+    }
+
+    private static CliActionVNext[] GetActions(Type type, object? instance)
+    {
         var methods = CliMethodInfo
             .Get(type);
 
@@ -54,10 +66,8 @@ public sealed class CliProcessor : CliProcessorBase
                 return new CliActionVNext(m, instance);
             })
             .ToArray();
-        return new CliProcessor(actions);
+        return actions;
     }
-
-
 
 
     [DebuggerStepThrough]
@@ -69,7 +79,7 @@ public sealed class CliProcessor : CliProcessorBase
 
 
 
-    protected override void ShowGeneralHelp(CliCommandLine commandLine)
+    protected override void DisplayGeneralHelp(CliCommandLine commandLine)
     {
         throw new NotImplementedException();
     }

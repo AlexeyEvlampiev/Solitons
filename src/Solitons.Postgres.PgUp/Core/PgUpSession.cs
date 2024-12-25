@@ -4,7 +4,6 @@ using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using Npgsql;
-using Solitons;
 using Solitons.CommandLine;
 using Solitons.Data;
 using Solitons.Postgres.PgUp.Core.Formatting;

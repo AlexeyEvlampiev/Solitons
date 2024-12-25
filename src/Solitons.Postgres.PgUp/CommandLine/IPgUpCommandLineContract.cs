@@ -4,9 +4,8 @@ using Solitons.CommandLine.Reflection;
 
 namespace Solitons.Postgres.PgUp.CommandLine;
 
-public interface IProgram
+public interface IPgUpCommandLineContract
 {
-    internal const string PgUpDescription = "PgUp is a PostgreSQL migration tool using plain SQL for transaction-safe schema changes";
     const string DeployCommandDescription = "Deploys a PostgreSQL database according to the pgup.json deployment plan, ensuring all configurations and resources are correctly applied.";
     const string InitializeProjectCommand = "init|initialize";
     const string ProjectDirectoryArgumentDescription = "File directory where to initialize the new pgup project.";

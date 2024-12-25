@@ -6,7 +6,7 @@ using Solitons.Postgres.PgUp.CommandLine;
 
 
 // ReSharper disable once InconsistentNaming
-public class Program_Examples_Should : CliContractValidator<IProgram>
+public class Program_Examples_Should : CliContractValidator<IPgUpCommandLineContract>
 {
 
     [Fact]

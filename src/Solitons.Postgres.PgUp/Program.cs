@@ -1,28 +1,39 @@
 ﻿using System.Diagnostics;
 using System.Reactive;
+using Solitons.CommandLine;
 using Solitons.Postgres.PgUp.CommandLine;
 using Solitons.Postgres.PgUp.Core;
 
 namespace Solitons.Postgres.PgUp;
 
 
-public class Program : IProgram
+public sealed class Program : CliProcessor, IPgUpCommandLineContract
 {
+    const string PgUpDescription = "PgUp is a PostgreSQL migration tool using plain SQL for transaction-safe schema changes";
     private static readonly TimeSpan DefaultActionTimeout = TimeSpan.FromMinutes(10);
 
-    public static int Main()
+    public static int Main(params string[] args)
     {
-        throw new NotImplementedException();
-        //return CliProcessorVNext
-        //    .Setup(config => config
-        //        .UseCommandsFrom(new Program())
-        //        .UseLogo(PgUpResource.AsciiLogo)
-        //        .UseDescription(IProgram.PgUpDescription))
-        //    .Process();
+        var xxx = Environment.GetCommandLineArgs();
+        var program = new Program();
+        return program.Process(xxx);
+    }
+
+    protected override void DisplayGeneralHelp(CliCommandLine commandLine)
+    {
+        Console.WriteLine(PgUpResource.AsciiLogo);
+
+        Enumerable
+            .Range(0, 3)
+            .ForEach(_ => Console.WriteLine());
+
+        Console.WriteLine(PgUpDescription);
+
+        base.DisplayGeneralHelp(commandLine);
     }
 
     [DebuggerStepThrough]
-    void IProgram.Initialize(
+    void IPgUpCommandLineContract.Initialize(
         string projectDir,
         string template)
     {
@@ -30,7 +41,7 @@ public class Program : IProgram
     }
 
     [DebuggerStepThrough]
-    Task<int> IProgram.DeployAsync(
+    Task<int> IPgUpCommandLineContract.DeployAsync(
         string projectFile,
         PgUpConnectionOptionsBundle pgUpConnection,
         PgUpDeploymentCommonOptionBundle common)
@@ -49,7 +60,7 @@ public class Program : IProgram
 
 
     [DebuggerStepThrough]
-    Task<int> IProgram.DeployAsync(
+    Task<int> IPgUpCommandLineContract.DeployAsync(
         string projectFile,
         PgUpConnectionOptionsBundle pgUpConnection,
         PgUpDeploymentCommonOptionBundle common,
@@ -67,7 +78,7 @@ public class Program : IProgram
     }
 
     [DebuggerStepThrough]
-    Task<int> IProgram.DeployAsync(
+    Task<int> IPgUpCommandLineContract.DeployAsync(
         string projectFile,
         string connectionString,
         PgUpDeploymentCommonOptionBundle common)

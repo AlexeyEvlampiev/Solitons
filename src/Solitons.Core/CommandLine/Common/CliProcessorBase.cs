@@ -18,7 +18,8 @@ public abstract class CliProcessorBase
 
     public int Process(params string[] args)
     {
-        throw new NotImplementedException();
+        var commandLineObject = CliCommandLine.FromArgs(args);
+        return SafeProcess(commandLineObject);
     }
 
     [DebuggerStepThrough]
@@ -46,7 +47,7 @@ public abstract class CliProcessorBase
     {
         if (IsGeneralHelpRequest(commandLine))
         {
-            ShowGeneralHelp(commandLine);
+            DisplayGeneralHelp(commandLine);
             return 0;
         }
 
@@ -108,12 +109,12 @@ public abstract class CliProcessorBase
     protected virtual void OnActionNotFound(CliCommandLine commandLine)
     {
         PrintError("Not found");
-        ShowGeneralHelp(commandLine);
+        DisplayGeneralHelp(commandLine);
     }
 
     protected virtual void PrintError(string message) => Console.Error.WriteLine(message);
 
-    protected abstract void ShowGeneralHelp(CliCommandLine commandLine);
+    protected abstract void DisplayGeneralHelp(CliCommandLine commandLine);
 
     protected virtual bool IsGeneralHelpRequest(CliCommandLine commandLine)
     {

@@ -3,7 +3,7 @@ using Solitons.Postgres.PgUp.CommandLine;
 
 namespace Solitons.Postgres.PgUp;
 
-public sealed class TestCliContractValidator : CliContractValidator<IProgram>
+public sealed class TestCliContractValidator : CliContractValidator<IPgUpCommandLineContract>
 {
     [Fact]
     public void Run()
