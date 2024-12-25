@@ -25,18 +25,7 @@ public class Program : IProgram
         string projectDir,
         string template)
     {
-        Console.Write("DEBUG: Initializing");
-        Trace.Listeners.Add(new ConsoleTraceListener(true));
-        try
-        {
-            PgUpTemplateManager.Initialize(projectDir, template);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine(ex);
-            throw;
-        }
-
+        PgUpTemplateManager.Initialize(projectDir, template);
     }
 
     [DebuggerStepThrough]

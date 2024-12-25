@@ -23,7 +23,7 @@ internal sealed class PgUpTemplateManager
             throw new PgUpExitException($"'{targetDir.Name}' directory is not empty..");
         }
 
-        var root = new DirectoryInfo("templates");
+        var root = new DirectoryInfo("Templates");
         var sourceDir = root
             .EnumerateDirectories("*", SearchOption.AllDirectories)
             .Where(di =>
