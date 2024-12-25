@@ -22,4 +22,7 @@ catch {
 #Config-Packages -staging 'Alpha' -searchRoot "." 
 
 
-docker build -t solitons-build --build-arg SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING=$env:SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING .
+docker build -t solitons-build `
+    --build-arg SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING=$env:SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING `
+    --build-arg STAGING_TYPE=Alpha `
+    .
