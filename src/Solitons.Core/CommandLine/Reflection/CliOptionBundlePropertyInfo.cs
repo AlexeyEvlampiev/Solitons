@@ -21,6 +21,12 @@ internal class CliOptionBundlePropertyInfo : PropertyInfoDecorator,  ICliOptionM
         IsOptional = 
             false == attributes.OfType<RequiredAttribute>().Any() || 
             property.IsNullable();
+
+        Description = attributes
+            .OfType<DescriptionAttribute>()
+            .Select(a => a.Description)
+            .Union([_optionAttribute.Description])
+            .First();
         _materializer = CliOptionMaterializer.CreateOrThrow(_optionAttribute, property.PropertyType, IsOptional, null);
     }
 

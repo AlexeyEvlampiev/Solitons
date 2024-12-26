@@ -13,18 +13,18 @@ public class CliRouteAttribute : Attribute
     /// <summary>
     /// Initializes a new instance of the CliCommandAttribute class.
     /// </summary>
-    /// <param name="routeDeclaration">A space-separated string representing individual subcommands.</param>
-    public CliRouteAttribute(string routeDeclaration)
+    /// <param name="routeSignature">A space-separated string representing individual subcommands.</param>
+    public CliRouteAttribute(string routeSignature)
     {
-        RouteDeclaration = routeDeclaration;
+        RouteSignature = routeSignature;
     }
 
     /// <summary>
     /// Gets a space-separated string representing individual subcommands.
     /// </summary>
-    public string RouteDeclaration { get; }
+    public string RouteSignature { get; }
 
 
 
-    public override string ToString() => RouteDeclaration;
+    public override string ToString() => RouteSignature;
 }

@@ -36,9 +36,10 @@ internal sealed class CliOptionParameterInfo : CliParameterInfo, ICliOptionMembe
             .OfType<DescriptionAttribute>()
             .Select(d => d.Description)
             .Union([_optionAttribute.Description])
-            .First();
+            .FirstOrDefault("");
     }
 
+    public string PipeSeparatedAliases => _optionAttribute.PipeSeparatedAliases;
 
     public string Description { get; }
 

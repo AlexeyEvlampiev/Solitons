@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Reactive;
 using Solitons.CommandLine;
+using Solitons.CommandLine.Common;
 using Solitons.Postgres.PgUp.CommandLine;
 using Solitons.Postgres.PgUp.Core;
 
@@ -12,25 +13,27 @@ public sealed class Program : CliProcessor, IPgUpCommandLineContract
     const string PgUpDescription = "PgUp is a PostgreSQL migration tool using plain SQL for transaction-safe schema changes";
     private static readonly TimeSpan DefaultActionTimeout = TimeSpan.FromMinutes(10);
 
-    public static int Main(params string[] args)
+    public static int Main()
     {
-        var xxx = Environment.GetCommandLineArgs();
         var program = new Program();
-        return program.Process(xxx);
+        return program.Process();
     }
 
-    protected override void DisplayGeneralHelp(CliCommandLine commandLine)
+    public Program() : base(Initialize)
     {
-        Console.WriteLine(PgUpResource.AsciiLogo);
-
-        Enumerable
-            .Range(0, 3)
-            .ForEach(_ => Console.WriteLine());
-
-        Console.WriteLine(PgUpDescription);
-
-        base.DisplayGeneralHelp(commandLine);
+        
     }
+
+    private static void Initialize(ICliProcessorConfig config)
+    {
+        config.GlobalOptions
+            .Clear()
+            .Add(new CliTracingGlobalOptionBundle());
+    }
+
+    protected override string Logo => PgUpResource.AsciiLogo;
+
+    protected override string Description => PgUpDescription;
 
     [DebuggerStepThrough]
     void IPgUpCommandLineContract.Initialize(

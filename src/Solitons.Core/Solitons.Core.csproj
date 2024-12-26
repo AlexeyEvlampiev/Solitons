@@ -40,7 +40,7 @@
     </DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="README.md" Pack="true" PackagePath="/"/>
+    <None Include="README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Data\Web\**" />
@@ -85,6 +85,11 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Compile Update="CommandLine\Reflection\CliMethodInfoGeneralHelpRtt.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CliMethodInfoGeneralHelpRtt.tt</DependentUpon>
+    </Compile>
     <Compile Update="Common\Azure\ResourceManager\AutoScaleSettingsRtt.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -122,6 +127,10 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <None Update="CommandLine\Reflection\CliMethodInfoGeneralHelpRtt.tt">
+      <Generator>TextTemplatingFilePreprocessor</Generator>
+      <LastGenOutput>CliMethodInfoGeneralHelpRtt.cs</LastGenOutput>
+    </None>
     <None Update="Common\Azure\ResourceManager\AutoScaleSettingsRtt.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>
       <LastGenOutput>AutoScaleSettingsRtt.cs</LastGenOutput>

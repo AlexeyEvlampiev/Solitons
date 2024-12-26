@@ -16,9 +16,9 @@ public abstract class CliProcessorBase
     }
 
 
-    public int Process(params string[] args)
+    public int Process()
     {
-        var commandLineObject = CliCommandLine.FromArgs(args);
+        var commandLineObject = CliCommandLine.FromArgs();
         return SafeProcess(commandLineObject);
     }
 
@@ -45,12 +45,6 @@ public abstract class CliProcessorBase
 
     private int Process(CliCommandLine commandLine)
     {
-        if (IsGeneralHelpRequest(commandLine))
-        {
-            DisplayGeneralHelp(commandLine);
-            return 0;
-        }
-
         var actions = Match(commandLine);
         if (actions.Length == 1)
         {
@@ -62,14 +56,33 @@ public abstract class CliProcessorBase
             return Process(commandLine, actions[0]);
         }
 
-        if (actions.Length == 0)
+        if(actions.Length > 1) 
         {
-            OnActionNotFound(commandLine);
-            return 4;
+            Debug.Assert(actions.Length > 1);
+
+            throw new NotImplementedException();
         }
 
-        Debug.Assert(actions.Length > 1);
+        if (IsGeneralHelpRequest(commandLine))
+        {
+            DisplayGeneralHelp(commandLine);
+            return 0;
+        }
 
+        if (commandLine.Segments.Length == 0 &&
+            commandLine.Options.Length == 0)
+        {
+            DisplayGeneralHelp(commandLine);
+            return 0;
+        }
+
+        OnActionNotFound(commandLine);
+        DsiplayFuzzyMatchlHelp(commandLine);
+        return 4;
+    }
+
+    private void DsiplayFuzzyMatchlHelp(CliCommandLine commandLine)
+    {
         throw new NotImplementedException();
     }
 
@@ -93,18 +106,18 @@ public abstract class CliProcessorBase
 
     private int Process(CliCommandLine commandLine, CliAction action)
     {
-        OnProcessing(commandLine);
+        OnExecutingAction(commandLine);
         var exitCode = action.Process(commandLine);
-        OnProcessed(commandLine, exitCode);
+        OnActionExecuted(commandLine, exitCode);
         return exitCode;
     }
 
 
-    protected virtual void OnProcessed(CliCommandLine commandLine, int exitCode) { }
+    protected virtual void OnActionExecuted(CliCommandLine commandLine, int exitCode) { }
 
 
 
-    protected virtual void OnProcessing(CliCommandLine commandLine) { }
+    protected virtual void OnExecutingAction(CliCommandLine commandLine) { }
 
     protected virtual void OnActionNotFound(CliCommandLine commandLine)
     {
@@ -115,6 +128,11 @@ public abstract class CliProcessorBase
     protected virtual void PrintError(string message) => Console.Error.WriteLine(message);
 
     protected abstract void DisplayGeneralHelp(CliCommandLine commandLine);
+    
+
+    protected virtual string Logo => String.Empty;
+
+    protected virtual string Description => String.Empty;
 
     protected virtual bool IsGeneralHelpRequest(CliCommandLine commandLine)
     {

@@ -3,23 +3,37 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using Solitons.Collections;
 using Solitons.CommandLine.Common;
 using Solitons.CommandLine.Reflection;
-using static Solitons.Diagnostics.BufferedAsyncLogger;
 
 namespace Solitons.CommandLine;
 
 public class CliProcessor : CliProcessorBase
 {
     private readonly ImmutableArray<CliActionVNext> _actions;
+    private readonly ImmutableArray<CliGlobalOptionBundle> _globalOptions;
+
+    protected interface ICliProcessorConfig
+    {
+        FluentList<CliGlobalOptionBundle> GlobalOptions { get; }
+    }
+
+    sealed class Config : ICliProcessorConfig
+    {
+        public FluentList<CliGlobalOptionBundle> GlobalOptions { get; } = new();
+    }
 
     private CliProcessor(CliActionVNext[] actions)
     {
         _actions = [.. actions];
     }
 
-    protected CliProcessor() 
+    protected CliProcessor(Action<ICliProcessorConfig> initialize)
     {
+        var config = new Config();
+        initialize.Invoke(config);
+        _globalOptions = [.. config.GlobalOptions.Distinct()];
         _actions = [.. GetActions(GetType(), this)];
     }
 
@@ -49,6 +63,13 @@ public class CliProcessor : CliProcessorBase
         return new CliProcessor(actions);
     }
 
+    [DebuggerStepThrough]
+    public static int Process<T>(string commandLine)
+    {
+        return From<T>().Process(commandLine);
+    }
+
+
     private static CliActionVNext[] GetActions(Type type, object? instance)
     {
         var methods = CliMethodInfo
@@ -70,18 +91,31 @@ public class CliProcessor : CliProcessorBase
     }
 
 
-    [DebuggerStepThrough]
-    public static int Process<T>(string commandLine)
-    {
-        return From<T>().Process(commandLine);
-    }
+
 
 
 
 
     protected override void DisplayGeneralHelp(CliCommandLine commandLine)
     {
-        throw new NotImplementedException();
+        if (Logo.IsPrintable())
+        {
+            Console.WriteLine(Logo);
+            Enumerable.Range(0, 1).ForEach(_ => Console.WriteLine());
+        }
+
+        if (Description.IsPrintable())
+        {
+            Console.WriteLine(Description);
+            Enumerable.Range(0, 2).ForEach(_ => Console.WriteLine());
+        }
+
+        foreach (var action in _actions)
+        {
+            var actionHelp = action.GetGeneralHelp();
+            Console.WriteLine(actionHelp);
+            Enumerable.Range(0, 2).ForEach(_ => Console.WriteLine());
+        }
     }
 
 
@@ -110,5 +144,24 @@ public class CliProcessor : CliProcessorBase
         public override double RankByOptions(CliCommandLine commandLine) => method.RankByOptions(commandLine);
 
         public override string ToString() => method.ToString();
+
+        [DebuggerStepThrough]
+        public string GetGeneralHelp() => method.ToGeneralHelpString();
+    }
+
+    protected override void OnExecutingAction(CliCommandLine commandLine)
+    {
+        foreach (var bundle in _globalOptions)
+        {
+            bundle.OnExecutingAction(commandLine);
+        }
+    }
+
+    protected override void OnActionExecuted(CliCommandLine commandLine, int exitCode)
+    {
+        foreach (var bundle in _globalOptions)
+        {
+            bundle.OnActionExecuted(commandLine);
+        }
     }
 }

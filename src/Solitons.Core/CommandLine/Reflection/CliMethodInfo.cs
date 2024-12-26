@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
@@ -12,7 +13,7 @@ using Solitons.Reflection;
 
 namespace Solitons.CommandLine.Reflection;
 
-internal sealed class CliMethodInfo : MethodInfoDecorator
+internal sealed class CliMethodInfo : MethodInfoDecorator, IFormattable
 {
     private readonly ImmutableArray<ParameterInfoDecorator> _parameters;
     private readonly ImmutableArray<object> _routeSegments;
@@ -64,6 +65,7 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
 
         _parameters = [.. cliParameters];
         Examples = [.. attributes.OfType<CliCommandExampleAttribute>()];
+        Description = attributes.OfType<DescriptionAttribute>().Select(a => a.Description).FirstOrDefault(Name);
     }
 
     [DebuggerStepThrough]
@@ -93,6 +95,7 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
         return list.ToArray();
     }
 
+    public string Description { get; }
 
     public int Invoke(object? instance, CliCommandLine commandLine)
     {
@@ -203,7 +206,7 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
                 if (attribute is CliRouteAttribute route)
                 {
                     return Regex
-                        .Split(route.RouteDeclaration, @"\s+")
+                        .Split(route.RouteSignature, @"\s+")
                         .Where(r => r.IsPrintable())
                         .Select(r => r.Trim())
                         .Select(r => (object)new Regex(r, RegexOptions.IgnoreCase));
@@ -314,6 +317,16 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
         return builder.ToString();
     }
 
+    public string ToString(string? format, IFormatProvider? formatProvider = null)
+    {
+        format = format?.ToUpperInvariant();
+        switch (format)
+        {
+            case ("GH"): return ToGeneralHelpString();
+            default: return base.ToString();
+        }
+    }
+
     public double RankByOptions(CliCommandLine commandLine)
     {
         var optionInfos = GetOptions().ToList();
@@ -330,4 +343,60 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
 
         return matchedOptions - missingOptions - unrecognizedOptions;
     }
+
+    public string ToGeneralHelpString()
+    {
+        var rtt = new CliMethodInfoGeneralHelpRtt(this);
+        return rtt.ToString();
+    }
+
+    internal IEnumerable<object> Segments => _routeSegments;
+}
+
+internal partial class CliMethodInfoGeneralHelpRtt
+{
+    private readonly CliMethodInfo _method;
+
+    public CliMethodInfoGeneralHelpRtt(CliMethodInfo method)
+    {
+        _method = method;
+        var signature = new StringBuilder();
+        foreach (var attribute in _method.GetCustomAttributes(true))
+        {
+            if (attribute is CliRouteAttribute route)
+            {
+                signature.Append($" {route.RouteSignature}");
+            }
+            else if(attribute is CliArgumentAttribute argument) 
+            {
+                signature.Append($" <{argument.Name.ToUpperInvariant()}>");
+            }
+        }
+
+        Signature = signature.ToString().Trim();
+        Arguments = _method
+            .GetParameters()
+            .OfType<CliArgumentParameterInfo>()
+            .Select(info => new Argument($"<{info.CliArgumentName.ToUpperInvariant()}>", info.Description))
+            .ToArray();
+        Options = _method
+            .GetOptions()
+            .Select(o => new Option(o.PipeSeparatedAliases, o.Description)).ToArray();
+
+        //foreach (var option in _method.GetOptions())
+        //{
+        //    signature.Append($" {option.PipeSeparatedAliases}");
+        //}
+        //Signature = signature.ToString().Trim();
+    }
+
+    public string Description => _method.Description;
+
+    public string Signature { get; }
+
+    public IEnumerable<Argument> Arguments { get; }
+    public IEnumerable<Option> Options { get; }
+
+    public record Argument(string Name, string Description);
+    public record Option(string Signature, string Description);
 }
