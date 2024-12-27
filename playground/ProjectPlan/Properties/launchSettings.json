@@ -8,7 +8,7 @@
       "commandName": "Project",
       "commandLineArgs": "deploy pgup.json --connection \"%DEV_POSTGRES_CONNECTION_STRING%\" --overwrite --force -p.dbManagerPwd postgres"
     },
-    "help root": {
+    "-?": {
       "commandName": "Project",
       "commandLineArgs": "-?"
     },
@@ -27,6 +27,14 @@
     "help template list": {
       "commandName": "Project",
       "commandLineArgs": "template list -?"
+    },
+    "--version": {
+      "commandName": "Project",
+      "commandLineArgs": "--version"
+    },
+    "--version -?": {
+      "commandName": "Project",
+      "commandLineArgs": "--version -?"
     },
     "WSL": {
       "commandName": "WSL2",

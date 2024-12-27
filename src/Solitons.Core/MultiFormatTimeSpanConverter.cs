@@ -11,6 +11,11 @@ namespace Solitons;
 /// </summary>
 public sealed class MultiFormatTimeSpanConverter : TypeConverter
 {
+    public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType)
+    {
+        return sourceType == typeof(string);
+    }
+
     /// <inheritdoc />
     [DebuggerStepThrough]
     public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)

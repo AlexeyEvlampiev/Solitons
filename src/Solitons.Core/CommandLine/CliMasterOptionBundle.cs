@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace Solitons.CommandLine;
 
-public class CliMasterOptionBundle : CliOptionBundle
+public class CliMasterOptionBundle : CliOptionBundle, ICloneable
 {
     public new static bool IsAssignableFrom(Type type) => typeof(CliMasterOptionBundle).IsAssignableFrom(type);
 
@@ -21,4 +21,9 @@ public class CliMasterOptionBundle : CliOptionBundle
     {
         Debug.WriteLine($"{GetType()}.{nameof(OnError)}");
     }
+
+    public CliMasterOptionBundle Clone() => (CliMasterOptionBundle)this.MemberwiseClone();
+
+    object ICloneable.Clone() => Clone();
+
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
@@ -10,6 +11,7 @@ using System.Linq;
 using System.Net;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -22,6 +24,97 @@ namespace Solitons;
 
 public static partial class Extensions
 {
+    /// <summary>
+    /// Converts the specified invariant string to the desired type using the provided <see cref="TypeConverter"/>.
+    /// </summary>
+    /// <param name="converter">The <see cref="TypeConverter"/> to perform the conversion.</param>
+    /// <param name="input">The input string to convert from.</param>
+    /// <param name="targetType">The desired target <see cref="Type"/> for the conversion result.</param>
+    /// <returns>The converted object of the specified <paramref name="targetType"/>.</returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown if <paramref name="converter"/> or <paramref name="targetType"/> is <c>null</c>.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown if the conversion succeeds but the resulting value is not of the specified <paramref name="targetType"/>.
+    /// </exception>
+    public static object ConvertFromInvariantString(this TypeConverter converter, string input, Type targetType)
+    {
+        // Null checks for arguments
+        if (converter == null)
+            throw new ArgumentNullException(nameof(converter), "The type converter cannot be null.");
+
+        if (targetType == null)
+            throw new ArgumentNullException(nameof(targetType), "The target type cannot be null.");
+
+        // Attempt to convert the input
+        var value = converter.ConvertFromInvariantString(input);
+
+        // Check if the converted value is of the required type
+        if (value == null || !targetType.IsInstanceOfType(value))
+        {
+            throw new InvalidOperationException(
+                $"Conversion succeeded, but the result is not of the expected type. " +
+                $"Expected: '{targetType.FullName}', but got: '{value?.GetType().FullName ?? "null"}'. " +
+                $"Input: '{input}'.");
+        }
+
+        return value;
+    }
+
+
+    /// <summary>
+    /// Creates an instance of the <see cref="TypeConverter"/> specified by the <see cref="TypeConverterAttribute"/>.
+    /// </summary>
+    /// <param name="attribute">The <see cref="TypeConverterAttribute"/> that specifies the converter type.</param>
+    /// <returns>An instance of the <see cref="TypeConverter"/> specified by the attribute.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when the <paramref name="attribute"/> is <c>null</c>.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the <see cref="TypeConverterAttribute"/> does not specify a converter type or 
+    /// when the specified type is not a valid <see cref="TypeConverter"/>.
+    /// </exception>
+    /// <exception cref="TypeLoadException">Thrown when the converter type cannot be found.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when an instance of the converter type cannot be created.</exception>
+    public static TypeConverter CreateInstance(this TypeConverterAttribute attribute)
+    {
+        if (attribute == null)
+            throw new ArgumentNullException(nameof(attribute));
+
+        string converterTypeName = attribute.ConverterTypeName;
+
+        if (string.IsNullOrWhiteSpace(converterTypeName))
+            throw new InvalidOperationException("The TypeConverterAttribute does not specify a converter type.");
+
+        var converterType = Type.GetType(converterTypeName);
+        if (converterType == null)
+            throw new TypeLoadException($"Unable to load the type '{converterTypeName}'.");
+
+        if (!typeof(TypeConverter).IsAssignableFrom(converterType))
+            throw new InvalidOperationException($"The type '{converterTypeName}' is not a valid TypeConverter.");
+
+        try
+        {
+            return Activator.CreateInstance(converterType) as TypeConverter 
+                   ?? throw new InvalidOperationException($"The type '{converterTypeName}' could not be cast to TypeConverter.");
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Failed to create an instance of '{converterTypeName}'.", ex);
+        }
+    }
+
+
+    [DebuggerStepThrough]
+    public static Task InvokeAsync(this MethodInfo method, object? instance, object?[] args)
+    {
+        var result = method.Invoke(instance, args);
+        if (result is Task task)
+        {
+            return task;
+        }
+
+        return Task.FromResult(result);
+    }
+
     /// <summary>
     /// Copies the contents of the source directory to the destination directory.
     /// </summary>
@@ -946,29 +1039,6 @@ public static partial class Extensions
                value == 303 ||
                value == 308;
     }
-
-    /// <summary>
-    /// Throws a <see cref="NullReferenceException"/> with the specified <paramref name="message"/> if the specified object is null.
-    /// </summary>
-    /// <typeparam name="T">The type of the object to check for null.</typeparam>
-    /// <param name="self">The object to check for null.</param>
-    /// <param name="message">The exception message to use if the object is null. If not specified, a default message is used.</param>
-    /// <param name="paramName">The name of the parameter being checked. This parameter is automatically provided by the compiler and does not need to be specified explicitly.</param>
-    /// <returns>The non-null object if it is not null.</returns>
-    /// <exception cref="NullReferenceException">Thrown when the object is null.</exception>
-    /// <remarks>The <paramref name="paramName"/> parameter is automatically provided by the compiler and represents the name of the parameter being checked.</remarks>
-    [DebuggerStepThrough]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [return: NotNull]
-    public static T ThrowIfNull<T>(this T self, string? message = null, [CallerArgumentExpression("self")] string paramName = "") where T : class?
-    {
-        if (self is null)
-        {
-            throw new NullReferenceException(message.DefaultIfNullOrWhiteSpace($"{paramName} is null."));
-        }
-        return self;
-    }
-
 
 
     /// <summary>

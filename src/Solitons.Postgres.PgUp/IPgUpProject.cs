@@ -1,5 +1,4 @@
-﻿using Solitons.CommandLine;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace Solitons.Postgres.PgUp;
 
@@ -23,7 +22,7 @@ public interface IPgUpProject
         cancellation.ThrowIfCancellationRequested();
         if (false == File.Exists(projectFilePath))
         {
-            throw new CliExitException("Specified PgUp project file does not exist.");
+            throw PgUpExitException.ProjectFileNotFound(projectFilePath);
         }
 
         try
@@ -34,13 +33,9 @@ public interface IPgUpProject
             var project = PgUpSerializer.Deserialize(pgUpJson, parameters);
             return project;
         }
-        catch (CliExitException)
-        {
-            throw;
-        }
         catch (Exception e)
         {
-            throw new CliExitException($"Failed to load project file. {e.Message}");
+            throw PgUpExitException.FailedToLoadProjectFile(projectFilePath, e.Message);
         }
     }
 }

@@ -14,7 +14,7 @@ RESET ROLE; -- The following command require the current session role
 
 
 -- Schema for holding PostgreSQL extensions, keeping them separate from business data.
-CREATE SCHEMA IF NOT EXISTS "extensions" AUTHORIZATION ${dbowner};
+CREATE SCHEMA IF NOT EXISTS "extensions" AUTHORIZATION ${databaseOwner};
 COMMENT ON SCHEMA "extensions" IS 'Separates PostgreSQL extensions from business data for cleaner management.';
 
 -- Create the required extensions within the "extensions" schema.
@@ -27,36 +27,36 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm SCHEMA extensions CASCADE;
 DO $$ 
 BEGIN 
     -- Check if the database manager role exists, and create it if not.
-    IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = '${dbmanager}') THEN
-        CREATE ROLE ${dbmanager} LOGIN PASSWORD '${dbmanagerpwd}';
+    IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = '${databaseAdmin}') THEN
+        CREATE ROLE ${databaseAdmin} LOGIN PASSWORD '${databaseAdminPassword}';
 	ELSE
 	    -- If the role exists, update its password and connection limit.
-		ALTER ROLE ${dbmanager} WITH 
-			PASSWORD '${dbmanagerpwd}'
+		ALTER ROLE ${databaseAdmin} WITH 
+			PASSWORD '${databaseAdminPassword}'
 			CONNECTION LIMIT 5;
     END IF;
 	
 	-- Add a comment to describe the purpose of the database manager role.
-	COMMENT ON ROLE ${dbmanager} IS 'Manages database operations for ${dbname}, with specified login credentials.';
+	COMMENT ON ROLE ${databaseAdmin} IS 'Manages database operations for ${databaseName}, with specified login credentials.';
 	
 	-- Grant the database owner role to the database manager.
-	GRANT ${dbowner} TO ${dbmanager};
+	GRANT ${databaseOwner} TO ${databaseAdmin};
 END $$;
 
 
 
-
+ALTER SCHEMA "public" OWNER TO ${databaseOwner};
 
 
 -- Create schemas to organize database objects effectively.
-SET ROLE ${dbowner};
+SET ROLE ${databaseOwner};
 
 
 -- Set schema ownership for consistency.
-ALTER SCHEMA "extensions" OWNER TO ${dbowner};
+ALTER SCHEMA "extensions" OWNER TO ${databaseOwner};
 
 -- Set the search path to prioritize schema lookup.
-ALTER DATABASE ${dbname} SET search_path TO "public", "extensions";
+ALTER DATABASE ${databaseName} SET search_path TO "public", "extensions";
 
 -- Create a table to track executed migration scripts.
 
@@ -78,13 +78,13 @@ COMMENT ON INDEX public.ix_migration_script_path IS 'Provides case-insensitive i
 
 REVOKE ALL ON TABLE public.migration_script FROM PUBLIC;
 GRANT SELECT ON TABLE public.migration_script TO PUBLIC;
-GRANT INSERT, UPDATE, DELETE ON TABLE public.migration_script TO ${dbOwner};
+GRANT INSERT, UPDATE, DELETE ON TABLE public.migration_script TO ${databaseOwner};
 
 
 -- Create a function to execute migration scripts if they are new.
 
 -- Function to execute SQL commands associated with migration scripts.
-CREATE OR REPLACE FUNCTION public.migration_script_execute(p_data jsonb) RETURNS BIGINT
+CREATE OR REPLACE FUNCTION public.execute_migration_script(p_data jsonb) RETURNS BIGINT
 AS
 $migration_script_execute$
 DECLARE
@@ -107,10 +107,12 @@ BEGIN
         RAISE EXCEPTION 'Required JSON property missing: "checksum"';
     END IF;
 
-    SELECT ms.* INTO v_migration_script FOR UPDATE
+    SELECT ms.*
+    INTO v_migration_script
     FROM public.migration_script AS ms
     WHERE ms."checksum" = v_checksum
-    LIMIT 1;
+    LIMIT 1
+    FOR UPDATE;
 
     IF FOUND THEN
         IF v_path = (v_migration_script).path THEN
@@ -135,12 +137,12 @@ END;
 $migration_script_execute$ LANGUAGE plpgsql;
 
 -- Set function ownership for consistency.
-ALTER FUNCTION public.migration_script_execute(jsonb) OWNER TO ${dbname};
+ALTER FUNCTION public.execute_migration_script(jsonb) OWNER TO ${databaseName};
 
 -- Add comments to describe the function's purpose and usage.
 
 -- Function to execute a SQL statement if the provided migration script path is new.
-COMMENT ON FUNCTION public.migration_script_execute("path" text, "sql" text) IS
+COMMENT ON FUNCTION public.execute_migration_script(p_request jsonb) IS
 'Executes or skips SQL commands based on migration script checksum and path changes in JSONB input. Requires "filePath", "command", and "checksum". Returns script ID or -1 if skipped.';
 
 

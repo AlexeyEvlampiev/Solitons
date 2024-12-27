@@ -87,10 +87,9 @@ public sealed class TransientStorageReceipt
             .ArgumentNullOrWhiteSpace(receipt, nameof(receipt))
             .AsBase64Bytes()
             .ToUtf8String();
-        var fields = JsonSerializer
-            .Deserialize<Dictionary<string, string>>(json)
-            .ThrowIfNull();
-        return new TransientStorageReceipt(fields);
+        return ThrowIf.NullReference(JsonSerializer
+            .Deserialize<Dictionary<string, string>>(json))
+            .Convert(fields => new TransientStorageReceipt(fields));
     }
 
     /// <summary>

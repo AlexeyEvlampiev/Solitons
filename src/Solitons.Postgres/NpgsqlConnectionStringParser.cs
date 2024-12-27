@@ -1,5 +1,7 @@
-﻿using Npgsql;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
+using Npgsql;
+
+namespace Solitons.Postgres;
 
 public static class NpgsqlConnectionStringParser
 {

@@ -3,7 +3,6 @@ using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Npgsql;
 using NpgsqlTypes;
-using Solitons.CommandLine;
 
 namespace Solitons.Postgres.PgUp;
 
@@ -25,14 +24,14 @@ public sealed class PgUpCommandBuilder
             }
             else if (matches.Count == 0)
             {
-                throw new CliExitException(
+                throw new PgUpExitException(
                     "Custom script execution command must have a single parameter " +
                     "that is JSON containing the script content to be executed and script metadata " +
                     "such as file path and script checksum.");
             }
             else
             {
-                throw new CliExitException(
+                throw new PgUpExitException(
                     "Custom script execution command must have a single parameter " +
                     "that is JSON containing the script content to be executed and script metadata " +
                     $"such as file path and script checksum. Actual: {matches.Count}");

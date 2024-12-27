@@ -341,9 +341,8 @@ public sealed class DataTransferPackage
     {
         var data = ThrowIf
             .ArgumentNullOrWhiteSpace(package, nameof(package))
-            .Convert(text => JsonSerializer.Deserialize<Dictionary<string, string>>(text))
-            .ThrowIfNull($"Invalid json");
-
+            .Convert(text => JsonSerializer.Deserialize<Dictionary<string, string>>(text));
+        data = ThrowIf.NullReference(data, $"Invalid json");
         if (false == data.TryGetValue(TypeIdKey, out var value) ||
             false == Guid.TryParse(value, out var typeId))
         {

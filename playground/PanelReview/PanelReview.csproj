@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Solitons.AzProvider\Solitons.AzProvider.csproj" />
+    <ProjectReference Include="..\..\src\Solitons.Azure\Solitons.Azure.csproj" />
   </ItemGroup>
 
 </Project>

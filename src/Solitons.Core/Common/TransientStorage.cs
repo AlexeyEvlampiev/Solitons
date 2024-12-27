@@ -24,11 +24,10 @@ namespace Solitons.Common
         /// </summary>
         protected TransientStorage()
         {
-            var att = (GuidAttribute)GetType()
-                .GetCustomAttribute(typeof(GuidAttribute))
-                .ThrowIfNull();
+            var att = ThrowIf.NullReference(
+                GetType()
+                .GetCustomAttribute(typeof(GuidAttribute)) as GuidAttribute);
             _id = Guid.Parse(att.Value);
-
         }
 
         /// <summary>
@@ -89,9 +88,8 @@ namespace Solitons.Common
             }
                 
             cancellation.ThrowIfCancellationRequested();
-            var stream = await DownloadAsync(receipt, cancellation);
+            var stream = ThrowIf.NullReference(await DownloadAsync(receipt, cancellation));
             return stream
-                .ThrowIfNull($"{GetType()}.{nameof(DownloadAsync)} returned null.")
                 .ThrowIfCanNotRead();
         }
     }

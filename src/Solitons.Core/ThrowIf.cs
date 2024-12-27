@@ -295,7 +295,7 @@ public static class ThrowIf
             throw new ArgumentNullException(paramName, message);
         }
 
-        if(string.IsNullOrEmpty(value))
+        if(string.IsNullOrWhiteSpace(value))
         {
             message ??= IsVariableName(paramName)
                 ? $"{paramName} is an empty or a whitespace {typeof(string)} value."
@@ -445,4 +445,43 @@ public static class ThrowIf
                 .DefaultIfNullOrWhiteSpace($"{paramName}.{nameof(value.CanWrite)} is false."), 
                 paramName);
     }
+
+    /// <summary>
+    /// Throws an <see cref="InvalidOperationException"/> if the provided condition is <c>false</c>.
+    /// </summary>
+    /// <param name="condition">The condition to check.</param>
+    /// <param name="message">The exception message to use if the condition is <c>false</c>.</param>
+    /// <param name="argExpression">The argument expression to use in the exception message if <paramref name="message"/> is <c>null</c>.</param>
+    /// <exception cref="InvalidOperationException">Thrown if the condition is <c>false</c>.</exception>
+    [DebuggerNonUserCode, MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void True(bool condition, string? message = null, [CallerArgumentExpression("condition")] string argExpression = "")
+    {
+        if (!condition)
+        {
+            message ??= IsVariableName(argExpression)
+                ? $"{argExpression} is not true."
+                : $"{argExpression} evaluated to false.";
+            throw new InvalidOperationException(message);
+        }
+    }
+
+    /// <summary>
+    /// Throws an <see cref="InvalidOperationException"/> if the provided condition is <c>true</c>.
+    /// </summary>
+    /// <param name="condition">The condition to check.</param>
+    /// <param name="message">The exception message to use if the condition is <c>true</c>.</param>
+    /// <param name="argExpression">The argument expression to use in the exception message if <paramref name="message"/> is <c>null</c>.</param>
+    /// <exception cref="InvalidOperationException">Thrown if the condition is <c>true</c>.</exception>
+    [DebuggerNonUserCode, MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void False(bool condition, string? message = null, [CallerArgumentExpression("condition")] string argExpression = "")
+    {
+        if (condition == false)
+        {
+            message ??= IsVariableName(argExpression)
+                ? $"{argExpression} is not false."
+                : $"{argExpression} evaluated to true.";
+            throw new InvalidOperationException(message);
+        }
+    }
+
 }

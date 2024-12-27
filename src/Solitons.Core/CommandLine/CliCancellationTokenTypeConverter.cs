@@ -7,7 +7,7 @@ using System.Xml;
 
 namespace Solitons.CommandLine;
 
-public sealed class CliCancellationTokenTypeConverter : TypeConverter
+internal sealed class CliCancellationTokenTypeConverter : TypeConverter
 {
     [DebuggerStepThrough]
     public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
