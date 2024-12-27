@@ -27,6 +27,7 @@ public class CliProcessor : CliProcessorBase
     private CliProcessor(CliActionVNext[] actions)
     {
         _actions = [.. actions];
+        _globalOptions = [];
     }
 
     protected CliProcessor(Action<ICliProcessorConfig> initialize)
