@@ -17,6 +17,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="CommandLine\Contract.generated.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Contract.tt</DependentUpon>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="NJsonSchema" Version="11.1.0" />
     <PackageReference Include="Npgsql" Version="9.0.2" />
   </ItemGroup>
@@ -27,6 +35,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="CommandLine\Contract.generated.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Contract.tt</DependentUpon>
+    </Compile>
     <Compile Update="Core\Formatting\PgUpConnectionDisplayRtt.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -50,6 +63,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="CommandLine\Contract.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Contract.generated.cs</LastGenOutput>
+    </None>
     <None Update="Core\Formatting\PgUpConnectionDisplayRtt.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>
       <LastGenOutput>PgUpConnectionDisplayRtt.cs</LastGenOutput>
