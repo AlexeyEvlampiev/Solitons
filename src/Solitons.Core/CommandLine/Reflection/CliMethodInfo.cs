@@ -20,8 +20,8 @@ internal sealed class CliMethodInfo : MethodInfoDecorator, IFormattable
 
 
     private CliMethodInfo(
-        CliRouteAttribute[] baseRoutes,
-        MethodInfo method) : base(method)
+        MethodInfo method,
+        CliContext context) : base(method)
     {
         Debug.Assert(IsCliMethod(method));
         var parameters = base.GetParameters();
@@ -68,10 +68,7 @@ internal sealed class CliMethodInfo : MethodInfoDecorator, IFormattable
         Description = attributes.OfType<DescriptionAttribute>().Select(a => a.Description).FirstOrDefault(Name);
     }
 
-    [DebuggerStepThrough]
-    public static CliMethodInfo[] Get(Type type) => Get([], type);
-
-    public static CliMethodInfo[] Get(CliRouteAttribute[] baseRoutes, Type type)
+    public static CliMethodInfo[] Get(Type type, CliContext context)
     {
         var methods = FluentList
             .Create(type)
@@ -89,7 +86,7 @@ internal sealed class CliMethodInfo : MethodInfoDecorator, IFormattable
                 continue;
             }
 
-            list.Add(new CliMethodInfo(baseRoutes, method));
+            list.Add(new CliMethodInfo(method, context));
         }
 
         return list.ToArray();

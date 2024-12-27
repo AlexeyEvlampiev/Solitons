@@ -1,4 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine.Reflection;
 
@@ -17,6 +21,11 @@ public class CliRouteAttribute : Attribute
     public CliRouteAttribute(string routeSignature)
     {
         RouteSignature = routeSignature;
+        Segments = [
+            ..Regex
+                .Split(RouteSignature, @"(?<=\S)\s+(?=\S)")
+                .Select(segment => segment.Trim())
+        ];
     }
 
     /// <summary>
@@ -24,7 +33,7 @@ public class CliRouteAttribute : Attribute
     /// </summary>
     public string RouteSignature { get; }
 
-
+    public ImmutableArray<string> Segments { get; }
 
     public override string ToString() => RouteSignature;
 }

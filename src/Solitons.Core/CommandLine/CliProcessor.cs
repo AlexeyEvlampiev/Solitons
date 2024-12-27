@@ -14,67 +14,116 @@ public class CliProcessor : CliProcessorBase
     private readonly ImmutableArray<CliActionVNext> _actions;
     private readonly ImmutableArray<CliGlobalOptionBundle> _globalOptions;
 
-    protected interface ICliProcessorConfig
+    public interface ICliProcessorConfig
     {
-        FluentList<CliGlobalOptionBundle> GlobalOptions { get; }
+        ICliProcessorConfig WithProcessorAsService(bool processorIsService);
+        ICliProcessorConfig ConfigGlobalOptions(Action<FluentList<CliGlobalOptionBundle>> config);
+        ICliProcessorConfig AddService(object instance, IEnumerable<CliRouteAttribute> rootRoutes);
+        ICliProcessorConfig AddService(Type serviceType, IEnumerable<CliRouteAttribute> rootRoutes);
+
+        [DebuggerStepThrough]
+        public sealed ICliProcessorConfig AddService(object instance) => AddService(instance, []);
+
+        [DebuggerStepThrough]
+        public sealed ICliProcessorConfig AddService(Type serviceType) => AddService(serviceType, []);
+
+        [DebuggerStepThrough]
+        public sealed ICliProcessorConfig AddService<T>(
+            IEnumerable<CliRouteAttribute> rootRoutes) =>
+            AddService(typeof(T), rootRoutes);
+
+        [DebuggerStepThrough]
+        public sealed ICliProcessorConfig AddService<T>() =>
+            AddService(typeof(T), []);
     }
 
+    sealed record Service(Type ServiceType, object? Instances, ImmutableArray<CliRouteAttribute> RootRoutes);
     sealed class Config : ICliProcessorConfig
     {
         public FluentList<CliGlobalOptionBundle> GlobalOptions { get; } = new();
+
+        public List<Service> Services { get; } = new();
+
+        public ICliProcessorConfig WithProcessorAsService(bool processorIsService)
+        {
+            this.ProcessorIsService = processorIsService;
+            return this;
+        }
+
+        public bool ProcessorIsService { get; private set; }
+
+        public ICliProcessorConfig ConfigGlobalOptions(Action<FluentList<CliGlobalOptionBundle>> config)
+        {
+            config.Invoke(GlobalOptions);
+            return this;
+        }
+
+        public ICliProcessorConfig AddService(
+            object instance, 
+            IEnumerable<CliRouteAttribute> rootRoutes)
+        {
+            Services.Add(new Service(instance.GetType(), instance, [..rootRoutes.Distinct()]));
+            return this;
+        }
+
+        public ICliProcessorConfig AddService(Type serviceType, IEnumerable<CliRouteAttribute> rootRoutes)
+        {
+            var ctor = serviceType.GetConstructor([]);
+            object? instance = null;
+            if (serviceType.IsAbstract || ctor is null)
+            {
+                instance = null;
+            }
+            else
+            {
+                instance = ctor.Invoke([]);
+            }
+
+            Services.Add(new Service(serviceType, instance, [.. rootRoutes.Distinct()]));
+
+            return this;
+        }
     }
 
-    private CliProcessor(CliActionVNext[] actions)
-    {
-        _actions = [.. actions];
-        _globalOptions = [];
-    }
 
     protected CliProcessor(Action<ICliProcessorConfig> initialize)
     {
         var config = new Config();
         initialize.Invoke(config);
-        _globalOptions = [.. config.GlobalOptions.Distinct()];
-        _actions = [.. GetActions(GetType(), this)];
-    }
-
-    [DebuggerStepThrough]
-    public static CliProcessor From<T>() => From(typeof(T));
-
-
-    public static CliProcessor From(Type type)
-    {
-        if (type.IsInterface ||
-            type.IsAbstract)
+        if (config.ProcessorIsService)
         {
-            throw new ArgumentException("Oops...");
+            ((ICliProcessorConfig)config).AddService(this);
         }
-
-        var instance = Activator.CreateInstance(type);
-        return From(type, instance);
+        
+        
+        
+        _globalOptions = [.. config.GlobalOptions.Distinct()];
+        _actions = 
+            [
+                ..config.Services
+                    .SelectMany(service =>
+                    {
+                        var context = new CliContext(service.RootRoutes, _globalOptions);
+                        return CliMethodInfo
+                            .Get(service.ServiceType, context)
+                            .Select(method => new CliActionVNext(method, service.Instances));
+                    })
+            ];
     }
+
 
     [DebuggerStepThrough]
-    public static CliProcessor From(object program) => From(program.GetType(), program);
-
-
-    private static CliProcessor From(Type type, object? instance)
+    public static CliProcessor CreateDefault(Action<ICliProcessorConfig> initialize)
     {
-        var actions = GetActions(type, instance);
-        return new CliProcessor(actions);
-    }
-
-    [DebuggerStepThrough]
-    public static int Process<T>(string commandLine)
-    {
-        return From<T>().Process(commandLine);
+        return new CliProcessor(initialize);
     }
 
 
-    private static CliActionVNext[] GetActions(Type type, object? instance)
+
+    private static CliActionVNext[] GetActions(Type type, object? instance, CliContext context)
     {
         var methods = CliMethodInfo
-            .Get(type);
+            .Get(type, context);
 
         var actions = methods
             .Select(m =>

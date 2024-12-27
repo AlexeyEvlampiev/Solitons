@@ -13,7 +13,7 @@ public class VanillaTemplates_Should
         await TestConnectionAsync();
 
         var processor = CliProcessor
-            .From(new Program());
+            .CreateDefault(config => config.AddService(new Program()));
         var templates = PgUpTemplateManager
             .GetTemplateDirectories()
                 .ToList();

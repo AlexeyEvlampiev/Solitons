@@ -25,7 +25,7 @@ public sealed class CliMethodInfo_Get_Should
 
         internal static void Test()
         {
-            var methods = CliMethodInfo.Get(typeof(IPgUpTestCase));
+            var methods = CliMethodInfo.Get(typeof(IPgUpTestCase), CliContext.Empty);
             Assert.Equal(1, methods.Length);
             TestInitializeMethod(methods.Single(m => m.Name.Equals(nameof(Initialize))));
         }
