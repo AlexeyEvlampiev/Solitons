@@ -15,6 +15,7 @@ namespace Solitons.CommandLine.Reflection;
 
 internal sealed class CliMethodInfo : MethodInfoDecorator, IFormattable
 {
+    private readonly CliContext _context;
     private readonly ImmutableArray<ParameterInfoDecorator> _parameters;
     private readonly ImmutableArray<object> _routeSegments;
 
@@ -23,6 +24,7 @@ internal sealed class CliMethodInfo : MethodInfoDecorator, IFormattable
         MethodInfo method,
         CliContext context) : base(method)
     {
+        _context = context;
         Debug.Assert(IsCliMethod(method));
         var parameters = base.GetParameters();
         var attributes = GetCustomAttributes(true).OfType<Attribute>().ToList();
@@ -187,6 +189,11 @@ internal sealed class CliMethodInfo : MethodInfoDecorator, IFormattable
                     yield return o;
                 }
             }
+        }
+
+        foreach (var option in _context.GlobalOptions)
+        {
+            yield return option;
         }
     }
 
