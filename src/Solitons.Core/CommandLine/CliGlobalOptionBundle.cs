@@ -62,4 +62,16 @@ public abstract class CliGlobalOptionBundle : CliOptionBundle, ICloneable
             yield return option;
         }
     }
+
+    internal void PopulateFrom(CliCommandLine commandLine)
+    {
+        foreach (var info in _options)
+        {
+            var value = info.Materialize(commandLine);
+            if (value != null)
+            {
+                info.SetValue(this, value);
+            }
+        }
+    }
 }

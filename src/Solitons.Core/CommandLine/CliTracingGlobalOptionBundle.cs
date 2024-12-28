@@ -16,7 +16,6 @@ public sealed class CliTracingGlobalOptionBundle : CliGlobalOptionBundle
     {
         _listenersSnapshot.Clear();
         _listenersSnapshot.AddRange(Trace.Listeners.OfType<TraceListener>());
-        Trace.Listeners.Clear();
         Trace.Listeners.Add(new CliTraceListener(Level));
         base.OnExecutingAction(commandLine);
     }

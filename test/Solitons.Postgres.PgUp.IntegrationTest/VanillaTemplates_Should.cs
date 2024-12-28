@@ -13,7 +13,11 @@ public class VanillaTemplates_Should
         await TestConnectionAsync();
 
         var processor = CliProcessor
-            .CreateDefault(config => config.AddService(new Program()));
+            .CreateDefault(config => config
+                .ConfigGlobalOptions(options => options
+                    .Clear()
+                    .Add(new CliTracingGlobalOptionBundle()))
+                .AddService(new Program()));
         var templates = PgUpTemplateManager
             .GetTemplateDirectories()
                 .ToList();
@@ -26,7 +30,7 @@ public class VanillaTemplates_Should
                 .Convert(root => Path.Combine(root, Guid.NewGuid().ToString()))
                 .Convert(Directory.CreateDirectory);
 
-            var exitCode = processor.Process($@"pgup init ""{workingDir.FullName}""  --template {template.Name}");
+            var exitCode = processor.Process($@"pgup init ""{workingDir.FullName}""  --template {template.Name} --trace Verbose");
             Assert.True(exitCode == 0, $"Template initialization failed with exit code {exitCode}");
 
             var pgUpProjectPath = Path.Combine(workingDir.FullName, "pgup.json");

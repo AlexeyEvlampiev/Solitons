@@ -35,5 +35,4 @@ public interface ICliOptionMemberInfo
 
 
     bool IsNotIn(CliCommandLine commandLine) => (false == IsIn(commandLine));
-
 }

@@ -98,10 +98,17 @@ internal sealed class CliMethodInfo : MethodInfoDecorator, IFormattable
 
     public int Invoke(object? instance, CliCommandLine commandLine)
     {
+        Action onExecuted = () => { };
         try
         {
+            var globalOptionsBundles = _context.ToGlobalOptionBundles(commandLine);
+            globalOptionsBundles.ForEach(bundle => bundle.OnExecutingAction(commandLine));
+
+            onExecuted = () => globalOptionsBundles
+                .ForEach(bundle => bundle.OnActionExecuted(commandLine));
+
             var args = ToMethodArguments(commandLine);
-            object result = Invoke(instance, args);
+            object? result = Invoke(instance, args);
             if (result is Task task)
             {
                 Debug.WriteLine($"Awaiting '{Name}' returned task");
@@ -126,6 +133,10 @@ internal sealed class CliMethodInfo : MethodInfoDecorator, IFormattable
         catch (TargetInvocationException e)
         {
             throw e.InnerException ?? new CliExitException("Internal error");
+        }
+        finally
+        {
+            onExecuted.Invoke();
         }
 
 

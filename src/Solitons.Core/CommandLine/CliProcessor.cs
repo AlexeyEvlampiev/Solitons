@@ -12,7 +12,6 @@ namespace Solitons.CommandLine;
 public class CliProcessor : CliProcessorBase
 {
     private readonly ImmutableArray<CliActionVNext> _actions;
-    private readonly ImmutableArray<CliGlobalOptionBundle> _globalOptions;
 
     public interface ICliProcessorConfig
     {
@@ -97,13 +96,13 @@ public class CliProcessor : CliProcessorBase
         
         
         
-        _globalOptions = [.. config.GlobalOptions.Distinct()];
+        var globalOptions = config.GlobalOptions.Distinct();
         _actions = 
             [
                 ..config.Services
                     .SelectMany(service =>
                     {
-                        var context = new CliContext(service.RootRoutes, _globalOptions);
+                        var context = new CliContext(service.RootRoutes, globalOptions);
                         return CliMethodInfo
                             .Get(service.ServiceType, context)
                             .Select(method => new CliActionVNext(method, service.Instances));
@@ -197,21 +196,5 @@ public class CliProcessor : CliProcessorBase
 
         [DebuggerStepThrough]
         public string GetGeneralHelp() => method.ToGeneralHelpString();
-    }
-
-    protected override void OnExecutingAction(CliCommandLine commandLine)
-    {
-        foreach (var bundle in _globalOptions)
-        {
-            bundle.OnExecutingAction(commandLine);
-        }
-    }
-
-    protected override void OnActionExecuted(CliCommandLine commandLine, int exitCode)
-    {
-        foreach (var bundle in _globalOptions)
-        {
-            bundle.OnActionExecuted(commandLine);
-        }
     }
 }
