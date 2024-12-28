@@ -239,6 +239,14 @@ internal sealed class CliScalarOptionMaterializer : CliOptionMaterializer
                 }
                 return result;
             }
+            catch (FormatException ex) when(declaredType.IsEnum)
+            {
+                var expectedValueCsv = Enum
+                    .GetNames(declaredType)
+                    .Join(", ");
+                throw new CliOptionMaterializationException(
+                    $"The value '{value}' is invalid. Expected: {expectedValueCsv}. {ex.Message}");
+            }
             catch (Exception ex)
             {
                 throw new CliOptionMaterializationException(

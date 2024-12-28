@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.ComponentModel;
+using System.Diagnostics;
 using System.Reactive;
 using Solitons.CommandLine;
 using Solitons.Postgres.PgUp.CommandLine;
@@ -13,10 +14,10 @@ public sealed class Program() : IPgUpCommandLineContract
     private static readonly TimeSpan DefaultActionTimeout = TimeSpan.FromMinutes(10);
 
     public static int Main() => CliProcessor
-            .Create(Initialize)
+            .Create(Configure)
             .Process();
 
-    private static void Initialize(ICliProcessorConfig config)
+    private static void Configure(ICliProcessorConfig config)
     {
         config
             .AddService(new Program())
