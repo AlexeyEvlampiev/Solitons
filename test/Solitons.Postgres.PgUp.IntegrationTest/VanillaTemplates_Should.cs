@@ -13,7 +13,7 @@ public class VanillaTemplates_Should
         await TestConnectionAsync();
 
         var processor = CliProcessor
-            .CreateDefault(config => config
+            .Create(config => config
                 .ConfigGlobalOptions(options => options
                     .Clear()
                     .Add(new CliTracingGlobalOptionBundle()))

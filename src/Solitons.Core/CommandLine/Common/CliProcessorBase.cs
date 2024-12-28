@@ -129,11 +129,6 @@ public abstract class CliProcessorBase
 
     protected abstract void DisplayGeneralHelp(CliCommandLine commandLine);
     
-
-    protected virtual string Logo => String.Empty;
-
-    protected virtual string Description => String.Empty;
-
     protected virtual bool IsGeneralHelpRequest(CliCommandLine commandLine)
     {
         if (commandLine.Segments.Length != 1)

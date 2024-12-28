@@ -9,32 +9,11 @@ using Solitons.CommandLine.Reflection;
 
 namespace Solitons.CommandLine;
 
-public class CliProcessor : CliProcessorBase
+public sealed class CliProcessor : CliProcessorBase
 {
+    private readonly string _logo;
+    private readonly string _description;
     private readonly ImmutableArray<CliActionVNext> _actions;
-
-    public interface ICliProcessorConfig
-    {
-        ICliProcessorConfig WithProcessorAsService(bool processorIsService);
-        ICliProcessorConfig ConfigGlobalOptions(Action<FluentList<CliGlobalOptionBundle>> config);
-        ICliProcessorConfig AddService(object instance, IEnumerable<CliRouteAttribute> rootRoutes);
-        ICliProcessorConfig AddService(Type serviceType, IEnumerable<CliRouteAttribute> rootRoutes);
-
-        [DebuggerStepThrough]
-        public sealed ICliProcessorConfig AddService(object instance) => AddService(instance, []);
-
-        [DebuggerStepThrough]
-        public sealed ICliProcessorConfig AddService(Type serviceType) => AddService(serviceType, []);
-
-        [DebuggerStepThrough]
-        public sealed ICliProcessorConfig AddService<T>(
-            IEnumerable<CliRouteAttribute> rootRoutes) =>
-            AddService(typeof(T), rootRoutes);
-
-        [DebuggerStepThrough]
-        public sealed ICliProcessorConfig AddService<T>() =>
-            AddService(typeof(T), []);
-    }
 
     sealed record Service(Type ServiceType, object? Instances, ImmutableArray<CliRouteAttribute> RootRoutes);
     sealed class Config : ICliProcessorConfig
@@ -43,13 +22,22 @@ public class CliProcessor : CliProcessorBase
 
         public List<Service> Services { get; } = new();
 
-        public ICliProcessorConfig WithProcessorAsService(bool processorIsService)
+        public string Logo { get; set; }
+
+        public string Description { get; set; }
+
+        public ICliProcessorConfig WithLogo(string logo)
         {
-            this.ProcessorIsService = processorIsService;
+            Logo = logo;
             return this;
         }
 
-        public bool ProcessorIsService { get; private set; }
+
+        public ICliProcessorConfig WithDescription(string description)
+        {
+            Description = description;
+            return this;
+        }
 
         public ICliProcessorConfig ConfigGlobalOptions(Action<FluentList<CliGlobalOptionBundle>> config)
         {
@@ -85,16 +73,12 @@ public class CliProcessor : CliProcessorBase
     }
 
 
-    protected CliProcessor(Action<ICliProcessorConfig> initialize)
+    private CliProcessor(Action<ICliProcessorConfig> initialize)
     {
         var config = new Config();
         initialize.Invoke(config);
-        if (config.ProcessorIsService)
-        {
-            ((ICliProcessorConfig)config).AddService(this);
-        }
-        
-        
+        _logo = config.Logo;
+        _description = config.Description;
         
         var globalOptions = config.GlobalOptions.Distinct();
         _actions = 
@@ -112,7 +96,7 @@ public class CliProcessor : CliProcessorBase
 
 
     [DebuggerStepThrough]
-    public static CliProcessor CreateDefault(Action<ICliProcessorConfig> initialize)
+    public static CliProcessor Create(Action<ICliProcessorConfig> initialize)
     {
         return new CliProcessor(initialize);
     }
@@ -147,15 +131,15 @@ public class CliProcessor : CliProcessorBase
 
     protected override void DisplayGeneralHelp(CliCommandLine commandLine)
     {
-        if (Logo.IsPrintable())
+        if (_logo.IsPrintable())
         {
-            Console.WriteLine(Logo);
+            Console.WriteLine(_logo);
             Enumerable.Range(0, 1).ForEach(_ => Console.WriteLine());
         }
 
-        if (Description.IsPrintable())
+        if (_description.IsPrintable())
         {
-            Console.WriteLine(Description);
+            Console.WriteLine(_description);
             Enumerable.Range(0, 2).ForEach(_ => Console.WriteLine());
         }
 

@@ -13,7 +13,7 @@ public class Program_Initialize_Should
     {
         var program = new Mock<IPgUpCommandLineContract>();
         var processor = CliProcessor
-            .CreateDefault(config => config.AddService(program.Object));
+            .Create(config => config.AddService(program.Object));
 
         processor.Process(commandLine);
         program.Verify(m => m.Initialize(".", template), Times.Once);

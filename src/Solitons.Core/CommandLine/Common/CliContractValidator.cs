@@ -39,7 +39,7 @@ public abstract class CliContractValidator<T> where T : class
         T proxy = DispatchProxy.Create<T, CliRouteProxy>();
 
         var processor = CliProcessor
-            .CreateDefault(config => config.AddService(proxy));
+            .Create(config => config.AddService(proxy));
 
         foreach (var testCase in testCases)
         {

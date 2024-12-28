@@ -7,29 +7,26 @@ using Solitons.Postgres.PgUp.Core;
 namespace Solitons.Postgres.PgUp;
 
 
-public sealed class Program() : CliProcessor(Initialize), IPgUpCommandLineContract
+public sealed class Program() : IPgUpCommandLineContract
 {
     const string PgUpDescription = "PgUp is a PostgreSQL migration tool using plain SQL for transaction-safe schema changes";
     private static readonly TimeSpan DefaultActionTimeout = TimeSpan.FromMinutes(10);
 
-    public static int Main()
-    {
-        var program = new Program();
-        return program.Process();
-    }
+    public static int Main() =>
+        CliProcessor
+            .Create(Initialize)
+            .Process();
 
     private static void Initialize(ICliProcessorConfig config)
     {
         config
-            .WithProcessorAsService(true)
+            .WithLogo(PgUpResource.AsciiLogo)
+            .WithDescription(PgUpDescription)
             .ConfigGlobalOptions(options => options
                 .Clear()
                 .Add(new CliTracingGlobalOptionBundle()));
     }
 
-    protected override string Logo => PgUpResource.AsciiLogo;
-
-    protected override string Description => PgUpDescription;
 
     [DebuggerStepThrough]
     void IPgUpCommandLineContract.Initialize(
