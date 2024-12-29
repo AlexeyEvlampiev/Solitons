@@ -25,8 +25,8 @@
     string maintenanceDatabaseDefault = "postgres";
     string maintenanceDatabaseParameterDescription = $"The maintenance database to use during the deployment process. Default is '{maintenanceDatabaseDefault}'.";
     string parametersParameterDescription = "Key-value pairs to override default parameters in the project file.";
-    string timeoutParameyerDefault = "1 minute";
-    string timeoutParameterDescription = $"The maximum time to retry deployment in case of transient errors. Default is '{timeoutParameyerDefault}'.";
+    string timeoutParameterDefault = "1 minute";
+    string timeoutParameterDescription = $"The maximum time to retry deployment in case of transient errors. Default is '{timeoutParameterDefault}'.";
     string overwriteParameterDescription = "Drops the existing database and recreates it. All data will be lost.";
     string forceParameterDescription = "Suppresses confirmation prompts when overwriting the database. Overrides safety checks.";
 #>
@@ -81,7 +81,7 @@ public interface IPgUp
         [CliOption("--password|--pwd|-p", "<#=passwordParameterDescription #>")]string password,
         [CliOption("--maintenance-database|-mdb", "<#= maintenanceDatabaseParameterDescription #>", Default = "<#= maintenanceDatabaseDefault #>")]string maintenanceDatabase,
         [CliOption("--parameters|--parameter|-param", "<#= parametersParameterDescription #>")]Dictionary<string, string> parameters,
-        [CliOption("--timeout", "<#= timeoutParameterDescription #>", Default = "<#= timeoutParameyerDefault #>")]TimeSpan timeout,
+        [CliOption("--timeout", "<#= timeoutParameterDescription #>", Default = "<#= timeoutParameterDefault #>")]TimeSpan timeout,
         [CliOption("--overwrite", "<#= overwriteParameterDescription #>")]CliFlag? overwrite = null,
         [CliOption("--force", "<#= forceParameterDescription #>")]CliFlag? force = null);
 }
