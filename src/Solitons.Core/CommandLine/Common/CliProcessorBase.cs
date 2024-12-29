@@ -104,7 +104,7 @@ public abstract class CliProcessorBase
     }
 
 
-    private int Process(CliCommandLine commandLine, CliAction action)
+    private int Process(CliCommandLine commandLine, IAction action)
     {
         OnExecutingAction(commandLine);
         var exitCode = action.Process(commandLine);
@@ -141,9 +141,9 @@ public abstract class CliProcessorBase
     }
 
 
-    protected abstract IEnumerable<CliAction> GetActions();
+    protected abstract IEnumerable<IAction> GetActions();
 
-    protected virtual CliAction[] Match(CliCommandLine commandLine)
+    protected virtual IAction[] Match(CliCommandLine commandLine)
     {
         var matches = GetActions()
             .Where(a => a.IsMatch(commandLine))
@@ -168,13 +168,12 @@ public abstract class CliProcessorBase
 
     }
 
-    protected abstract class CliAction
+    protected interface IAction
     {
-        public abstract bool IsMatch(CliCommandLine commandLine);
-        public abstract double Rank(CliCommandLine commandLine);
-        public abstract int Process(CliCommandLine commandLine);
-        public abstract void ShowHelp(CliCommandLine commandLine);
+        bool IsMatch(CliCommandLine commandLine);
+        int Process(CliCommandLine commandLine);
+        void ShowHelp(CliCommandLine commandLine);
 
-        public abstract double RankByOptions(CliCommandLine commandLine);
+        double RankByOptions(CliCommandLine commandLine);
     }
 }

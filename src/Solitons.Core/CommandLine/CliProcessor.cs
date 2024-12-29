@@ -13,7 +13,7 @@ public sealed class CliProcessor : CliProcessorBase
 {
     private readonly string _logo;
     private readonly string _description;
-    private readonly ImmutableArray<CliActionVNext> _actions;
+    private readonly ImmutableArray<CliAction> _actions;
 
     sealed record Service(Type ServiceType, object? Instances, ImmutableArray<CliRouteAttribute> RootRoutes);
     sealed class Config : ICliProcessorConfig
@@ -89,7 +89,7 @@ public sealed class CliProcessor : CliProcessorBase
                         var context = new CliContext(service.RootRoutes, globalOptions);
                         return CliMethodInfo
                             .Get(service.ServiceType, context)
-                            .Select(method => new CliActionVNext(method, service.Instances));
+                            .Select(method => new CliAction(method, service.Instances));
                     })
             ];
     }
@@ -103,7 +103,7 @@ public sealed class CliProcessor : CliProcessorBase
 
 
 
-    private static CliActionVNext[] GetActions(Type type, object? instance, CliContext context)
+    private static CliAction[] GetActions(Type type, object? instance, CliContext context)
     {
         var methods = CliMethodInfo
             .Get(type, context);
@@ -113,11 +113,11 @@ public sealed class CliProcessor : CliProcessorBase
             {
                 if (m.IsStatic)
                 {
-                    return new CliActionVNext(m, null);
+                    return new CliAction(m, null);
                 }
 
                 ThrowIf.NullReference(instance);
-                return new CliActionVNext(m, instance);
+                return new CliAction(m, instance);
             })
             .ToArray();
         return actions;
@@ -153,28 +153,24 @@ public sealed class CliProcessor : CliProcessorBase
 
 
 
-    protected override IEnumerable<CliAction> GetActions() => _actions;
+    protected override IEnumerable<IAction> GetActions() => _actions;
 
-    sealed class CliActionVNext(CliMethodInfo method, object? instance) : CliAction
+    sealed class CliAction(CliMethodInfo method, object? instance) : IAction
     {
-        private readonly object? _instance = instance;
+        [DebuggerStepThrough]
+        bool IAction.IsMatch(CliCommandLine commandLine) => method.IsMatch(commandLine);
+
 
         [DebuggerStepThrough]
-        public override bool IsMatch(CliCommandLine commandLine) => method.IsMatch(commandLine);
+        int IAction.Process(CliCommandLine commandLine) => method.Invoke(instance, commandLine);
 
-        [DebuggerStepThrough]
-        public override double Rank(CliCommandLine commandLine) => method.Rank(commandLine);
-
-        [DebuggerStepThrough]
-        public override int Process(CliCommandLine commandLine) => method.Invoke(instance, commandLine);
-
-        public override void ShowHelp(CliCommandLine commandLine)
+        void IAction.ShowHelp(CliCommandLine commandLine)
         {
             throw new NotImplementedException();
         }
 
         [DebuggerStepThrough]
-        public override double RankByOptions(CliCommandLine commandLine) => method.RankByOptions(commandLine);
+        double IAction.RankByOptions(CliCommandLine commandLine) => method.RankByOptions(commandLine);
 
         public override string ToString() => method.ToString();
 
