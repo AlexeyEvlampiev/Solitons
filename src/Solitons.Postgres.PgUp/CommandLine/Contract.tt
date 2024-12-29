@@ -5,26 +5,32 @@
 <#@ import namespace="System.Collections.Generic" #>
 <#@ output extension=".generated.cs" #><#
 
-    string contractSummary = "Defines the pgup CLI interface.";
+    string contractSummary = "Defines the PgUp CLI interface, enabling streamlined project initialization and database deployment.";
 
     var initRoute = "init|initialize";
-    var initCmdDescription = "Sets up a new PgUp project structure with required files and folders for PostgreSQL deployment in the specified directory";
-    var projectDirectoryDescription = "Directory to populate with the pgup.json project file and deployment sql scripts.";
-    var templateParameterDescription = "The template to initialize the new project from";
+    var initCmdDescription = "Creates a new PgUp project structure with necessary files for PostgreSQL deployment.";
+    var projectDirectoryDescription = "The target directory where the PgUp project files and deployment scripts will be created.";
+    var templateParameterDefault = "basic";
+    var templateParameterDescription = $"Specifies the template used to initialize the project. Default is '{templateParameterDefault}'.";
 
-    string deployRoute = "deploy";
-    string deployCmdDescription = "Deployes database using the given database project file and given deployment configurations,";
-    string projectFileParameterDescription = "Database project file to use for the deployment.";
-    string hostParameterDescription = "Postgres server host.";
-    string portParameterDescription = "Postgres server port.";
-    string usernameParameterDescription = "Postgres user who is authorized creating new roles on the server and creating new databases.";
-    string passwordParameterDescription = "Postgres user password to authnticate to the server.";
-    string maintenanceDatabaseParameterDescription = "Postgres maintenance database.";
-    string parametersParameterDescription = "Parameters -  key value pairs to override parameters defined in the database project file..";
-    string timoutParameterDescription = "The timeout the deployment may retry within. Only transient errors are subject of retry.";
-    string overwriteParameterDescription = "Flag specifying whether the existing database should be dropped and recreted from sctartch. When applied, all data will be lost..";
-    string forseParameterDescription = "Flag specifying whether the user should not be prompted when override is specified. If specified, the database will be dropped and redeployed anyway.";
+    string deployRoute = "deploy|db-deploy";
+    string deployCmdDescription = "Deploys a PostgreSQL database using the specified project file and configurations.";
+    string projectFileParameterDescription = "The PgUp project file defining the database structure and deployment settings.";
+    string hostParameterDefault = "localhost";
+    string hostParameterDescription = $"The hostname or IP address of the PostgreSQL server. Default is '{hostParameterDefault}'.";
+    string portParameterDefault = 5432.ToString();
+    string portParameterDescription = $"The port number of the PostgreSQL server. Default is {portParameterDefault}";
+    string usernameParameterDescription = "The PostgreSQL user with permissions to create roles and databases.";
+    string passwordParameterDescription = "The password for the PostgreSQL user.";
+    string maintenanceDatabaseDefault = "postgres";
+    string maintenanceDatabaseParameterDescription = $"The maintenance database to use during the deployment process. Default is '{maintenanceDatabaseDefault}'.";
+    string parametersParameterDescription = "Key-value pairs to override default parameters in the project file.";
+    string timeoutParameyerDefault = "1 minute";
+    string timeoutParameterDescription = $"The maximum time to retry deployment in case of transient errors. Default is '{timeoutParameyerDefault}'.";
+    string overwriteParameterDescription = "Drops the existing database and recreates it. All data will be lost.";
+    string forceParameterDescription = "Suppresses confirmation prompts when overwriting the database. Overrides safety checks.";
 #>
+
 using System.ComponentModel;
 using Solitons.CommandLine;
 using Solitons.CommandLine.Reflection;
@@ -44,7 +50,7 @@ public interface IPgUp
     [Description("<#= initCmdDescription #>")]
     void Initialize(
         string projectDir,
-        [CliOption("--template", "<#= templateParameterDescription #>")] string template = "basic");
+        [CliOption("--template", "<#= templateParameterDescription #>")] string template = "<#= templateParameterDefault #>");
 
     /// <summary>
     /// <#= deployCmdDescription #>
@@ -56,9 +62,9 @@ public interface IPgUp
     /// <param name="password"><#=passwordParameterDescription #></param>
     /// <param name="maintenanceDatabase"><#= maintenanceDatabaseParameterDescription #></param>
     /// <param name="parameters"><#= parametersParameterDescription #></param>
-    /// <param name="timout"><#= timoutParameterDescription #></param>
+    /// <param name="timeout"><#= timeoutParameterDescription #></param>
     /// <param name="overwrite"><#= overwriteParameterDescription #></param>
-    /// <param name="forse"><#= forseParameterDescription #></param>
+    /// <param name="force"><#= forceParameterDescription #></param>
     /// <returns></returns>
     [CliRoute("<#= deployRoute #>")]
     [CliArgument(nameof(projectFile), "<#= projectFileParameterDescription #>")]
@@ -69,14 +75,13 @@ public interface IPgUp
     [Description("<#= deployCmdDescription #>")]
     Task<int> DeployAsync(
         string projectFile,
-        [CliOption("--host|-h", "<#= hostParameterDescription #>")]string host,
-        [CliOption("--port|-p", "<#= hostParameterDescription #>")]int port,
+        [CliOption("--host|-h", "<#= hostParameterDescription #>", Default = "<#= hostParameterDefault #>")]string host,
+        [CliOption("--port|-p", "<#= hostParameterDescription #>", Default = "5432")]int port,
         [CliOption("--username|--user|-u", "<#= usernameParameterDescription #>")]string username,
         [CliOption("--password|--pwd|-p", "<#=passwordParameterDescription #>")]string password,
-        [CliOption("--maintenance-database|-mdb", "<#= maintenanceDatabaseParameterDescription #>")]string maintenanceDatabase,
+        [CliOption("--maintenance-database|-mdb", "<#= maintenanceDatabaseParameterDescription #>", Default = "<#= maintenanceDatabaseDefault #>")]string maintenanceDatabase,
         [CliOption("--parameters|--parameter|-param", "<#= parametersParameterDescription #>")]Dictionary<string, string> parameters,
-        [CliOption("--timeout", "<#= timoutParameterDescription #>")]TimeSpan timout,
-        [CliOption("--overwrite", "<#= overwriteParameterDescription #>")]CliFlag? overwrite,
-        [CliOption("--forse", "<#= deployCmdDescription #>")]CliFlag? forse);
-
+        [CliOption("--timeout", "<#= timeoutParameterDescription #>", Default = "<#= timeoutParameyerDefault #>")]TimeSpan timeout,
+        [CliOption("--overwrite", "<#= overwriteParameterDescription #>")]CliFlag? overwrite = null,
+        [CliOption("--force", "<#= forceParameterDescription #>")]CliFlag? force = null);
 }

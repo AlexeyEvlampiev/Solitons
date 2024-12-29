@@ -133,6 +133,8 @@ public class CliOptionAttribute : Attribute
 
     public virtual bool AllowsCsv => true;
 
+    public string? Default { get; init; }
+
 
     /// <summary>
     /// Returns a string representation of the option specification.
