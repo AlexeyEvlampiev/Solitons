@@ -4,25 +4,79 @@
 <#@ import namespace="System.Text" #>
 <#@ import namespace="System.Collections.Generic" #>
 <#@ output extension=".generated.cs" #><#
+
+    string contractSummary = "Defines the pgup CLI interface.";
+
     var initRoute = "init|initialize";
     var initCmdDescription = "Sets up a new PgUp project structure with required files and folders for PostgreSQL deployment in the specified directory";
     var projectDirectoryDescription = "Directory to populate with the pgup.json project file and deployment sql scripts.";
+    var templateParameterDescription = "The template to initialize the new project from";
+
+    string deployRoute = "deploy";
+    string deployCmdDescription = "Deployes database using the given database project file and given deployment configurations,";
+    string projectFileParameterDescription = "Database project file to use for the deployment.";
+    string hostParameterDescription = "Postgres server host.";
+    string portParameterDescription = "Postgres server port.";
+    string usernameParameterDescription = "Postgres user who is authorized creating new roles on the server and creating new databases.";
+    string passwordParameterDescription = "Postgres user password to authnticate to the server.";
+    string maintenanceDatabaseParameterDescription = "Postgres maintenance database.";
+    string parametersParameterDescription = "Parameters -  key value pairs to override parameters defined in the database project file..";
+    string timoutParameterDescription = "The timeout the deployment may retry within. Only transient errors are subject of retry.";
+    string overwriteParameterDescription = "Flag specifying whether the existing database should be dropped and recreted from sctartch. When applied, all data will be lost..";
+    string forseParameterDescription = "Flag specifying whether the user should not be prompted when override is specified. If specified, the database will be dropped and redeployed anyway.";
 #>
 using System.ComponentModel;
+using Solitons.CommandLine;
 using Solitons.CommandLine.Reflection;
 
-
-public interface IJazzy
+/// <summary>
+/// <#= contractSummary #>
+/// </summary>
+public interface IPgUp
 {
     /// <summary>
     /// <#= initCmdDescription #>
     /// </summary>
     /// <param name="projectDir"><#= projectDirectoryDescription #></param>
-    /// <param name="template"></param>
+    /// <param name="template"><#= templateParameterDescription #></param>
 	[CliRoute("<#= initRoute #>")]
-    [CliArgument(nameof(projectDir), description: "")]
+    [CliArgument(nameof(projectDir), description: "<#= projectDirectoryDescription #>")]
     [Description("<#= initCmdDescription #>")]
     void Initialize(
         string projectDir,
-        [CliOption("--template", "<#= projectDirectoryDescription #>")] string template = "basic");
+        [CliOption("--template", "<#= templateParameterDescription #>")] string template = "basic");
+
+    /// <summary>
+    /// <#= deployCmdDescription #>
+    /// </summary>
+    /// <param name="projectFile"><#= projectFileParameterDescription #></param>
+    /// <param name="host"><#= hostParameterDescription #></param>
+    /// <param name="port"><#= portParameterDescription #></param>
+    /// <param name="username"><#= usernameParameterDescription #></param>
+    /// <param name="password"><#=passwordParameterDescription #></param>
+    /// <param name="maintenanceDatabase"><#= maintenanceDatabaseParameterDescription #></param>
+    /// <param name="parameters"><#= parametersParameterDescription #></param>
+    /// <param name="timout"><#= timoutParameterDescription #></param>
+    /// <param name="overwrite"><#= overwriteParameterDescription #></param>
+    /// <param name="forse"><#= forseParameterDescription #></param>
+    /// <returns></returns>
+    [CliRoute("<#= deployRoute #>")]
+    [CliArgument(nameof(projectFile), "<#= projectFileParameterDescription #>")]
+    [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD%", description: "Deploys using the specified admin credentials.")]
+    [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD% --timeout 00:30:00", description: "Deploys with a custom timeout of 30 minutes.")]
+    [CliCommandExample("deploy pgup.json --host localhost --port 5432 --maintenance-database postgres --username %ADMIN_USR% --password %ADMIN_PWD% --timeout 00:30:00", description: "Specifies port, management database, and timeout.")]
+    [CliCommandExample("deploy pgup.json --host localhost --port 5432 --maintenance-database postgres --username %ADMIN_USR% --password %ADMIN_PWD% --timeout 00:30:00 --parameter[dbName] my_database", description: "Overrides default parameters such as the database name.")]
+    [Description("<#= deployCmdDescription #>")]
+    Task<int> DeployAsync(
+        string projectFile,
+        [CliOption("--host|-h", "<#= hostParameterDescription #>")]string host,
+        [CliOption("--port|-p", "<#= hostParameterDescription #>")]int port,
+        [CliOption("--username|--user|-u", "<#= usernameParameterDescription #>")]string username,
+        [CliOption("--password|--pwd|-p", "<#=passwordParameterDescription #>")]string password,
+        [CliOption("--maintenance-database|-mdb", "<#= maintenanceDatabaseParameterDescription #>")]string maintenanceDatabase,
+        [CliOption("--parameters|--parameter|-param", "<#= parametersParameterDescription #>")]Dictionary<string, string> parameters,
+        [CliOption("--timeout", "<#= timoutParameterDescription #>")]TimeSpan timout,
+        [CliOption("--overwrite", "<#= overwriteParameterDescription #>")]CliFlag? overwrite,
+        [CliOption("--forse", "<#= deployCmdDescription #>")]CliFlag? forse);
+
 }
