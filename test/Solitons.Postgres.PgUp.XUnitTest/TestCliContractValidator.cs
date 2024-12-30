@@ -1,5 +1,4 @@
 ﻿using Solitons.CommandLine.Common;
-using Solitons.Postgres.PgUp.CommandLine;
 
 namespace Solitons.Postgres.PgUp;
 
