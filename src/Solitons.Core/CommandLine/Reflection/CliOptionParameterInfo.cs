@@ -20,15 +20,24 @@ internal sealed class CliOptionParameterInfo : CliParameterInfo, ICliOptionMembe
             .OfType<CliOptionAttribute>()
             .Union([new CliOptionAttribute($"--{parameter.Name}")])
             .First();
-        
 
-        IsOptional = parameter.HasDefaultValue || parameter.IsNullable();
+        if (_optionAttribute.IsOptional(parameter, out object? defaultValue))
+        {
+            IsOptional = true;
+            DefaultValue = defaultValue;
+        }
+        else
+        {
+            IsOptional = false;
+            DefaultValue = null;
+        }
+        
  
         _materializer = CliOptionMaterializer.CreateOrThrow(
             _optionAttribute, 
             parameter.ParameterType, 
             IsOptional, 
-            parameter.DefaultValue);
+            DefaultValue);
 
 
         Aliases = [.. _optionAttribute.Aliases];
@@ -49,6 +58,7 @@ internal sealed class CliOptionParameterInfo : CliParameterInfo, ICliOptionMembe
 
     public override bool IsOptional { get; }
 
+    public override object? DefaultValue { get; }
 
 
     [DebuggerStepThrough]

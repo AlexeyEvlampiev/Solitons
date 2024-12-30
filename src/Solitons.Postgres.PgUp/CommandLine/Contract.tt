@@ -96,13 +96,13 @@ public interface IPgUp
     [Description("<#= deployCmdDescription #>")]
     Task<int> DeployAsync(
         string projectFile,
-        [CliOption("--host|-h", "<#= hostParameterDescription #>", Default = "<#= hostParameterDefault #>")]string host,
-        [CliOption("--port|-p", "<#= hostParameterDescription #>", Default = "5432")]int port,
+        [CliOption("--host|-h", "<#= hostParameterDescription #>", DefaultValue = "<#= hostParameterDefault #>")]string host,
+        [CliOption("--port|-p", "<#= hostParameterDescription #>", DefaultValue = "5432")]int port,
         [CliOption("--username|--user|-u", "<#= usernameParameterDescription #>")]string username,
         [CliOption("--password|--pwd|-p", "<#=passwordParameterDescription #>")]string password,
-        [CliOption("--maintenance-database|-mdb", "<#= maintenanceDatabaseParameterDescription #>", Default = "<#= maintenanceDatabaseDefault #>")]string maintenanceDatabase,
+        [CliOption("--maintenance-database|-mdb", "<#= maintenanceDatabaseParameterDescription #>", DefaultValue = "<#= maintenanceDatabaseDefault #>")]string maintenanceDatabase,
         [CliOption("--parameters|--parameter|-param", "<#= parametersParameterDescription #>")]Dictionary<string, string> parameters,
-        [CliOption("--timeout", "<#= timeoutParameterDescription #>", Default = "<#= timeoutParameterDefault #>")]TimeSpan timeout,
+        [CliOption("--timeout", "<#= timeoutParameterDescription #>", DefaultValue = "<#= timeoutParameterDefault #>")]TimeSpan timeout,
         [CliOption("--overwrite", "<#= overwriteParameterDescription #>")]CliFlag? overwrite = null,
         [CliOption("--force", "<#= forceParameterDescription #>")]CliFlag? force = null);
 }

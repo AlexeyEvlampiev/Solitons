@@ -229,18 +229,6 @@ internal sealed class CliScalarOptionMaterializer : CliOptionMaterializer
                 "Ensure the declared type is compatible with the attribute's requirements.");
         }
 
-        if (attribute.Default.IsPrintable() && isOptional == false)
-        {
-            try
-            {
-                isOptional = true;
-                defaultValue = typeConverter.ConvertFromInvariantString(attribute.Default!);
-            }
-            catch (Exception e)
-            {
-                throw new CliConfigurationException("Oops...");
-            }
-        }
 
         object ParseValue(string value)
         {

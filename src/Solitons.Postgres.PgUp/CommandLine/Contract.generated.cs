@@ -45,13 +45,13 @@ public interface IPgUp
     [Description("Deploys a PostgreSQL database using the specified project file and configurations.")]
     Task<int> DeployAsync(
         string projectFile,
-        [CliOption("--host|-h", "The hostname or IP address of the PostgreSQL server. Default is 'localhost'.", Default = "localhost")]string host,
-        [CliOption("--port|-p", "The hostname or IP address of the PostgreSQL server. Default is 'localhost'.", Default = "5432")]int port,
+        [CliOption("--host|-h", "The hostname or IP address of the PostgreSQL server. Default is 'localhost'.", DefaultValue = "localhost")]string host,
+        [CliOption("--port|-p", "The hostname or IP address of the PostgreSQL server. Default is 'localhost'.", DefaultValue = "5432")]int port,
         [CliOption("--username|--user|-u", "The PostgreSQL user with permissions to create roles and databases.")]string username,
         [CliOption("--password|--pwd|-p", "The password for the PostgreSQL user.")]string password,
-        [CliOption("--maintenance-database|-mdb", "The maintenance database to use during the deployment process. Default is 'postgres'.", Default = "postgres")]string maintenanceDatabase,
+        [CliOption("--maintenance-database|-mdb", "The maintenance database to use during the deployment process. Default is 'postgres'.", DefaultValue = "postgres")]string maintenanceDatabase,
         [CliOption("--parameters|--parameter|-param", "Key-value pairs to override default parameters in the project file.")]Dictionary<string, string> parameters,
-        [CliOption("--timeout", "The maximum time to retry deployment in case of transient errors. Default is '1 minute'.", Default = "1 minute")]TimeSpan timeout,
+        [CliOption("--timeout", "The maximum time to retry deployment in case of transient errors. Default is '1 minute'.", DefaultValue = "1 minute")]TimeSpan timeout,
         [CliOption("--overwrite", "Drops the existing database and recreates it. All data will be lost.")]CliFlag? overwrite = null,
         [CliOption("--force", "Suppresses confirmation prompts when overwriting the database. Overrides safety checks.")]CliFlag? force = null);
 }

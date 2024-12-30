@@ -133,7 +133,7 @@ public class CliOptionAttribute : Attribute
 
     public virtual bool AllowsCsv => true;
 
-    public string? Default { get; init; }
+    public string? DefaultValue { get; init; }
 
 
     /// <summary>
@@ -203,4 +203,52 @@ public class CliOptionAttribute : Attribute
 
     [DebuggerNonUserCode]
     public bool IsMatch(string optionName) => _optionRegex.IsMatch(optionName);
+
+    public bool IsOptional(ParameterInfo parameter, out object? defaultValue)
+    {
+        defaultValue = null;
+        var result =
+            parameter.HasDefaultValue ||
+            parameter.IsNullable() ||
+            this.DefaultValue is not null;
+
+        if (!result)
+        {
+            defaultValue = null;
+            return false;
+        }
+
+        if (parameter.DefaultValue is not null && 
+            parameter.DefaultValue is not DBNull)
+        {
+            defaultValue = parameter.DefaultValue;
+            return true;
+        }
+
+        if (this.DefaultValue is null)
+        {
+            defaultValue = null;
+            return true;
+        }
+
+        if (CanAccept(parameter.ParameterType, out var valueConverter))
+        {
+            try
+            {
+                defaultValue = valueConverter.ConvertFromInvariantString(this.DefaultValue);
+                return true;
+            }
+            catch (Exception e)
+            {
+                throw new CliConfigurationException(
+                    $"The default value '{DefaultValue}' provided cannot be used to initialize the parameter '{parameter.Name}' of type '{parameter.ParameterType.FullName}'. " +
+                    $"Ensure the default value matches the expected type and format for '{parameter.ParameterType.FullName}'. Additional details: {e.Message}");
+            }
+        }
+
+        throw new CliConfigurationException(
+            $"The parameter '{parameter.Name}' of type '{parameter.ParameterType.FullName}' is incompatible with the applied CLI attribute. " +
+            $"Verify that the parameter type supports conversion from CLI options and that any default values are properly defined. " +
+            $"If this issue persists, consider reviewing the CLI attribute configuration or consulting the documentation for guidance.");
+    }
 }
