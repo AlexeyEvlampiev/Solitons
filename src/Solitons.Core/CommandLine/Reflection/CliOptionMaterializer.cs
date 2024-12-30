@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Solitons.CommandLine.Reflection;
@@ -219,12 +220,26 @@ internal sealed class CliScalarOptionMaterializer : CliOptionMaterializer
         bool isOptional,
         object? defaultValue)
     {
+        Debug.WriteLine(attribute.PipeSeparatedAliases);
         if (false == attribute.CanAccept(declaredType, out var typeConverter))
         {
             throw new CliConfigurationException(
                 $"The attribute of type '{attribute.GetType().Name}' cannot accept the declared type '{declaredType.FullName}'. " +
                 $"Refer to the attribute's aliases: '{attribute.PipeSeparatedAliases}' to identify the problematic configuration. " +
                 "Ensure the declared type is compatible with the attribute's requirements.");
+        }
+
+        if (attribute.Default.IsPrintable() && isOptional == false)
+        {
+            try
+            {
+                isOptional = true;
+                defaultValue = typeConverter.ConvertFromInvariantString(attribute.Default!);
+            }
+            catch (Exception e)
+            {
+                throw new CliConfigurationException("Oops...");
+            }
         }
 
         object ParseValue(string value)
