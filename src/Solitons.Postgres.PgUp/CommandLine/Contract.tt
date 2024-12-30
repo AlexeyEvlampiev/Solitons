@@ -29,6 +29,29 @@
     string timeoutParameterDescription = $"The maximum time to retry deployment in case of transient errors. Default is '{timeoutParameterDefault}'.";
     string overwriteParameterDescription = "Drops the existing database and recreates it. All data will be lost.";
     string forceParameterDescription = "Suppresses confirmation prompts when overwriting the database. Overrides safety checks.";
+
+    var initExamples = new Example[]{
+        new Example("init ./pgup_project --template basic", 
+            "Initializes a PgUp project in the directory './pgup_project' using the default 'basic' template.")
+    };
+
+    var deployExamples = new Example[]{
+        new Example("deploy pgup.json --host localhost --username pgup_admin --password postgres --parameters.databasePrefix dev --parameters.databaseAdminPassword dev_password", 
+            "Deploys a database to the local server with a 'dev_' prefix for the database name.",
+            "For a core database name defined in 'pgup.json' as 'mydb', the resulting database name will be 'dev_mydb'.",
+            "Uses 'pgup_admin' as the admin user to create roles and databases.",
+            "The database owner connects with the login defined in 'pgup.json' and the password 'dev_password'."),
+        new Example("deploy pgup.json --host 192.168.1.10 --port 5432 --username admin --password secure123 --parameters.databasePrefix prod_", 
+            "Deploys the database to a remote PostgreSQL server at 192.168.1.10.",
+            "The database name will have a 'prod_' prefix, e.g., 'prod_mydb', as per the parameter override."),
+        new Example("deploy pgup.json --host localhost --username admin --password postgres --overwrite --force", 
+            "Re-deploys the database, overwriting the existing one without confirmation prompts.",
+            "All previous data in the database will be lost."),
+        new Example("deploy pgup.json --parameters.databaseOwner new_owner --parameters.databaseName new_database", 
+            "Deploys a database with a custom owner and database name, overriding the default values in 'pgup.json'."),
+        new Example("deploy pgup.json --timeout 2m", 
+            "Deploys the database with a custom timeout of 2 minutes for retrying transient errors.")
+    };
 #>
 
 using System.ComponentModel;
@@ -45,7 +68,8 @@ public interface IPgUp
     /// </summary>
     /// <param name="projectDir"><#= projectDirectoryDescription #></param>
     /// <param name="template"><#= templateParameterDescription #></param>
-	[CliRoute("<#= initRoute #>")]
+	[CliRoute("<#= initRoute #>")]<# foreach(var example in initExamples){ #> 
+    [CliCommandExample("<#= example.Command #>", "<#= example.Description #>")] <# } #> 
     [CliArgument(nameof(projectDir), description: "<#= projectDirectoryDescription #>")]
     [Description("<#= initCmdDescription #>")]
     void Initialize(
@@ -66,12 +90,8 @@ public interface IPgUp
     /// <param name="overwrite"><#= overwriteParameterDescription #></param>
     /// <param name="force"><#= forceParameterDescription #></param>
     /// <returns></returns>
-    [CliRoute("<#= deployRoute #>")]
-    [CliArgument(nameof(projectFile), "<#= projectFileParameterDescription #>")]
-    [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD%", description: "Deploys using the specified admin credentials.")]
-    [CliCommandExample("deploy pgup.json --host localhost --username %ADMIN_USR% --password %ADMIN_PWD% --timeout 00:30:00", description: "Deploys with a custom timeout of 30 minutes.")]
-    [CliCommandExample("deploy pgup.json --host localhost --port 5432 --maintenance-database postgres --username %ADMIN_USR% --password %ADMIN_PWD% --timeout 00:30:00", description: "Specifies port, management database, and timeout.")]
-    [CliCommandExample("deploy pgup.json --host localhost --port 5432 --maintenance-database postgres --username %ADMIN_USR% --password %ADMIN_PWD% --timeout 00:30:00 --parameter[dbName] my_database", description: "Overrides default parameters such as the database name.")]
+    [CliRoute("<#= deployRoute #>")]<# foreach(var example in deployExamples){ #> 
+    [CliCommandExample("<#= example.Command #>", "<#= example.Description #>")] <# } #> 
     [Description("<#= deployCmdDescription #>")]
     Task<int> DeployAsync(
         string projectFile,
@@ -85,3 +105,17 @@ public interface IPgUp
         [CliOption("--overwrite", "<#= overwriteParameterDescription #>")]CliFlag? overwrite = null,
         [CliOption("--force", "<#= forceParameterDescription #>")]CliFlag? force = null);
 }
+<#+
+sealed record Example
+{
+    public Example(string command, params string[] description)
+    {
+        Command = command;
+        Description = string.Join(" ", description);
+    }
+
+    public string Command { get; }
+    public string Description { get; }
+   
+}
+#>
