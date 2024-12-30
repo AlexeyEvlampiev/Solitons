@@ -39,6 +39,7 @@ public abstract class CliProcessorBase
         }
         catch (Exception e)
         {
+            Trace.TraceError(e.ToString());
             return 5;
         }
     }
