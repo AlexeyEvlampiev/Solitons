@@ -6,6 +6,8 @@ internal sealed class PgUpTemplateManager
 {
     public static void Initialize(string projectDir, string template)
     {
+        Trace.WriteLine($"{typeof(PgUpTemplateManager)}.{nameof(Initialize)}");
+        Trace.WriteLine($@"(\t""{projectDir}"", ""{template}"")");
         DirectoryInfo targetDir;
         try
         {
