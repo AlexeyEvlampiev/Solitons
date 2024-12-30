@@ -90,7 +90,8 @@ public interface IPgUp
     /// <param name="overwrite"><#= overwriteParameterDescription #></param>
     /// <param name="force"><#= forceParameterDescription #></param>
     /// <returns></returns>
-    [CliRoute("<#= deployRoute #>")]<# foreach(var example in deployExamples){ #> 
+    [CliRoute("<#= deployRoute #>")]
+    [CliArgument(nameof(projectFile), "<#= projectFileParameterDescription #>")]<# foreach(var example in deployExamples){ #> 
     [CliCommandExample("<#= example.Command #>", "<#= example.Description #>")] <# } #> 
     [Description("<#= deployCmdDescription #>")]
     Task<int> DeployAsync(

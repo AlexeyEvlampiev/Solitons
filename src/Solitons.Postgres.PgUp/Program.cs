@@ -1,6 +1,5 @@
-﻿using System.ComponentModel;
-using System.Diagnostics;
-using System.Reactive;
+﻿using System.Diagnostics;
+using Npgsql;
 using Solitons.CommandLine;
 using Solitons.Postgres.PgUp.CommandLine;
 using Solitons.Postgres.PgUp.Core;
@@ -8,16 +7,15 @@ using Solitons.Postgres.PgUp.Core;
 namespace Solitons.Postgres.PgUp;
 
 
-public sealed class Program() : IPgUpCommandLineContract
+public sealed class Program : IPgUp
 {
     const string PgUpDescription = "PgUp is a PostgreSQL migration tool using plain SQL for transaction-safe schema changes";
-    private static readonly TimeSpan DefaultActionTimeout = TimeSpan.FromMinutes(10);
 
     public static int Main() => CliProcessor
-            .Create(Configure)
+            .Create(ConfigureProcessor)
             .Process();
 
-    private static void Configure(ICliProcessorConfig config)
+    private static void ConfigureProcessor(ICliProcessorConfig config)
     {
         config
             .AddService(new Program())
@@ -30,85 +28,40 @@ public sealed class Program() : IPgUpCommandLineContract
 
 
     [DebuggerStepThrough]
-    void IPgUpCommandLineContract.Initialize(
+    void IPgUp.Initialize(
         string projectDir,
         string template)
     {
         PgUpTemplateManager.Initialize(projectDir, template);
     }
 
-    [DebuggerStepThrough]
-    Task<int> IPgUpCommandLineContract.DeployAsync(
-        string projectFile,
-        PgUpConnectionOptionsBundle pgUpConnection,
-        PgUpDeploymentCommonOptionBundle common)
+    Task<int> IPgUp.DeployAsync(
+        string projectFile, 
+        string host, 
+        int port, 
+        string username, 
+        string password,
+        string maintenanceDatabase, 
+        Dictionary<string, string> parameters, 
+        TimeSpan timeout, 
+        CliFlag? overwrite,
+        CliFlag? force)
     {
+        var csb = new NpgsqlConnectionStringBuilder()
+        {
+            Host = host,
+            Port = port,
+            Username = username,
+            Password = password,
+            Database = maintenanceDatabase
+        };
         return PgUpDatabaseManager
             .DeployAsync(
                 projectFile,
-                pgUpConnection.ToString(),
-                false,
-                false,
-                common.Parameters,
-                common.Timeout ?? DefaultActionTimeout);
-    }
-
-  
-
-
-    [DebuggerStepThrough]
-    Task<int> IPgUpCommandLineContract.DeployAsync(
-        string projectFile,
-        PgUpConnectionOptionsBundle pgUpConnection,
-        PgUpDeploymentCommonOptionBundle common,
-        Unit overwrite,
-        Unit? forceOverride)
-    {
-        return PgUpDatabaseManager
-            .DeployAsync(
-                projectFile,
-                pgUpConnection.ToString(),
-                false,
-                false,
-                common.Parameters,
-                common.Timeout ?? DefaultActionTimeout);
-    }
-
-    [DebuggerStepThrough]
-    Task<int> IPgUpCommandLineContract.DeployAsync(
-        string projectFile,
-        string connectionString,
-        PgUpDeploymentCommonOptionBundle common)
-    {
-        return PgUpDatabaseManager
-            .DeployAsync(
-                projectFile,
-                connectionString,
-                false,
-                false,
-                common.Parameters,
-                common.Timeout ?? DefaultActionTimeout);
-    }
-
-
-
-    [DebuggerStepThrough]
-    public Task<int> DeployAsync(
-        string projectFile,
-        string connectionString,
-        PgUpDeploymentCommonOptionBundle common,
-        Unit overwrite,
-        Unit? forceOverride)
-    {
-
-        return PgUpDatabaseManager
-            .DeployAsync(
-                projectFile,
-                connectionString,
-                false,
-                false,
-                common.Parameters,
-                common.Timeout ?? DefaultActionTimeout);
+                csb.ConnectionString,
+                overwrite is not null,
+                force is not null,
+                parameters, timeout);
     }
 
 }

@@ -35,7 +35,8 @@ public interface IPgUp
     /// <param name="overwrite">Drops the existing database and recreates it. All data will be lost.</param>
     /// <param name="force">Suppresses confirmation prompts when overwriting the database. Overrides safety checks.</param>
     /// <returns></returns>
-    [CliRoute("deploy|db-deploy")] 
+    [CliRoute("deploy|db-deploy")]
+    [CliArgument(nameof(projectFile), "The PgUp project file defining the database structure and deployment settings.")] 
     [CliCommandExample("deploy pgup.json --host localhost --username pgup_admin --password postgres --parameters.databasePrefix dev --parameters.databaseAdminPassword dev_password", "Deploys a database to the local server with a 'dev_' prefix for the database name. For a core database name defined in 'pgup.json' as 'mydb', the resulting database name will be 'dev_mydb'. Uses 'pgup_admin' as the admin user to create roles and databases. The database owner connects with the login defined in 'pgup.json' and the password 'dev_password'.")]  
     [CliCommandExample("deploy pgup.json --host 192.168.1.10 --port 5432 --username admin --password secure123 --parameters.databasePrefix prod_", "Deploys the database to a remote PostgreSQL server at 192.168.1.10. The database name will have a 'prod_' prefix, e.g., 'prod_mydb', as per the parameter override.")]  
     [CliCommandExample("deploy pgup.json --host localhost --username admin --password postgres --overwrite --force", "Re-deploys the database, overwriting the existing one without confirmation prompts. All previous data in the database will be lost.")]  

@@ -77,11 +77,11 @@ public abstract class CliProcessorBase
         }
 
         OnActionNotFound(commandLine);
-        DsiplayFuzzyMatchlHelp(commandLine);
+        DisplayFuzzyMatchHelp(commandLine);
         return 4;
     }
 
-    private void DsiplayFuzzyMatchlHelp(CliCommandLine commandLine)
+    private void DisplayFuzzyMatchHelp(CliCommandLine commandLine)
     {
         throw new NotImplementedException();
     }
