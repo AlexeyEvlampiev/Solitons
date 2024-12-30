@@ -18,9 +18,17 @@ internal class CliOptionBundlePropertyInfo : PropertyInfoDecorator,  ICliOptionM
         var attributes = property.GetCustomAttributes().ToList();
         _optionAttribute = attributes.OfType<CliOptionAttribute>().Single();
 
-        IsOptional = 
-            false == attributes.OfType<RequiredAttribute>().Any() || 
-            property.IsNullable();
+        if (_optionAttribute.IsOptional(property, out object? defaultValue))
+        {
+            IsOptional = true;
+            DefaultValue = defaultValue;
+        }
+        else
+        {
+            IsOptional = false;
+            DefaultValue = null;
+        }
+
 
         Description = attributes
             .OfType<DescriptionAttribute>()

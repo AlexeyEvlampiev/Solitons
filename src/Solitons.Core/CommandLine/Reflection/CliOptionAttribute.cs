@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Metadata;
 using System.Text.RegularExpressions;
 using System.Threading;
 
@@ -251,4 +252,53 @@ public class CliOptionAttribute : Attribute
             $"Verify that the parameter type supports conversion from CLI options and that any default values are properly defined. " +
             $"If this issue persists, consider reviewing the CLI attribute configuration or consulting the documentation for guidance.");
     }
+
+    public bool IsOptional(PropertyInfo property, out object? defaultValue)
+    {
+        defaultValue = null;
+
+        // Determine if the property is nullable or has a defined default value
+        var result =
+            property.IsNullable() ||
+            this.DefaultValue is not null;
+
+        if (!result)
+        {
+            defaultValue = null;
+            return false;
+        }
+
+        // If the attribute specifies a default value
+        if (this.DefaultValue is not null)
+        {
+            if (CanAccept(property.PropertyType, out var valueConverter))
+            {
+                try
+                {
+                    defaultValue = valueConverter.ConvertFromInvariantString(this.DefaultValue);
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    throw new CliConfigurationException(
+                        $"The default value '{DefaultValue}' cannot be assigned to the property '{property.Name}' of type '{property.PropertyType.FullName}'. " +
+                        $"Ensure the default value matches the expected type and format. Additional details: {e.Message}");
+                }
+            }
+
+            throw new CliConfigurationException(
+                $"The property '{property.Name}' of type '{property.PropertyType.FullName}' does not support conversion from CLI options. " +
+                $"Verify that the property type is compatible with CLI attributes or modify the type to support such conversion.");
+        }
+
+        // If nullable, no specific default value is required
+        if (property.IsNullable())
+        {
+            defaultValue = null;
+            return true;
+        }
+
+        return false;
+    }
+
 }

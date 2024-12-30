@@ -40,8 +40,8 @@ public interface IPgUp
     [CliCommandExample("deploy pgup.json --host localhost --username pgup_admin --password postgres --parameters.databasePrefix dev --parameters.databaseAdminPassword dev_password", "Deploys a database to the local server with a 'dev_' prefix for the database name. For a core database name defined in 'pgup.json' as 'mydb', the resulting database name will be 'dev_mydb'. Uses 'pgup_admin' as the admin user to create roles and databases. The database owner connects with the login defined in 'pgup.json' and the password 'dev_password'.")]  
     [CliCommandExample("deploy pgup.json --host 192.168.1.10 --port 5432 --username admin --password secure123 --parameters.databasePrefix prod_", "Deploys the database to a remote PostgreSQL server at 192.168.1.10. The database name will have a 'prod_' prefix, e.g., 'prod_mydb', as per the parameter override.")]  
     [CliCommandExample("deploy pgup.json --host localhost --username admin --password postgres --overwrite --force", "Re-deploys the database, overwriting the existing one without confirmation prompts. All previous data in the database will be lost.")]  
-    [CliCommandExample("deploy pgup.json --parameters.databaseOwner new_owner --parameters.databaseName new_database", "Deploys a database with a custom owner and database name, overriding the default values in 'pgup.json'.")]  
-    [CliCommandExample("deploy pgup.json --timeout 2m", "Deploys the database with a custom timeout of 2 minutes for retrying transient errors.")]  
+    [CliCommandExample("deploy pgup.json --username pgup_admin --password postgres --parameters.databaseOwner new_owner --parameters.databaseName new_database", "Deploys a database with a custom owner and database name, overriding the default values in 'pgup.json'.")]  
+    [CliCommandExample("deploy pgup.json --timeout 00:02:00 --username pgup_admin --password postgres", "Deploys the database with a custom timeout of 2 minutes for retrying transient errors.")]  
     [Description("Deploys a PostgreSQL database using the specified project file and configurations.")]
     Task<int> DeployAsync(
         string projectFile,

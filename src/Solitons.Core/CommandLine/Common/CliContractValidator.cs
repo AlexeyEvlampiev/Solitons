@@ -76,6 +76,11 @@ public abstract class CliContractValidator<T> where T : class
                 throw new InvalidOperationException($"Method {targetMethod.Name} is not adorned with CliCommandExampleAttribute.");
             }
 
+            if (targetMethod.ReturnType == typeof(void))
+            {
+                return 0;
+            }
+
             // Return the default value for the method's return type
             if (targetMethod.ReturnType.IsValueType)
             {

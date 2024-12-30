@@ -47,9 +47,9 @@
         new Example("deploy pgup.json --host localhost --username admin --password postgres --overwrite --force", 
             "Re-deploys the database, overwriting the existing one without confirmation prompts.",
             "All previous data in the database will be lost."),
-        new Example("deploy pgup.json --parameters.databaseOwner new_owner --parameters.databaseName new_database", 
+        new Example("deploy pgup.json --username pgup_admin --password postgres --parameters.databaseOwner new_owner --parameters.databaseName new_database", 
             "Deploys a database with a custom owner and database name, overriding the default values in 'pgup.json'."),
-        new Example("deploy pgup.json --timeout 2m", 
+        new Example(@"deploy pgup.json --timeout 00:02:00 --username pgup_admin --password postgres", 
             "Deploys the database with a custom timeout of 2 minutes for retrying transient errors.")
     };
 #>

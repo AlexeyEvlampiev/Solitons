@@ -98,6 +98,7 @@ internal sealed class CliMethodInfo : MethodInfoDecorator, IFormattable
 
     public int Invoke(object? instance, CliCommandLine commandLine)
     {
+        Debug.WriteLine(commandLine.ToString("D"));
         Action onExecuted = () => { };
         try
         {
