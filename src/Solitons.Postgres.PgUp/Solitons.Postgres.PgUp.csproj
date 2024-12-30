@@ -13,7 +13,6 @@
 
   <ItemGroup>
     <None Remove="README.md" />
-    <None Remove="Solitons.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -78,6 +77,10 @@
     <None Update="Core\Formatting\PgUpTransactionDelimiterRtt.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>
       <LastGenOutput>PgUpTransactionDelimiterRtt.cs</LastGenOutput>
+    </None>
+    <None Update="Solitons.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
     </None>
     <None Update="Templates\Basic\migrations\migration.00-00-00.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
