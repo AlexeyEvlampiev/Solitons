@@ -7,6 +7,8 @@
     <PackageIcon>Solitons.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageId>Solitons.Azure</PackageId>
+    <Title>Solitons.Azure</Title>
+    <Description>Solitons.Azure delivers specialized providers, services, and abstractions tailored for Microsoft Azure.</Description>
   </PropertyGroup>
 
   <ItemGroup>

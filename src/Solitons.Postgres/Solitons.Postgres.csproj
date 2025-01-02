@@ -7,6 +7,8 @@
     <PackageIcon>Solitons.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageId>Solitons.Postgres</PackageId>
+    <Title>Solitons.Postgres</Title>
+    <Description>Solitons.Postgres provides specialized providers, services, and abstractions tailored for PostgreSQL.</Description>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Npgsql" Version="9.0.2" />

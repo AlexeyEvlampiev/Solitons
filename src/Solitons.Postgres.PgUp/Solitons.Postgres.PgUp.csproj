@@ -9,6 +9,8 @@
     <PackageIcon>Solitons.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageId>Solitons.Postgres.PgUp</PackageId>
+    <Title>pgup</Title>
+    <Description>Solitons.Postgres.PgUp is a CLI tool for streamlined PostgreSQL deployments, automating tasks and ensuring consistent setups.</Description>
   </PropertyGroup>
 
   <ItemGroup>
