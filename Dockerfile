@@ -43,6 +43,7 @@ RUN dotnet pack src/Solitons.Core/Solitons.Core.csproj -c Release  -o /app/packa
 
 RUN dotnet nuget push "/app/packages/Solitons.Core.*.nupkg" --api-key ${NUGET_API_KEY} --source https://api.nuget.org/v3/index.json && \
     dotnet nuget push "/app/packages/Solitons.Azure.*.nupkg" --api-key ${NUGET_API_KEY} --source https://api.nuget.org/v3/index.json && \
+    dotnet nuget push "/app/packages/Solitons.Postgres.*.nupkg" --api-key ${NUGET_API_KEY} --source https://api.nuget.org/v3/index.json  && \
     dotnet nuget push "/app/packages/Solitons.Postgres.PgUp.*.nupkg" --api-key ${NUGET_API_KEY} --source https://api.nuget.org/v3/index.json 
 
 # Final stage to hold the packages
