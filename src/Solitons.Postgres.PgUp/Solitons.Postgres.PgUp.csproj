@@ -2,23 +2,22 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>pgup</AssemblyName>
     <PackageIcon>Solitons.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageId>Solitons.Postgres.PgUp</PackageId>
+    <Title>pgup</Title>
+    <Description>Solitons.Postgres.PgUp is a CLI tool for streamlined PostgreSQL deployments, automating tasks and ensuring consistent setups.</Description>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\Solitons.SQLite\README.md">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-    <None Include="..\Solitons.SQLite\Solitons.png">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
+    <None Include="CommandLine\Contract.generated.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Contract.tt</DependentUpon>
     </None>
   </ItemGroup>
 
@@ -33,22 +32,27 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="Formatting\PgUpConnectionDisplayRtt.cs">
+    <Compile Update="CommandLine\Contract.generated.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Contract.tt</DependentUpon>
+    </Compile>
+    <Compile Update="Core\Formatting\PgUpConnectionDisplayRtt.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>PgUpConnectionDisplayRtt.tt</DependentUpon>
     </Compile>
-    <Compile Update="Formatting\PgUpScriptDisplayRtt.cs">
+    <Compile Update="Core\Formatting\PgUpScriptDisplayRtt.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>PgUpScriptDisplayRtt.tt</DependentUpon>
     </Compile>
-    <Compile Update="Formatting\PgUpTransactionDelimiterRtt.cs">
+    <Compile Update="Core\Formatting\PgUpTransactionDelimiterRtt.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>PgUpTransactionDelimiterRtt.tt</DependentUpon>
     </Compile>
-    <Compile Update="PgUpResource.Designer.cs">
+    <Compile Update="CommandLine\PgUpResource.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>PgUpResource.resx</DependentUpon>
@@ -56,17 +60,29 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Formatting\PgUpConnectionDisplayRtt.tt">
+    <None Update="CommandLine\Contract.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Contract.generated.cs</LastGenOutput>
+    </None>
+    <None Update="Core\Formatting\PgUpConnectionDisplayRtt.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>
       <LastGenOutput>PgUpConnectionDisplayRtt.cs</LastGenOutput>
     </None>
-    <None Update="Formatting\PgUpScriptDisplayRtt.tt">
+    <None Update="Core\Formatting\PgUpScriptDisplayRtt.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>
       <LastGenOutput>PgUpScriptDisplayRtt.cs</LastGenOutput>
     </None>
-    <None Update="Formatting\PgUpTransactionDelimiterRtt.tt">
+    <None Update="Core\Formatting\PgUpTransactionDelimiterRtt.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>
       <LastGenOutput>PgUpTransactionDelimiterRtt.cs</LastGenOutput>
+    </None>
+    <None Update="README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Update="Solitons.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
     </None>
     <None Update="Templates\Basic\migrations\migration.00-00-00.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -90,7 +106,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Update="PgUpResource.resx">
+    <EmbeddedResource Update="CommandLine\PgUpResource.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>PgUpResource.Designer.cs</LastGenOutput>
     </EmbeddedResource>

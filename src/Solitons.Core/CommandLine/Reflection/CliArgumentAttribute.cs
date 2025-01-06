@@ -67,6 +67,7 @@ public class CliArgumentAttribute : Attribute
 
     public virtual bool CanAccept(Type argumentType, out TypeConverter converter)
     {
+        argumentType = Nullable.GetUnderlyingType(argumentType) ?? argumentType;
         converter = TypeDescriptor.GetConverter(argumentType);
 
         if (argumentType == typeof(TimeSpan))

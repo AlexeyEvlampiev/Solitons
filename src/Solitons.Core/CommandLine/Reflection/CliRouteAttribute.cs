@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Immutable;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Solitons.CommandLine.Reflection;
 
@@ -13,18 +16,23 @@ public class CliRouteAttribute : Attribute
     /// <summary>
     /// Initializes a new instance of the CliCommandAttribute class.
     /// </summary>
-    /// <param name="routeDeclaration">A space-separated string representing individual subcommands.</param>
-    public CliRouteAttribute(string routeDeclaration)
+    /// <param name="routeSignature">A space-separated string representing individual subcommands.</param>
+    public CliRouteAttribute(string routeSignature)
     {
-        RouteDeclaration = routeDeclaration;
+        RouteSignature = routeSignature;
+        Segments = [
+            ..Regex
+                .Split(RouteSignature, @"(?<=\S)\s+(?=\S)")
+                .Select(segment => segment.Trim())
+        ];
     }
 
     /// <summary>
     /// Gets a space-separated string representing individual subcommands.
     /// </summary>
-    public string RouteDeclaration { get; }
+    public string RouteSignature { get; }
 
+    public ImmutableArray<string> Segments { get; }
 
-
-    public override string ToString() => RouteDeclaration;
+    public override string ToString() => RouteSignature;
 }

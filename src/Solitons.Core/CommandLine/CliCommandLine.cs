@@ -59,8 +59,6 @@ public sealed class CliCommandLine : IFormattable
         return new CliCommandLine(SplitCommandLine(commandLine).ToArray());
     }
 
-    [DebuggerStepThrough]
-    public static CliCommandLine FromArgs(string[] args) => new(args);
 
     [DebuggerStepThrough]
     public static CliCommandLine FromArgs() => new(Environment.GetCommandLineArgs());

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using Solitons.Collections;
 using Solitons.CommandLine.Common;
 using Solitons.CommandLine.Reflection;
 
@@ -10,95 +11,170 @@ namespace Solitons.CommandLine;
 
 public sealed class CliProcessor : CliProcessorBase
 {
-    private readonly ImmutableArray<CliActionVNext> _actions;
+    private readonly string _logo;
+    private readonly string _description;
+    private readonly ImmutableArray<CliAction> _actions;
 
-    private CliProcessor(CliActionVNext[] actions)
+    sealed record Service(Type ServiceType, object? Instances, ImmutableArray<CliRouteAttribute> RootRoutes);
+    sealed class Config : ICliProcessorConfig
     {
-        _actions = [.. actions];
-    }
+        public FluentList<CliGlobalOptionBundle> GlobalOptions { get; } = new();
 
-    [DebuggerStepThrough]
-    public static CliProcessor From<T>() => From(typeof(T));
+        public List<Service> Services { get; } = new();
 
+        public string Logo { get; set; }
 
-    public static CliProcessor From(Type type)
-    {
-        if (type.IsInterface ||
-            type.IsAbstract)
+        public string Description { get; set; }
+
+        public ICliProcessorConfig WithLogo(string logo)
         {
-            throw new ArgumentException("Oops...");
+            Logo = logo;
+            return this;
         }
 
-        var instance = Activator.CreateInstance(type);
-        return From(type, instance);
+
+        public ICliProcessorConfig WithDescription(string description)
+        {
+            Description = description;
+            return this;
+        }
+
+        public ICliProcessorConfig ConfigGlobalOptions(Action<FluentList<CliGlobalOptionBundle>> config)
+        {
+            config.Invoke(GlobalOptions);
+            return this;
+        }
+
+        public ICliProcessorConfig AddService(
+            object instance, 
+            IEnumerable<CliRouteAttribute> rootRoutes)
+        {
+            Services.Add(new Service(instance.GetType(), instance, [..rootRoutes.Distinct()]));
+            return this;
+        }
+
+        public ICliProcessorConfig AddService(Type serviceType, IEnumerable<CliRouteAttribute> rootRoutes)
+        {
+            var ctor = serviceType.GetConstructor([]);
+            object? instance = null;
+            if (serviceType.IsAbstract || ctor is null)
+            {
+                instance = null;
+            }
+            else
+            {
+                instance = ctor.Invoke([]);
+            }
+
+            Services.Add(new Service(serviceType, instance, [.. rootRoutes.Distinct()]));
+
+            return this;
+        }
     }
 
+
+    private CliProcessor(Action<ICliProcessorConfig> initialize)
+    {
+        var config = new Config();
+        initialize.Invoke(config);
+        _logo = config.Logo;
+        _description = config.Description;
+        
+        var globalOptions = config.GlobalOptions.Distinct();
+        _actions = 
+            [
+                ..config.Services
+                    .SelectMany(service =>
+                    {
+                        var context = new CliContext(service.RootRoutes, globalOptions);
+                        return CliMethodInfo
+                            .Get(service.ServiceType, context)
+                            .Select(method => new CliAction(method, service.Instances));
+                    })
+            ];
+    }
+
+
     [DebuggerStepThrough]
-    public static CliProcessor From(object program) => From(program.GetType(), program);
+    public static CliProcessor Create(Action<ICliProcessorConfig> initialize)
+    {
+        return new CliProcessor(initialize);
+    }
 
 
-    private static CliProcessor From(Type type, object? instance)
+
+    private static CliAction[] GetActions(Type type, object? instance, CliContext context)
     {
         var methods = CliMethodInfo
-            .Get(type);
+            .Get(type, context);
 
         var actions = methods
             .Select(m =>
             {
                 if (m.IsStatic)
                 {
-                    return new CliActionVNext(m, null);
+                    return new CliAction(m, null);
                 }
 
                 ThrowIf.NullReference(instance);
-                return new CliActionVNext(m, instance);
+                return new CliAction(m, instance);
             })
             .ToArray();
-        return new CliProcessor(actions);
+        return actions;
     }
 
 
 
 
-    [DebuggerStepThrough]
-    public static int Process<T>(string commandLine)
+
+
+
+    protected override void DisplayGeneralHelp(CliCommandLine commandLine)
     {
-        return From<T>().Process(commandLine);
+        if (_logo.IsPrintable())
+        {
+            Console.WriteLine(_logo);
+            Enumerable.Range(0, 1).ForEach(_ => Console.WriteLine());
+        }
+
+        if (_description.IsPrintable())
+        {
+            Console.WriteLine(_description);
+            Enumerable.Range(0, 2).ForEach(_ => Console.WriteLine());
+        }
+
+        foreach (var action in _actions)
+        {
+            var actionHelp = action.GetGeneralHelp();
+            Console.WriteLine(actionHelp);
+            Enumerable.Range(0, 2).ForEach(_ => Console.WriteLine());
+        }
     }
 
 
 
+    protected override IEnumerable<IAction> GetActions() => _actions;
 
-    protected override void ShowGeneralHelp(CliCommandLine commandLine)
+    sealed class CliAction(CliMethodInfo method, object? instance) : IAction
     {
-        throw new NotImplementedException();
-    }
+        [DebuggerStepThrough]
+        bool IAction.IsMatch(CliCommandLine commandLine) => method.IsMatch(commandLine);
 
-
-
-    protected override IEnumerable<CliAction> GetActions() => _actions;
-
-    sealed class CliActionVNext(CliMethodInfo method, object? instance) : CliAction
-    {
-        private readonly object? _instance = instance;
 
         [DebuggerStepThrough]
-        public override bool IsMatch(CliCommandLine commandLine) => method.IsMatch(commandLine);
+        int IAction.Process(CliCommandLine commandLine) => method.Invoke(instance, commandLine);
 
-        [DebuggerStepThrough]
-        public override double Rank(CliCommandLine commandLine) => method.Rank(commandLine);
-
-        [DebuggerStepThrough]
-        public override int Process(CliCommandLine commandLine) => method.Invoke(instance, commandLine);
-
-        public override void ShowHelp(CliCommandLine commandLine)
+        void IAction.ShowHelp(CliCommandLine commandLine)
         {
             throw new NotImplementedException();
         }
 
         [DebuggerStepThrough]
-        public override double RankByOptions(CliCommandLine commandLine) => method.RankByOptions(commandLine);
+        double IAction.RankByOptions(CliCommandLine commandLine) => method.RankByOptions(commandLine);
 
         public override string ToString() => method.ToString();
+
+        [DebuggerStepThrough]
+        public string GetGeneralHelp() => method.ToGeneralHelpString();
     }
 }

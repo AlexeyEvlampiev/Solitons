@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
@@ -12,16 +13,18 @@ using Solitons.Reflection;
 
 namespace Solitons.CommandLine.Reflection;
 
-internal sealed class CliMethodInfo : MethodInfoDecorator
+internal sealed class CliMethodInfo : MethodInfoDecorator, IFormattable
 {
+    private readonly CliContext _context;
     private readonly ImmutableArray<ParameterInfoDecorator> _parameters;
     private readonly ImmutableArray<object> _routeSegments;
 
 
     private CliMethodInfo(
-        CliRouteAttribute[] baseRoutes,
-        MethodInfo method) : base(method)
+        MethodInfo method,
+        CliContext context) : base(method)
     {
+        _context = context;
         Debug.Assert(IsCliMethod(method));
         var parameters = base.GetParameters();
         var attributes = GetCustomAttributes(true).OfType<Attribute>().ToList();
@@ -64,12 +67,10 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
 
         _parameters = [.. cliParameters];
         Examples = [.. attributes.OfType<CliCommandExampleAttribute>()];
+        Description = attributes.OfType<DescriptionAttribute>().Select(a => a.Description).FirstOrDefault(Name);
     }
 
-    [DebuggerStepThrough]
-    public static CliMethodInfo[] Get(Type type) => Get([], type);
-
-    public static CliMethodInfo[] Get(CliRouteAttribute[] baseRoutes, Type type)
+    public static CliMethodInfo[] Get(Type type, CliContext context)
     {
         var methods = FluentList
             .Create(type)
@@ -87,19 +88,28 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
                 continue;
             }
 
-            list.Add(new CliMethodInfo(baseRoutes, method));
+            list.Add(new CliMethodInfo(method, context));
         }
 
         return list.ToArray();
     }
 
+    public string Description { get; }
 
     public int Invoke(object? instance, CliCommandLine commandLine)
     {
+        Debug.WriteLine(commandLine.ToString("D"));
+        Action onExecuted = () => { };
         try
         {
+            var globalOptionsBundles = _context.ToGlobalOptionBundles(commandLine);
+            globalOptionsBundles.ForEach(bundle => bundle.OnExecutingAction(commandLine));
+
+            onExecuted = () => globalOptionsBundles
+                .ForEach(bundle => bundle.OnActionExecuted(commandLine));
+
             var args = ToMethodArguments(commandLine);
-            object result = Invoke(instance, args);
+            object? result = Invoke(instance, args);
             if (result is Task task)
             {
                 Debug.WriteLine($"Awaiting '{Name}' returned task");
@@ -124,6 +134,10 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
         catch (TargetInvocationException e)
         {
             throw e.InnerException ?? new CliExitException("Internal error");
+        }
+        finally
+        {
+            onExecuted.Invoke();
         }
 
 
@@ -188,6 +202,11 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
                 }
             }
         }
+
+        foreach (var option in _context.GlobalOptions)
+        {
+            yield return option;
+        }
     }
 
     private static bool IsCliMethod(MethodInfo methodInfo)
@@ -203,7 +222,7 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
                 if (attribute is CliRouteAttribute route)
                 {
                     return Regex
-                        .Split(route.RouteDeclaration, @"\s+")
+                        .Split(route.RouteSignature, @"\s+")
                         .Where(r => r.IsPrintable())
                         .Select(r => r.Trim())
                         .Select(r => (object)new Regex(r, RegexOptions.IgnoreCase));
@@ -314,6 +333,16 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
         return builder.ToString();
     }
 
+    public string ToString(string? format, IFormatProvider? formatProvider = null)
+    {
+        format = format?.ToUpperInvariant();
+        switch (format)
+        {
+            case ("GH"): return ToGeneralHelpString();
+            default: return base.ToString();
+        }
+    }
+
     public double RankByOptions(CliCommandLine commandLine)
     {
         var optionInfos = GetOptions().ToList();
@@ -330,4 +359,60 @@ internal sealed class CliMethodInfo : MethodInfoDecorator
 
         return matchedOptions - missingOptions - unrecognizedOptions;
     }
+
+    public string ToGeneralHelpString()
+    {
+        var rtt = new CliMethodInfoGeneralHelpRtt(this);
+        return rtt.ToString();
+    }
+
+    internal IEnumerable<object> Segments => _routeSegments;
+}
+
+internal partial class CliMethodInfoGeneralHelpRtt
+{
+    private readonly CliMethodInfo _method;
+
+    public CliMethodInfoGeneralHelpRtt(CliMethodInfo method)
+    {
+        _method = method;
+        var signature = new StringBuilder();
+        foreach (var attribute in _method.GetCustomAttributes(true))
+        {
+            if (attribute is CliRouteAttribute route)
+            {
+                signature.Append($" {route.RouteSignature}");
+            }
+            else if(attribute is CliArgumentAttribute argument) 
+            {
+                signature.Append($" <{argument.Name.ToUpperInvariant()}>");
+            }
+        }
+
+        Signature = signature.ToString().Trim();
+        Arguments = _method
+            .GetParameters()
+            .OfType<CliArgumentParameterInfo>()
+            .Select(info => new Argument($"<{info.CliArgumentName.ToUpperInvariant()}>", info.Description))
+            .ToArray();
+        Options = _method
+            .GetOptions()
+            .Select(o => new Option(o.PipeSeparatedAliases, o.Description)).ToArray();
+
+        //foreach (var option in _method.GetOptions())
+        //{
+        //    signature.Append($" {option.PipeSeparatedAliases}");
+        //}
+        //Signature = signature.ToString().Trim();
+    }
+
+    public string Description => _method.Description;
+
+    public string Signature { get; }
+
+    public IEnumerable<Argument> Arguments { get; }
+    public IEnumerable<Option> Options { get; }
+
+    public record Argument(string Name, string Description);
+    public record Option(string Signature, string Description);
 }

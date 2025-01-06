@@ -1,4 +1,6 @@
+using Npgsql;
 using Solitons.CommandLine;
+using Solitons.Postgres.PgUp.Core;
 
 namespace Solitons.Postgres.PgUp;
 using static EnvironmentInfo;
@@ -12,12 +14,17 @@ public class VanillaTemplates_Should
         await TestConnectionAsync();
 
         var processor = CliProcessor
-            .From(new Program());
+            .Create(config => config
+                .ConfigGlobalOptions(options => options
+                    .Clear()
+                    .Add(new CliTracingGlobalOptionBundle()))
+                .AddService(new Program()));
         var templates = PgUpTemplateManager
             .GetTemplateDirectories()
                 .ToList();
         Assert.True(templates.Count > 0, "The should be at least one template registered.");
 
+        var csb = new NpgsqlConnectionStringBuilder(EnvironmentInfo.ConnectionString);
         foreach (var template in templates)
         {
             var workingDir = Path
@@ -25,11 +32,11 @@ public class VanillaTemplates_Should
                 .Convert(root => Path.Combine(root, Guid.NewGuid().ToString()))
                 .Convert(Directory.CreateDirectory);
 
-            var exitCode = processor.Process($@"pgup init ""{workingDir.FullName}""  --template {template.Name}");
+            var exitCode = processor.Process($@"pgup init ""{workingDir.FullName}""  --template {template.Name} --trace Verbose");
             Assert.True(exitCode == 0, $"Template initialization failed with exit code {exitCode}");
 
             var pgUpProjectPath = Path.Combine(workingDir.FullName, "pgup.json");
-            exitCode = processor.Process($@"pgup deploy ""{pgUpProjectPath}"" --overwrite --force --connection ""%{ConnectionStringKey}%""");
+            exitCode = processor.Process($@"pgup deploy ""{pgUpProjectPath}"" --overwrite --force --host {csb.Host} --port {csb.Port} --username ""{csb.Username}"" --password ""{csb.Password}""  --trace Verbose");
             Assert.True(exitCode == 0, $"Database deployment failed with exit code {exitCode}");
         }
     }

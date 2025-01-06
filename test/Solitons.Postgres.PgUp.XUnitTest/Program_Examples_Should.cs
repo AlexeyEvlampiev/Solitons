@@ -1,10 +1,10 @@
 ﻿using Solitons.CommandLine.Common;
 using Solitons.CommandLine.Reflection;
 
-
+namespace Solitons.Postgres.PgUp;
 
 // ReSharper disable once InconsistentNaming
-public class Program_Examples_Should : CliContractValidator<Solitons.Postgres.PgUp.IProgram>
+public class Program_Examples_Should : CliContractValidator<IPgUp>
 {
 
     [Fact]
@@ -13,8 +13,8 @@ public class Program_Examples_Should : CliContractValidator<Solitons.Postgres.Pg
         Validate(OnFailure);
     }
 
-    private void OnFailure(CliCommandExampleAttribute failedInvocation)
+    private void OnFailure(CliCommandExampleAttribute example)
     {
-        throw new NotImplementedException();
+        Assert.Fail($"{example.Example} did not trigger the dedicated cli action.");
     }
 }

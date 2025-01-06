@@ -1,5 +1,4 @@
-﻿using Solitons;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -134,6 +133,8 @@ public class CliOptionAttribute : Attribute
 
     public virtual bool AllowsCsv => true;
 
+    public string? DefaultValue { get; init; }
+
 
     /// <summary>
     /// Returns a string representation of the option specification.
@@ -202,4 +203,101 @@ public class CliOptionAttribute : Attribute
 
     [DebuggerNonUserCode]
     public bool IsMatch(string optionName) => _optionRegex.IsMatch(optionName);
+
+    public bool IsOptional(ParameterInfo parameter, out object? defaultValue)
+    {
+        defaultValue = null;
+        var result =
+            parameter.HasDefaultValue ||
+            parameter.IsNullable() ||
+            this.DefaultValue is not null;
+
+        if (!result)
+        {
+            defaultValue = null;
+            return false;
+        }
+
+        if (parameter.DefaultValue is not null && 
+            parameter.DefaultValue is not DBNull)
+        {
+            defaultValue = parameter.DefaultValue;
+            return true;
+        }
+
+        if (this.DefaultValue is null)
+        {
+            defaultValue = null;
+            return true;
+        }
+
+        if (CanAccept(parameter.ParameterType, out var valueConverter))
+        {
+            try
+            {
+                defaultValue = valueConverter.ConvertFromInvariantString(this.DefaultValue);
+                return true;
+            }
+            catch (Exception e)
+            {
+                throw new CliConfigurationException(
+                    $"The default value '{DefaultValue}' provided cannot be used to initialize the parameter '{parameter.Name}' of type '{parameter.ParameterType.FullName}'. " +
+                    $"Ensure the default value matches the expected type and format for '{parameter.ParameterType.FullName}'. Additional details: {e.Message}");
+            }
+        }
+
+        throw new CliConfigurationException(
+            $"The parameter '{parameter.Name}' of type '{parameter.ParameterType.FullName}' is incompatible with the applied CLI attribute. " +
+            $"Verify that the parameter type supports conversion from CLI options and that any default values are properly defined. " +
+            $"If this issue persists, consider reviewing the CLI attribute configuration or consulting the documentation for guidance.");
+    }
+
+    public bool IsOptional(PropertyInfo property, out object? defaultValue)
+    {
+        defaultValue = null;
+
+        // Determine if the property is nullable or has a defined default value
+        var result =
+            property.IsNullable() ||
+            this.DefaultValue is not null;
+
+        if (!result)
+        {
+            defaultValue = null;
+            return false;
+        }
+
+        // If the attribute specifies a default value
+        if (this.DefaultValue is not null)
+        {
+            if (CanAccept(property.PropertyType, out var valueConverter))
+            {
+                try
+                {
+                    defaultValue = valueConverter.ConvertFromInvariantString(this.DefaultValue);
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    throw new CliConfigurationException(
+                        $"The default value '{DefaultValue}' cannot be assigned to the property '{property.Name}' of type '{property.PropertyType.FullName}'. " +
+                        $"Ensure the default value matches the expected type and format. Additional details: {e.Message}");
+                }
+            }
+
+            throw new CliConfigurationException(
+                $"The property '{property.Name}' of type '{property.PropertyType.FullName}' does not support conversion from CLI options. " +
+                $"Verify that the property type is compatible with CLI attributes or modify the type to support such conversion.");
+        }
+
+        // If nullable, no specific default value is required
+        if (property.IsNullable())
+        {
+            defaultValue = null;
+            return true;
+        }
+
+        return false;
+    }
+
 }

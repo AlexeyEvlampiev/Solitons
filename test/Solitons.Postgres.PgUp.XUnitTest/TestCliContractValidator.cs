@@ -2,7 +2,7 @@
 
 namespace Solitons.Postgres.PgUp;
 
-public sealed class TestCliContractValidator : CliContractValidator<IProgram>
+public sealed class TestCliContractValidator : CliContractValidator<IPgUp>
 {
     [Fact]
     public void Run()

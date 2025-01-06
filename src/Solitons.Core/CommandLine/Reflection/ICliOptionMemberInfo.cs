@@ -5,6 +5,8 @@ namespace Solitons.CommandLine.Reflection;
 public interface ICliOptionMemberInfo
 {
     string Name { get; }
+
+    string PipeSeparatedAliases { get; }
     bool IsMatch(string optionName);
 
     bool IsOptional { get; }
@@ -12,6 +14,7 @@ public interface ICliOptionMemberInfo
     object? DefaultValue { get; }
 
     ImmutableArray<string> Aliases { get; }
+    string Description { get; }
 
 
     public sealed bool IsIn(CliCommandLine commandLine)
@@ -32,5 +35,4 @@ public interface ICliOptionMemberInfo
 
 
     bool IsNotIn(CliCommandLine commandLine) => (false == IsIn(commandLine));
-
 }

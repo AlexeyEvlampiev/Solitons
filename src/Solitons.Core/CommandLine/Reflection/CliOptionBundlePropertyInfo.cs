@@ -1,6 +1,5 @@
 ﻿using System.Collections.Immutable;
 using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
@@ -18,9 +17,23 @@ internal class CliOptionBundlePropertyInfo : PropertyInfoDecorator,  ICliOptionM
         var attributes = property.GetCustomAttributes().ToList();
         _optionAttribute = attributes.OfType<CliOptionAttribute>().Single();
 
-        IsOptional = 
-            false == attributes.OfType<RequiredAttribute>().Any() || 
-            property.IsNullable();
+        if (_optionAttribute.IsOptional(property, out object? defaultValue))
+        {
+            IsOptional = true;
+            DefaultValue = defaultValue;
+        }
+        else
+        {
+            IsOptional = false;
+            DefaultValue = null;
+        }
+
+
+        Description = attributes
+            .OfType<DescriptionAttribute>()
+            .Select(a => a.Description)
+            .Union([_optionAttribute.Description])
+            .First();
         _materializer = CliOptionMaterializer.CreateOrThrow(_optionAttribute, property.PropertyType, IsOptional, null);
     }
 

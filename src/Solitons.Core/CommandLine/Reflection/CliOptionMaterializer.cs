@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Solitons.CommandLine.Reflection;
@@ -219,6 +220,7 @@ internal sealed class CliScalarOptionMaterializer : CliOptionMaterializer
         bool isOptional,
         object? defaultValue)
     {
+        Debug.WriteLine(attribute.PipeSeparatedAliases);
         if (false == attribute.CanAccept(declaredType, out var typeConverter))
         {
             throw new CliConfigurationException(
@@ -226,6 +228,7 @@ internal sealed class CliScalarOptionMaterializer : CliOptionMaterializer
                 $"Refer to the attribute's aliases: '{attribute.PipeSeparatedAliases}' to identify the problematic configuration. " +
                 "Ensure the declared type is compatible with the attribute's requirements.");
         }
+
 
         object ParseValue(string value)
         {
@@ -238,6 +241,14 @@ internal sealed class CliScalarOptionMaterializer : CliOptionMaterializer
                         $"The value '{value}' cannot be converted to the required type '{declaredType.FullName}'.");
                 }
                 return result;
+            }
+            catch (FormatException ex) when(declaredType.IsEnum)
+            {
+                var expectedValueCsv = Enum
+                    .GetNames(declaredType)
+                    .Join(", ");
+                throw new CliOptionMaterializationException(
+                    $"The value '{value}' is invalid. Expected: {expectedValueCsv}. {ex.Message}");
             }
             catch (Exception ex)
             {

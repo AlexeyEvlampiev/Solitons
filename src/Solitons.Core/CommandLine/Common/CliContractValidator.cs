@@ -39,7 +39,7 @@ public abstract class CliContractValidator<T> where T : class
         T proxy = DispatchProxy.Create<T, CliRouteProxy>();
 
         var processor = CliProcessor
-            .From(proxy);
+            .Create(config => config.AddService(proxy));
 
         foreach (var testCase in testCases)
         {
@@ -74,6 +74,11 @@ public abstract class CliContractValidator<T> where T : class
             if (attributes.Length == 0)
             {
                 throw new InvalidOperationException($"Method {targetMethod.Name} is not adorned with CliCommandExampleAttribute.");
+            }
+
+            if (targetMethod.ReturnType == typeof(void))
+            {
+                return 0;
             }
 
             // Return the default value for the method's return type

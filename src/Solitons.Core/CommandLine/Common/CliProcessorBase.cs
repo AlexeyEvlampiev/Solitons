@@ -1,5 +1,4 @@
-﻿using Solitons;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -17,9 +16,10 @@ public abstract class CliProcessorBase
     }
 
 
-    public int Process(params string[] args)
+    public int Process()
     {
-        throw new NotImplementedException();
+        var commandLineObject = CliCommandLine.FromArgs(Environment.CommandLine);
+        return SafeProcess(commandLineObject);
     }
 
     [DebuggerStepThrough]
@@ -39,18 +39,13 @@ public abstract class CliProcessorBase
         }
         catch (Exception e)
         {
+            Trace.TraceError(e.ToString());
             return 5;
         }
     }
 
     private int Process(CliCommandLine commandLine)
     {
-        if (IsGeneralHelpRequest(commandLine))
-        {
-            ShowGeneralHelp(commandLine);
-            return 0;
-        }
-
         var actions = Match(commandLine);
         if (actions.Length == 1)
         {
@@ -62,14 +57,33 @@ public abstract class CliProcessorBase
             return Process(commandLine, actions[0]);
         }
 
-        if (actions.Length == 0)
+        if(actions.Length > 1) 
         {
-            OnActionNotFound(commandLine);
-            return 4;
+            Debug.Assert(actions.Length > 1);
+
+            throw new NotImplementedException();
         }
 
-        Debug.Assert(actions.Length > 1);
+        if (IsGeneralHelpRequest(commandLine))
+        {
+            DisplayGeneralHelp(commandLine);
+            return 0;
+        }
 
+        if (commandLine.Segments.Length == 0 &&
+            commandLine.Options.Length == 0)
+        {
+            DisplayGeneralHelp(commandLine);
+            return 0;
+        }
+
+        OnActionNotFound(commandLine);
+        DisplayFuzzyMatchHelp(commandLine);
+        return 4;
+    }
+
+    private void DisplayFuzzyMatchHelp(CliCommandLine commandLine)
+    {
         throw new NotImplementedException();
     }
 
@@ -91,31 +105,31 @@ public abstract class CliProcessorBase
     }
 
 
-    private int Process(CliCommandLine commandLine, CliAction action)
+    private int Process(CliCommandLine commandLine, IAction action)
     {
-        OnProcessing(commandLine);
+        OnExecutingAction(commandLine);
         var exitCode = action.Process(commandLine);
-        OnProcessed(commandLine, exitCode);
+        OnActionExecuted(commandLine, exitCode);
         return exitCode;
     }
 
+    [DebuggerStepThrough]
+    protected virtual void OnActionExecuted(CliCommandLine commandLine, int exitCode) { }
 
-    protected virtual void OnProcessed(CliCommandLine commandLine, int exitCode) { }
 
-
-
-    protected virtual void OnProcessing(CliCommandLine commandLine) { }
+    [DebuggerStepThrough]
+    protected virtual void OnExecutingAction(CliCommandLine commandLine) { }
 
     protected virtual void OnActionNotFound(CliCommandLine commandLine)
     {
         PrintError("Not found");
-        ShowGeneralHelp(commandLine);
+        DisplayGeneralHelp(commandLine);
     }
 
     protected virtual void PrintError(string message) => Console.Error.WriteLine(message);
 
-    protected abstract void ShowGeneralHelp(CliCommandLine commandLine);
-
+    protected abstract void DisplayGeneralHelp(CliCommandLine commandLine);
+    
     protected virtual bool IsGeneralHelpRequest(CliCommandLine commandLine)
     {
         if (commandLine.Segments.Length != 1)
@@ -128,9 +142,9 @@ public abstract class CliProcessorBase
     }
 
 
-    protected abstract IEnumerable<CliAction> GetActions();
+    protected abstract IEnumerable<IAction> GetActions();
 
-    protected virtual CliAction[] Match(CliCommandLine commandLine)
+    protected virtual IAction[] Match(CliCommandLine commandLine)
     {
         var matches = GetActions()
             .Where(a => a.IsMatch(commandLine))
@@ -155,13 +169,12 @@ public abstract class CliProcessorBase
 
     }
 
-    protected abstract class CliAction
+    protected interface IAction
     {
-        public abstract bool IsMatch(CliCommandLine commandLine);
-        public abstract double Rank(CliCommandLine commandLine);
-        public abstract int Process(CliCommandLine commandLine);
-        public abstract void ShowHelp(CliCommandLine commandLine);
+        bool IsMatch(CliCommandLine commandLine);
+        int Process(CliCommandLine commandLine);
+        void ShowHelp(CliCommandLine commandLine);
 
-        public abstract double RankByOptions(CliCommandLine commandLine);
+        double RankByOptions(CliCommandLine commandLine);
     }
 }

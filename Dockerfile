@@ -1,5 +1,5 @@
 # Base build image
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 
 # Define build arguments
 ARG STAGING_TYPE=Alpha

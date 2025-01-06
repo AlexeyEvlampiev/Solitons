@@ -1,105 +1,67 @@
 ﻿using System.Diagnostics;
-using System.Reactive;
+using Npgsql;
 using Solitons.CommandLine;
+using Solitons.Postgres.PgUp.CommandLine;
+using Solitons.Postgres.PgUp.Core;
 
 namespace Solitons.Postgres.PgUp;
 
 
-public class Program : IProgram
+public sealed class Program : IPgUp
 {
-    private static readonly TimeSpan DefaultActionTimeout = TimeSpan.FromMinutes(10);
+    const string PgUpDescription = "PgUp is a PostgreSQL migration tool using plain SQL for transaction-safe schema changes";
 
-    public static int Main()
+    public static int Main() => CliProcessor
+            .Create(ConfigureProcessor)
+            .Process();
+
+    private static void ConfigureProcessor(ICliProcessorConfig config)
     {
-        throw new NotImplementedException();
-        //return CliProcessorVNext
-        //    .Setup(config => config
-        //        .UseCommandsFrom(new Program())
-        //        .UseLogo(PgUpResource.AsciiLogo)
-        //        .UseDescription(IProgram.PgUpDescription))
-        //    .Process();
+        config
+            .AddService(new Program())
+            .WithLogo(PgUpResource.AsciiLogo)
+            .WithDescription(PgUpDescription)
+            .ConfigGlobalOptions(options => options
+                .Clear()
+                .Add(new CliTracingGlobalOptionBundle()));
     }
 
+
     [DebuggerStepThrough]
-    public void Initialize(
+    void IPgUp.Initialize(
         string projectDir,
         string template)
     {
         PgUpTemplateManager.Initialize(projectDir, template);
     }
 
-    [DebuggerStepThrough]
-    public Task<int> DeployAsync(
-        string projectFile,
-        PgUpConnectionOptionsBundle pgUpConnection,
-        Dictionary<string, string>? parameters,
-        TimeSpan? timeout)
+    Task<int> IPgUp.DeployAsync(
+        string projectFile, 
+        string host, 
+        int port, 
+        string username, 
+        string password,
+        string maintenanceDatabase, 
+        Dictionary<string, string> parameters, 
+        TimeSpan timeout, 
+        CliFlag? overwrite,
+        CliFlag? force)
     {
+        var csb = new NpgsqlConnectionStringBuilder()
+        {
+            Host = host,
+            Port = port,
+            Username = username,
+            Password = password,
+            Database = maintenanceDatabase
+        };
         return PgUpDatabaseManager
             .DeployAsync(
                 projectFile,
-                pgUpConnection.ToString(),
-                false,
-                false,
-                parameters ?? [],
-                timeout ?? DefaultActionTimeout);
-    }
-
-
-    [DebuggerStepThrough]
-    public  Task<int> DeployAsync(
-        string projectFile,
-        PgUpConnectionOptionsBundle pgUpConnection,
-        Unit overwrite,
-        Unit? forceOverride,
-        Dictionary<string, string>? parameters,
-         TimeSpan? timeout)
-    {
-        return PgUpDatabaseManager
-            .DeployAsync(
-                projectFile,
-                pgUpConnection.ToString(),
-                false,
-                false,
-                parameters ?? [],
-                timeout ?? DefaultActionTimeout);
-    }
-
-    [DebuggerStepThrough]
-    public Task<int> DeployAsync(
-        string projectFile,
-        string connectionString,
-        Dictionary<string, string>? parameters,
-        TimeSpan? timeout)
-    {
-        return PgUpDatabaseManager
-            .DeployAsync(
-                projectFile,
-                connectionString,
-                false,
-                false,
-                parameters ?? [],
-                timeout ?? DefaultActionTimeout);
-    }
-
-    [DebuggerStepThrough]
-    public Task<int> DeployAsync(
-        string projectFile,
-        string connectionString,
-        Unit overwrite,
-        Unit? forceOverride,
-        Dictionary<string, string>? parameters,
-        TimeSpan? timeout)
-    {
-
-        return PgUpDatabaseManager
-            .DeployAsync(
-                projectFile,
-                connectionString,
-                false,
-                false,
-                parameters ?? [],
-                timeout ?? DefaultActionTimeout);
+                csb.ConnectionString,
+                overwrite is not null,
+                force is not null,
+                parameters, timeout);
     }
 
 }
