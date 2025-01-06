@@ -11,7 +11,9 @@
     <PackageIcon>Solitons.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageId>Solitons.Postgres.PgUp</PackageId>
+	  <PackageTags>postgresql, cli, automation, deployment, database, pgup</PackageTags>
     <Title>pgup</Title>
+	  <PackageReleaseNotes>Initial release of pgup. Streamline PostgreSQL deployments effortlessly.</PackageReleaseNotes>
     <Description>Solitons.Postgres.PgUp is a CLI tool for streamlined PostgreSQL deployments, automating tasks and ensuring consistent setups.</Description>
 	  <IncludeReferencedProjects>true</IncludeReferencedProjects>
 	  <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
