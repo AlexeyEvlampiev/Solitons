@@ -35,11 +35,11 @@ RUN dotnet build solitons.sln -c Release --no-restore
 RUN dotnet test solitons.sln -c Release --no-build --verbosity normal
 
 # Create NuGet packages
-RUN dotnet pack src/Solitons.Core/Solitons.Core.csproj -c Release --no-build -o /app/packages && \
-    dotnet pack src/Solitons.Postgres/Solitons.Postgres.csproj -c Release --no-build -o /app/packages && \
-    dotnet pack src/Solitons.Postgres.PgUp/Solitons.Postgres.PgUp.csproj -c Release --no-build -o /app/packages && \
-    dotnet pack src/Solitons.SQLite/Solitons.SQLite.csproj -c Release --no-build -o /app/packages && \
-    dotnet pack src/Solitons.Azure/Solitons.Azure.csproj -c Release --no-build -o /app/packages
+RUN dotnet pack src/Solitons.Core/Solitons.Core.csproj -c Release  -o /app/packages && \
+    dotnet pack src/Solitons.Postgres/Solitons.Postgres.csproj -c Release  -o /app/packages && \
+    dotnet pack src/Solitons.Postgres.PgUp/Solitons.Postgres.PgUp.csproj -c Release  -o /app/packages && \
+    dotnet pack src/Solitons.SQLite/Solitons.SQLite.csproj -c Release  -o /app/packages && \
+    dotnet pack src/Solitons.Azure/Solitons.Azure.csproj -c Release  -o /app/packages
 
 RUN dotnet nuget push "/app/packages/Solitons.Core.*.nupkg" --api-key ${NUGET_API_KEY} --source https://api.nuget.org/v3/index.json && \
     dotnet nuget push "/app/packages/Solitons.Azure.*.nupkg" --api-key ${NUGET_API_KEY} --source https://api.nuget.org/v3/index.json && \
