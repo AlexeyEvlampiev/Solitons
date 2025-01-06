@@ -36,7 +36,7 @@ public class VanillaTemplates_Should
             Assert.True(exitCode == 0, $"Template initialization failed with exit code {exitCode}");
 
             var pgUpProjectPath = Path.Combine(workingDir.FullName, "pgup.json");
-            exitCode = processor.Process($@"pgup deploy ""{pgUpProjectPath}"" --overwrite --force --host {csb.Host} --port {csb.Port} --username ""{csb.Username}"" --password ""{csb.Password}""  --trace Verbose");
+            exitCode = processor.Process($@"pgup deploy ""{pgUpProjectPath}"" --overwrite --force --host {csb.Host} --port {csb.Port} --username ""{csb.Username}"" --password ""{csb.Password}""  --trace Verbose --timeout 00:03:00");
             Assert.True(exitCode == 0, $"Database deployment failed with exit code {exitCode}");
         }
     }
