@@ -9,6 +9,8 @@
     <PackageId>Solitons.Azure</PackageId>
     <Title>Solitons.Azure</Title>
     <Description>Solitons.Azure delivers specialized providers, services, and abstractions tailored for Microsoft Azure.</Description>
+	  <IncludeProjectReferences>true</IncludeProjectReferences>
+	  <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,12 +26,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Solitons.Core\Solitons.Core.csproj">
-	    <PrivateAssets>all</PrivateAssets>
-    </ProjectReference>
-	  <ProjectReference Include="..\Solitons.Postgres\Solitons.Postgres.csproj">
-		  <PrivateAssets>all</PrivateAssets>
-	  </ProjectReference>
+    <ProjectReference Include="..\Solitons.Core\Solitons.Core.csproj" />
+    <ProjectReference Include="..\Solitons.Postgres\Solitons.Postgres.csproj"/>
   </ItemGroup>
 
   <ItemGroup>
