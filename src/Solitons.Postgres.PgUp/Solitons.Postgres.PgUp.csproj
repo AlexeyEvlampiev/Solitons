@@ -11,7 +11,11 @@
     <PackageId>Solitons.Postgres.PgUp</PackageId>
     <Title>pgup</Title>
     <Description>Solitons.Postgres.PgUp is a CLI tool for streamlined PostgreSQL deployments, automating tasks and ensuring consistent setups.</Description>
+	  <IncludeProjectReferences>true</IncludeProjectReferences>
+	  <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
+
+
 
   <ItemGroup>
     <None Include="CommandLine\Contract.generated.cs">
@@ -27,8 +31,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Solitons.Core\Solitons.Core.csproj" />
-    <ProjectReference Include="..\Solitons.Postgres\Solitons.Postgres.csproj" />
+    <ProjectReference Include="..\Solitons.Core\Solitons.Core.csproj">
+	    <PrivateAssets>none</PrivateAssets>
+    </ProjectReference>
+    <ProjectReference Include="..\Solitons.Postgres\Solitons.Postgres.csproj">
+	    <PrivateAssets>none</PrivateAssets>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>
