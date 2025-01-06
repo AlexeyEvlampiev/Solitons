@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Reflection;
 
 namespace Solitons.Postgres.PgUp.Core;
 
@@ -26,6 +27,9 @@ internal sealed class PgUpTemplateManager
         {
             throw new PgUpExitException($"'{targetDir.Name}' directory is not empty..");
         }
+
+        var assembly = Assembly.GetExecutingAssembly();
+        var yyy = assembly.GetManifestResourceNames();
 
         var root = new DirectoryInfo("Templates");
         var sourceDir = root
@@ -56,6 +60,13 @@ internal sealed class PgUpTemplateManager
 
     public static IEnumerable<Template> GetTemplateDirectories()
     {
+        var assembly = Assembly.GetExecutingAssembly();
+        var templates = assembly
+            .GetManifestResourceNames()
+            .Where(name => name.StartsWith($"{typeof(Program).Namespace}.Templates.") &&
+                           name.EndsWith(".pgup.json"))
+            .Select(name => name.Replace($"{typeof(Program).Namespace}.Templates.", ""))
+            .ToArray();
         var dir = new DirectoryInfo(Path.Combine(".", "Templates"));
         Debug.Assert(dir.Exists);
         return dir

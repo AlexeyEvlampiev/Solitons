@@ -19,6 +19,7 @@ public class VanillaTemplates_Should
                     .Clear()
                     .Add(new CliTracingGlobalOptionBundle()))
                 .AddService(new Program()));
+        
         var templates = PgUpTemplateManager
             .GetTemplateDirectories()
                 .ToList();
