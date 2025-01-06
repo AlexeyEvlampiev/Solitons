@@ -11,6 +11,7 @@
     <Description>Solitons.Azure delivers specialized providers, services, and abstractions tailored for Microsoft Azure.</Description>
 	  <IncludeReferencedProjects>true</IncludeReferencedProjects>
 	  <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
+	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
   </PropertyGroup>
 	<Target Name="CopyProjectReferencesToPackage" DependsOnTargets="BuildOnlySettings;ResolveReferences">
 		<ItemGroup>

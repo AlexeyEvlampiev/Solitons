@@ -13,6 +13,7 @@
     <Description>Solitons.Postgres.PgUp is a CLI tool for streamlined PostgreSQL deployments, automating tasks and ensuring consistent setups.</Description>
 	  <IncludeReferencedProjects>true</IncludeReferencedProjects>
 	  <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
+	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
   </PropertyGroup>
 	<Target Name="CopyProjectReferencesToPackage" DependsOnTargets="BuildOnlySettings;ResolveReferences">
 		<ItemGroup>
