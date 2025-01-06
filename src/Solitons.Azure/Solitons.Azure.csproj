@@ -9,10 +9,14 @@
     <PackageId>Solitons.Azure</PackageId>
     <Title>Solitons.Azure</Title>
     <Description>Solitons.Azure delivers specialized providers, services, and abstractions tailored for Microsoft Azure.</Description>
-	  <IncludeProjectReferences>true</IncludeProjectReferences>
-	  <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+	  <IncludeReferencedProjects>true</IncludeReferencedProjects>
+	  <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
-
+	<Target Name="CopyProjectReferencesToPackage" DependsOnTargets="BuildOnlySettings;ResolveReferences">
+		<ItemGroup>
+			<BuildOutputInPackage Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))" />
+		</ItemGroup>
+	</Target>
   <ItemGroup>
     <PackageReference Include="Azure.Identity" Version="1.13.1" />
     <PackageReference Include="Azure.Messaging.EventGrid" Version="4.28.0" />
@@ -26,8 +30,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Solitons.Core\Solitons.Core.csproj" />
-    <ProjectReference Include="..\Solitons.Postgres\Solitons.Postgres.csproj"/>
+    <ProjectReference Include="..\Solitons.Core\Solitons.Core.csproj">
+	    <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+	    <IncludeAssets>all</IncludeAssets>
+    </ProjectReference>
+    <ProjectReference Include="..\Solitons.Postgres\Solitons.Postgres.csproj">
+	    <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+	    <IncludeAssets>all</IncludeAssets>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>
