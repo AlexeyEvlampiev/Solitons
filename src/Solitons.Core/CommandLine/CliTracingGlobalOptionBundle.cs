@@ -5,11 +5,12 @@ using Solitons.CommandLine.Reflection;
 
 namespace Solitons.CommandLine;
 
+[DebuggerDisplay("CliTracing: {Level}")]
 public sealed class CliTracingGlobalOptionBundle : CliGlobalOptionBundle
 {
     private readonly List<TraceListener> _listenersSnapshot = new();
 
-    [CliOption("--trace-level|--trace|-tl", "Trace level")]
+    [CliOption("--trace-level|--trace", "Trace level", DefaultValue = "Off")]
     public TraceLevel Level { get; set; } = TraceLevel.Off;
 
     public override void OnExecutingAction(CliCommandLine commandLine)
@@ -26,4 +27,5 @@ public sealed class CliTracingGlobalOptionBundle : CliGlobalOptionBundle
         Trace.Listeners.AddRange(_listenersSnapshot.ToArray());
         base.OnActionExecuted(commandLine);
     }
+
 }

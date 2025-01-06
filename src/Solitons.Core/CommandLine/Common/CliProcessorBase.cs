@@ -18,7 +18,7 @@ public abstract class CliProcessorBase
 
     public int Process()
     {
-        var commandLineObject = CliCommandLine.FromArgs();
+        var commandLineObject = CliCommandLine.FromArgs(Environment.CommandLine);
         return SafeProcess(commandLineObject);
     }
 
@@ -113,11 +113,11 @@ public abstract class CliProcessorBase
         return exitCode;
     }
 
-
+    [DebuggerStepThrough]
     protected virtual void OnActionExecuted(CliCommandLine commandLine, int exitCode) { }
 
 
-
+    [DebuggerStepThrough]
     protected virtual void OnExecutingAction(CliCommandLine commandLine) { }
 
     protected virtual void OnActionNotFound(CliCommandLine commandLine)
