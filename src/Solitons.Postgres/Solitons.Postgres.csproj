@@ -9,12 +9,16 @@
     <PackageId>Solitons.Postgres</PackageId>
     <Title>Solitons.Postgres</Title>
     <Description>Solitons.Postgres provides specialized providers, services, and abstractions tailored for PostgreSQL.</Description>
+	  <IncludeProjectReferences>true</IncludeProjectReferences>
+	  <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Npgsql" Version="9.0.2" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Solitons.Core\Solitons.Core.csproj" />
+	  <ProjectReference Include="..\Solitons.Core\Solitons.Core.csproj">
+		  <PrivateAssets>none</PrivateAssets>
+	  </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Update="README.md">
