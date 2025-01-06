@@ -25,6 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Solitons.Core\Solitons.Core.csproj" />
     <ProjectReference Include="..\..\src\Solitons.Postgres.PgUp\Solitons.Postgres.PgUp.csproj" />
   </ItemGroup>
 

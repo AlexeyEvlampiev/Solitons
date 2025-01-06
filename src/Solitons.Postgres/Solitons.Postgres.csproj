@@ -17,7 +17,7 @@
   </ItemGroup>
   <ItemGroup>
 	  <ProjectReference Include="..\Solitons.Core\Solitons.Core.csproj">
-		  <PrivateAssets>none</PrivateAssets>
+		  <PrivateAssets>all</PrivateAssets>
 	  </ProjectReference>
   </ItemGroup>
   <ItemGroup>

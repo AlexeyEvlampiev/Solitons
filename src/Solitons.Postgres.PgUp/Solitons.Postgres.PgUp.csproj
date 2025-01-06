@@ -32,10 +32,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Solitons.Core\Solitons.Core.csproj">
-	    <PrivateAssets>none</PrivateAssets>
+	    <PrivateAssets>all</PrivateAssets>
     </ProjectReference>
     <ProjectReference Include="..\Solitons.Postgres\Solitons.Postgres.csproj">
-	    <PrivateAssets>none</PrivateAssets>
+	    <PrivateAssets>all</PrivateAssets>
     </ProjectReference>
   </ItemGroup>
 
