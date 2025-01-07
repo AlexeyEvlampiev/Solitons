@@ -12,6 +12,14 @@
 	  <IncludeProjectReferences>true</IncludeProjectReferences>
 	  <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="PgUp\templates\basic\migrations\00-00-00.sql" />
+    <EmbeddedResource Include="PgUp\templates\basic\pgup.json" />
+    <EmbeddedResource Include="PgUp\templates\basic\post-deployment\post-deployment.sql" />
+    <EmbeddedResource Include="PgUp\templates\basic\pre-deployment\pre-deployment.sql" />
+    <EmbeddedResource Include="PgUp\templates\basic\setup\setup.sql" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Npgsql" Version="9.0.2" />
   </ItemGroup>
@@ -21,6 +29,22 @@
 	  </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Update="PgUp\CommandLine\Contract.tt">
+      <LastGenOutput>Contract.generated.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="PgUp\Core\Formatting\PgUpConnectionDisplayRtt.tt">
+      <LastGenOutput>PgUpConnectionDisplayRtt.cs</LastGenOutput>
+      <Generator>TextTemplatingFilePreprocessor</Generator>
+    </None>
+    <None Update="PgUp\Core\Formatting\PgUpScriptDisplayRtt.tt">
+      <LastGenOutput>PgUpScriptDisplayRtt.cs</LastGenOutput>
+      <Generator>TextTemplatingFilePreprocessor</Generator>
+    </None>
+    <None Update="PgUp\Core\Formatting\PgUpTransactionDelimiterRtt.tt">
+      <LastGenOutput>PgUpTransactionDelimiterRtt.cs</LastGenOutput>
+      <Generator>TextTemplatingFilePreprocessor</Generator>
+    </None>
     <None Update="README.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
@@ -29,5 +53,41 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="PgUp\CommandLine\Contract.generated.cs">
+      <DependentUpon>Contract.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="PgUp\CommandLine\PgUpResource.Designer.cs">
+      <DependentUpon>PgUpResource.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="PgUp\Core\Formatting\PgUpConnectionDisplayRtt.cs">
+      <DependentUpon>PgUpConnectionDisplayRtt.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="PgUp\Core\Formatting\PgUpScriptDisplayRtt.cs">
+      <DependentUpon>PgUpScriptDisplayRtt.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="PgUp\Core\Formatting\PgUpTransactionDelimiterRtt.cs">
+      <DependentUpon>PgUpTransactionDelimiterRtt.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Update="PgUp\CommandLine\PgUpResource.resx">
+      <LastGenOutput>PgUpResource.Designer.cs</LastGenOutput>
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
   </ItemGroup>
 </Project>

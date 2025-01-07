@@ -18,6 +18,8 @@
 	  <IncludeReferencedProjects>true</IncludeReferencedProjects>
 	  <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
 	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	  <StartupObject></StartupObject>
+	  <RootNamespace>PgUp</RootNamespace>
   </PropertyGroup>
 	<Target Name="CopyProjectReferencesToPackage" DependsOnTargets="BuildOnlySettings;ResolveReferences">
 		<ItemGroup>
@@ -47,23 +49,15 @@
 		<EmbeddedResource Include="Templates\**\*" />
 	</ItemGroup>
 
-
 	<ItemGroup>
-    <None Include="CommandLine\Contract.generated.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Contract.tt</DependentUpon>
-    </None>
-  </ItemGroup>
+	  <Compile Remove="CommandLine\**" />
+	  <EmbeddedResource Remove="CommandLine\**" />
+	  <None Remove="CommandLine\**" />
+	</ItemGroup>
 
   
 
   <ItemGroup>
-    <Compile Update="CommandLine\Contract.generated.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Contract.tt</DependentUpon>
-    </Compile>
     <Compile Update="Core\Formatting\PgUpConnectionDisplayRtt.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -79,18 +73,9 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>PgUpTransactionDelimiterRtt.tt</DependentUpon>
     </Compile>
-    <Compile Update="CommandLine\PgUpResource.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>PgUpResource.resx</DependentUpon>
-    </Compile>
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="CommandLine\Contract.tt">
-      <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>Contract.generated.cs</LastGenOutput>
-    </None>
     <None Update="Core\Formatting\PgUpConnectionDisplayRtt.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>
       <LastGenOutput>PgUpConnectionDisplayRtt.cs</LastGenOutput>
@@ -115,13 +100,6 @@
 
   <ItemGroup>
     <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Update="CommandLine\PgUpResource.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>PgUpResource.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
   </ItemGroup>
 
 </Project>

@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using Solitons.CommandLine;
 using Solitons.CommandLine.Reflection;
+namespace Solitons.Postgres.PgUp.CommandLine;
 
 /// <summary>
 /// Defines the PgUp CLI interface, enabling streamlined project initialization and database deployment.

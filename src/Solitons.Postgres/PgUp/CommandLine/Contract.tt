@@ -57,6 +57,7 @@
 using System.ComponentModel;
 using Solitons.CommandLine;
 using Solitons.CommandLine.Reflection;
+namespace Solitons.Postgres.PgUp.CommandLine;
 
 /// <summary>
 /// <#= contractSummary #>
