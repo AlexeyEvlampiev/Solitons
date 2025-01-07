@@ -22,29 +22,8 @@ COPY src/ src/
 COPY test/ test/
 COPY build/ build/
 
-RUN pwsh -Command ". ./build/commands.ps1; Config-Packages -staging '${STAGING_TYPE}' -searchRoot './src/'"
+RUN pwsh -Command ". ./build/build.ps1"
 
-# Restore dependencies
-RUN dotnet restore solitons.sln
-
-# Build solution
-RUN dotnet build solitons.sln -c Release --no-restore
-
-# Run tests
-
-RUN dotnet test solitons.sln -c Release --no-build --verbosity normal
-
-# Create NuGet packages
-RUN dotnet pack src/Solitons.Core/Solitons.Core.csproj -c Release  -o /app/packages && \
-    dotnet pack src/Solitons.Postgres/Solitons.Postgres.csproj -c Release  -o /app/packages && \
-    dotnet pack src/Solitons.Postgres.PgUp/Solitons.Postgres.PgUp.csproj -c Release  -o /app/packages && \
-    dotnet pack src/Solitons.SQLite/Solitons.SQLite.csproj -c Release  -o /app/packages && \
-    dotnet pack src/Solitons.Azure/Solitons.Azure.csproj -c Release  -o /app/packages
-
-RUN dotnet nuget push "/app/packages/Solitons.Core.*.nupkg" --api-key ${NUGET_API_KEY} --source https://api.nuget.org/v3/index.json && \
-    dotnet nuget push "/app/packages/Solitons.Azure.*.nupkg" --api-key ${NUGET_API_KEY} --source https://api.nuget.org/v3/index.json && \
-    dotnet nuget push "/app/packages/Solitons.Postgres.*.nupkg" --api-key ${NUGET_API_KEY} --source https://api.nuget.org/v3/index.json  && \
-    dotnet nuget push "/app/packages/Solitons.Postgres.PgUp.*.nupkg" --api-key ${NUGET_API_KEY} --source https://api.nuget.org/v3/index.json 
 
 # Final stage to hold the packages
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final

@@ -11,7 +11,7 @@ public sealed class Program : IPgUp
 {
     const string PgUpDescription = "PgUp is a PostgreSQL migration tool using plain SQL for transaction-safe schema changes";
 
-    public static int Main(string[] args) => CliProcessor
+    public static int Main() => CliProcessor
             .Create(ConfigureProcessor)
             .Process();
 
