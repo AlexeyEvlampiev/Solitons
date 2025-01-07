@@ -15,6 +15,46 @@ namespace Solitons
     public static partial class Extensions
     {
         private static readonly Lazy<Regex> Base64Regex = new(() => new Regex(@"(?xis-m)^[a-z0-9\+/]*={0,3}$"));
+
+
+        /// <summary>
+        /// Removes the specified prefix from the start of the source string if it exists.
+        /// </summary>
+        /// <param name="source">The string to process.</param>
+        /// <param name="prefix">The prefix to remove.</param>
+        /// <param name="comparisonType">
+        /// Specifies the type of comparison to use. Defaults to <see cref="StringComparison.Ordinal"/>.
+        /// </param>
+        /// <returns>The source string without the specified prefix, or the original string if the prefix is not found.</returns>
+        public static string RemovePrefix(this string source, string prefix, StringComparison comparisonType = StringComparison.Ordinal)
+        {
+            return source.StartsWith(prefix, comparisonType)
+                ? source.Substring(prefix.Length)
+                : source;
+        }
+
+        /// <summary>
+        /// Removes the specified suffix from the end of the source string if it exists.
+        /// </summary>
+        /// <param name="source">The string to process.</param>
+        /// <param name="suffix">The suffix to remove.</param>
+        /// <param name="comparisonType">
+        /// Specifies the type of comparison to use. Defaults to <see cref="StringComparison.Ordinal"/>.
+        /// </param>
+        /// <returns>The source string without the specified suffix, or the original string if the suffix is not found.</returns>
+        public static string RemoveSuffix(this string source, string suffix, StringComparison comparisonType = StringComparison.Ordinal)
+        {
+            if (source.EndsWith(suffix, comparisonType))
+            {
+                return source.Substring(0, source.Length - suffix.Length);
+            }
+
+            return source;
+        }
+
+
+
+
         /// <summary>
         /// Determines whether this string contains any number of printable characters.
         /// </summary>

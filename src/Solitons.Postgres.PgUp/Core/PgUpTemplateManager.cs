@@ -1,12 +1,62 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace Solitons.Postgres.PgUp.Core;
 
 internal sealed class PgUpTemplateManager
 {
-    public static void Initialize(string projectDir, string template)
+    sealed record Resource(string EmbeddedResourceName, string FilePath);
+
+    private readonly Assembly _assembly;
+    private readonly Dictionary<string, Resource[]> _templates;
+
+    public PgUpTemplateManager()
     {
+        var prefix = $"{typeof(Program).Namespace}.Templates.";
+        var directorySeparator = Path.DirectorySeparatorChar.ToString();
+        _assembly = Assembly.GetExecutingAssembly();
+        _templates = _assembly
+            .GetManifestResourceNames()
+            .Where(name => name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            .ToList()
+            .Convert(items =>
+            {
+                return items
+                    .Where(i => i.EndsWith(".pgup.json"))
+                    .Select(projectResource =>
+                    {
+                        var projectPath = projectResource.RemoveSuffix("pgup.json");
+                        var resources = items
+                            .Where(i => i.StartsWith(projectPath))
+                            .Select(i => new Resource(i, i
+                                .RemovePrefix(projectPath)
+                                .Replace(new Regex(@"\.(?!(?:json|sql)$)"), directorySeparator)
+                                .Replace("_", "-")))
+                            .ToArray();
+                        var templateName = projectPath
+                            .Replace(prefix, String.Empty)
+                            .Trim('.')
+                            .Replace(".", directorySeparator);
+                        return new
+                        {
+                            TemplateName = templateName,
+                            Resources = resources
+                        };
+                    });
+            })
+            .ToDictionary(i => i.TemplateName, i => i.Resources);
+    }
+    public void Initialize(string projectDir, string template)
+    {
+        if (false == _templates.TryGetValue(template, out var resources))
+        {
+            throw new PgUpExitException($"'{template}' template not found."){ ExitCode = 4 };
+        }
+
+        
+        
+
         Trace.WriteLine($"{typeof(PgUpTemplateManager)}.{nameof(Initialize)}");
         Trace.WriteLine($@"(\t""{projectDir}"", ""{template}"")");
         DirectoryInfo targetDir;
@@ -28,54 +78,30 @@ internal sealed class PgUpTemplateManager
             throw new PgUpExitException($"'{targetDir.Name}' directory is not empty..");
         }
 
-        var assembly = Assembly.GetExecutingAssembly();
-        var yyy = assembly.GetManifestResourceNames();
-
-        var root = new DirectoryInfo("Templates");
-        var sourceDir = root
-            .EnumerateDirectories("*", SearchOption.AllDirectories)
-            .Where(di =>
+        Trace.WriteLine($"Initializing '{template}' pgup template at '{targetDir.FullName}'");
+        foreach (var resource in resources)
+        {
+            using var stream = _assembly.GetManifestResourceStream(resource.EmbeddedResourceName);
+            if (stream == null)
             {
-                var relPath = Path.GetRelativePath(root.FullName, di.FullName);
-                return
-                    relPath.Equals(template, StringComparison.OrdinalIgnoreCase) &&
-                    di.EnumerateFiles("pgup.json").Any();
-            })
-            .FirstOrDefault();
-        if (sourceDir is null)
-        {
-            throw new PgUpExitException($"The '{template}' template is not found.");
+                throw new InvalidOperationException($"'{resource.EmbeddedResourceName}' resource not found");
+            }
+
+            using var reader = new StreamReader(stream);
+            string content = reader.ReadToEnd();
+            var path = Path.Combine(targetDir.FullName, resource.FilePath);
+            string directory = Path.GetDirectoryName(path)!;
+            if (!string.IsNullOrEmpty(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+            File.WriteAllText(path, content);
         }
 
-
-        Console.WriteLine(@"=======================================================================");
-
-        foreach (var xxx in sourceDir.GetFileSystemInfos("*", SearchOption.AllDirectories))
-        {
-            Console.WriteLine(xxx.FullName);
-        }
-
-        sourceDir.CopyContentsTo(targetDir, includeSubdirectories: true);
     }
 
-    public static IEnumerable<Template> GetTemplateDirectories()
+    public IEnumerable<string> GetTemplates()
     {
-        var assembly = Assembly.GetExecutingAssembly();
-        var templates = assembly
-            .GetManifestResourceNames()
-            .Where(name => name.StartsWith($"{typeof(Program).Namespace}.Templates.") &&
-                           name.EndsWith(".pgup.json"))
-            .Select(name => name.Replace($"{typeof(Program).Namespace}.Templates.", ""))
-            .ToArray();
-        var dir = new DirectoryInfo(Path.Combine(".", "Templates"));
-        Debug.Assert(dir.Exists);
-        return dir
-            .EnumerateDirectories("*", SearchOption.AllDirectories)
-            .Where(subDir => subDir
-                .GetFiles("*", SearchOption.TopDirectoryOnly)
-                .Any(f => f.Name.Equals("pgup.json")))
-            .Select(templateDir => new Template(templateDir.Name.ToLower(), templateDir));
+        return _templates.Keys;
     }
-
-    public sealed record Template(string Name, DirectoryInfo Root);
 }

@@ -27,7 +27,7 @@
           "scriptDir": "migrations",
           "discoveryMode": "none",
           "customCommand": "SELECT public.execute_migration_script(@json);",
-          "executionOrder": [ "migration.00-00-00.sql" ]
+          "executionOrder": [ "00-00-00.sql" ]
         },
         {
           "scriptDir": "setup",

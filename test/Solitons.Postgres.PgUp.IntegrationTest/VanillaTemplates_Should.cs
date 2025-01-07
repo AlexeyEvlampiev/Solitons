@@ -19,9 +19,9 @@ public class VanillaTemplates_Should
                     .Clear()
                     .Add(new CliTracingGlobalOptionBundle()))
                 .AddService(new Program()));
-        
-        var templates = PgUpTemplateManager
-            .GetTemplateDirectories()
+        var manager = new PgUpTemplateManager();
+        var templates = manager
+            .GetTemplates()
                 .ToList();
         Assert.True(templates.Count > 0, "The should be at least one template registered.");
 
@@ -33,7 +33,7 @@ public class VanillaTemplates_Should
                 .Convert(root => Path.Combine(root, Guid.NewGuid().ToString()))
                 .Convert(Directory.CreateDirectory);
 
-            var exitCode = processor.Process($@"pgup init ""{workingDir.FullName}""  --template {template.Name} --trace Verbose");
+            var exitCode = processor.Process($@"pgup init ""{workingDir.FullName}""  --template {template} --trace Verbose");
             Assert.True(exitCode == 0, $"Template initialization failed with exit code {exitCode}");
 
             var pgUpProjectPath = Path.Combine(workingDir.FullName, "pgup.json");

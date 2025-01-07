@@ -32,7 +32,8 @@ public sealed class Program : IPgUp
         string projectDir,
         string template)
     {
-        PgUpTemplateManager.Initialize(projectDir, template);
+        var manager = new PgUpTemplateManager();
+        manager.Initialize(projectDir, template);
     }
 
     Task<int> IPgUp.DeployAsync(
