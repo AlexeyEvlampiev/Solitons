@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Solitons.IO;
+using System.Diagnostics;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -98,6 +99,8 @@ internal sealed class PgUpTemplateManager
             File.WriteAllText(path, content);
         }
 
+        var ascii = FolderStructurePrinter.GenerateFolderStructure(targetDir);
+        Console.WriteLine(ascii);
     }
 
     public IEnumerable<string> GetTemplates()
