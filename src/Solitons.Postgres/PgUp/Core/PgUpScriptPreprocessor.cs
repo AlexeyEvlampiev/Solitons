@@ -1,4 +1,5 @@
 ﻿using System.Text.RegularExpressions;
+using Solitons.CommandLine;
 
 namespace Solitons.Postgres.PgUp.Core;
 
@@ -20,8 +21,11 @@ public class PgUpScriptPreprocessor(IReadOnlyDictionary<string, string> paramete
             .Join(", ");
         if (unresolvedParametersCsv.IsPrintable())
         {
-            throw new InvalidOperationException(
-                $"The following parameters could not be substituted: '{unresolvedParametersCsv}'. Please ensure they are defined in the pgup project file.");
+            throw new CliExitException(
+                $"The following parameters could not be substituted: '{unresolvedParametersCsv}'. Please ensure they are defined in the pgup project file.")
+            {
+                ExitCode = 4
+            };
         }
         return input;
     }
