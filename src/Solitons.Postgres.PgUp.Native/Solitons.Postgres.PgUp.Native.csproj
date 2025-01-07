@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<AssemblyName>pgup</AssemblyName>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net9.0</TargetFramework>
+		<SelfContained>true</SelfContained>
+		<PublishSingleFile>true</PublishSingleFile>
+		<PublishTrimmed>false</PublishTrimmed>
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+		<UseAppHost>true</UseAppHost>
+		<PublishReadyToRun>true</PublishReadyToRun>
+	</PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Solitons.Postgres\Solitons.Postgres.csproj" />
+  </ItemGroup>
+
+</Project>

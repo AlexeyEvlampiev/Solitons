@@ -26,26 +26,21 @@ public class FolderStructurePrinter
 
     private static void GenerateFolderStructureRecursive(DirectoryInfo dir, StringBuilder output, string prefix, bool isLast)
     {
-        // Print the current directory
-        output.AppendLine($"{prefix}{(isLast ? "└──" : "├──")}{dir.Name}");
+        // Replace Unicode characters with simpler alternatives
+        output.AppendLine($"{prefix}{(isLast ? "+--" : "|--")}{dir.Name}");
 
-        // Update prefix for child entries
-        var newPrefix = prefix + (isLast ? "    " : "│   ");
-
-        // Get all subdirectories and files
+        var newPrefix = prefix + (isLast ? "    " : "|   ");
         var subDirs = dir.GetDirectories();
         var files = dir.GetFiles();
 
-        // Iterate through subdirectories
         for (int i = 0; i < subDirs.Length; i++)
         {
             GenerateFolderStructureRecursive(subDirs[i], output, newPrefix, i == subDirs.Length - 1 && files.Length == 0);
         }
 
-        // Iterate through files
         for (int i = 0; i < files.Length; i++)
         {
-            output.AppendLine($"{newPrefix}{(i == files.Length - 1 ? "└──" : "├──")}{files[i].Name}");
+            output.AppendLine($"{newPrefix}{(i == files.Length - 1 ? "+--" : "|--")}{files[i].Name}");
         }
     }
 }

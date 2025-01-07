@@ -13,13 +13,10 @@
 	  <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="PgUp\templates\basic\migrations\00-00-00.sql" />
-    <EmbeddedResource Include="PgUp\templates\basic\pgup.json" />
-    <EmbeddedResource Include="PgUp\templates\basic\post-deployment\post-deployment.sql" />
-    <EmbeddedResource Include="PgUp\templates\basic\pre-deployment\pre-deployment.sql" />
-    <EmbeddedResource Include="PgUp\templates\basic\setup\setup.sql" />
-  </ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Include="PgUp\Templates\**\*" />
+	</ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Npgsql" Version="9.0.2" />
   </ItemGroup>

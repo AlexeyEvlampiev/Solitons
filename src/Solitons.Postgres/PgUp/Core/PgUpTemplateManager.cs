@@ -17,6 +17,7 @@ internal sealed class PgUpTemplateManager
         var prefix = $"{typeof(Program).Namespace}.Templates.";
         var directorySeparator = Path.DirectorySeparatorChar.ToString();
         _assembly = Assembly.GetExecutingAssembly();
+        var xxx = _assembly.GetManifestResourceNames();
         _templates = _assembly
             .GetManifestResourceNames()
             .Where(name => name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))

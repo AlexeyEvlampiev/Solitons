@@ -45,9 +45,6 @@
 		</ProjectReference>
 	</ItemGroup>
 
-	<ItemGroup>
-		<EmbeddedResource Include="Templates\**\*" />
-	</ItemGroup>
 
 	<ItemGroup>
 	  <Compile Remove="CommandLine\**" />
