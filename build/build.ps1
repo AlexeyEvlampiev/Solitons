@@ -4,7 +4,8 @@ if (-not $env:STAGING_TYPE) {
 }
 
 # Execute commands
-./functions.ps1
+$functionsPath = Join-Path $PSScriptRoot "functions.ps1"
+ . $functionsPath
 
 Set-Location -Path ".." -ErrorAction Stop
 Get-ChildItem -Directory | Select-Object Name
