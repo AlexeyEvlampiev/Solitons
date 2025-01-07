@@ -7,7 +7,7 @@ if (-not $env:STAGING_TYPE) {
 $functionsPath = Join-Path $PSScriptRoot "functions.ps1"
  . $functionsPath
 
-Set-Location -Path ".." -ErrorAction Stop
+Set-Location -Path "$PSScriptRoot/.." -ErrorAction Stop
 Get-ChildItem -Directory | Select-Object Name
 
 Write-Host "Preprocessing source code for $env:STAGING_TYPE release..."
