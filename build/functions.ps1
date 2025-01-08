@@ -110,7 +110,6 @@ function Config-Packages {
 #Config-Packages -staging 'Alpha' -searchRoot "." 
 
 
-
 function Unlist-PreviousPrereleases {
     param(
         [Parameter(Mandatory=$true)]
@@ -137,18 +136,44 @@ function Unlist-PreviousPrereleases {
             foreach ($version in $prereleaseVersions) {
                 Write-Host "Unlisting $packageId version $version..."
                 
-                # Unlist the package version
-                $result = dotnet nuget delete $packageId $version --source https://api.nuget.org/v3/index.json --api-key $env:NUGET_API_KEY --non-interactive
+                # Add --force-english-output to get consistent error messages
+                # Add --non-interactive to avoid hanging on prompts
+                # Add --force to skip confirmation
+                $result = dotnet nuget delete $packageId $version `
+                    --source https://api.nuget.org/v3/index.json `
+                    --api-key $env:NUGET_API_KEY `
+                    --non-interactive `
+                    --force-english-output `
+                    --force 2>&1
+
+                # Check for specific error messages
+                if ($result -match "already unlisted") {
+                    Write-Host "Package $packageId version $version is already unlisted"
+                    continue
+                }
                 
                 if ($LASTEXITCODE -eq 0) {
                     Write-Host "Successfully unlisted $packageId version $version"
                 } else {
-                    Write-Warning "Failed to unlist $packageId version $version"
+                    Write-Warning "Failed to unlist $packageId version $version. Error: $result"
+                    
+                    # If we get an unauthorized error, break the entire loop
+                    if ($result -match "unauthorized") {
+                        Write-Error "Unauthorized access. Please check your NUGET_API_KEY permissions."
+                        return
+                    }
                 }
+                
+                # Add a small delay between requests to avoid rate limiting
+                Start-Sleep -Seconds 1
             }
         }
         catch {
             Write-Error "Error processing package $packageId : $_"
+            if ($_.Exception.Message -match "404") {
+                Write-Warning "Package $packageId not found on NuGet. Skipping."
+                continue
+            }
         }
     }
 }
