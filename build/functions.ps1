@@ -123,6 +123,7 @@ function Unlist-PreviousPrereleases {
     }
 
     Write-Host "Unlisting previous prereleases for staging type: $env:STAGING_TYPE"
+    Write-Host "Will attempt to unlist up to 10 most recent prerelease versions per package"
     
     foreach ($packageId in $PackageIds) {
         try {
@@ -130,38 +131,32 @@ function Unlist-PreviousPrereleases {
             $versionsUrl = "https://api.nuget.org/v3-flatcontainer/$packageId/index.json"
             $versions = (Invoke-RestMethod -Uri $versionsUrl -ErrorAction Stop).versions
             
-            # Filter for prerelease versions
-            $prereleaseVersions = $versions | Where-Object { $_ -match '-alpha|-preview' }
+            # Filter for prerelease versions and take most recent 10
+            $prereleaseVersions = $versions | 
+                Where-Object { $_ -match '-alpha|-preview' } |
+                Sort-Object -Descending |
+                Select-Object -First 10
             
             foreach ($version in $prereleaseVersions) {
                 Write-Host "Unlisting $packageId version $version..."
                 
-                # Using only supported flags
                 $result = dotnet nuget delete $packageId $version `
                     -s https://api.nuget.org/v3/index.json `
                     -k $env:NUGET_API_KEY `
                     --non-interactive `
                     --force-english-output 2>&1
 
-                # Check for specific error messages
-                if ($result -match "already unlisted") {
-                    Write-Host "Package $packageId version $version is already unlisted"
-                    continue
-                }
-                
                 if ($LASTEXITCODE -eq 0) {
                     Write-Host "Successfully unlisted $packageId version $version"
                 } else {
                     Write-Warning "Failed to unlist $packageId version $version. Error: $result"
-                    
-                    # If we get an unauthorized error, break the entire loop
                     if ($result -match "unauthorized") {
                         Write-Error "Unauthorized access. Please check your NUGET_API_KEY permissions."
                         return
                     }
                 }
                 
-                # Add a small delay between requests to avoid rate limiting
+                # Small delay between operations
                 Start-Sleep -Seconds 1
             }
         }
