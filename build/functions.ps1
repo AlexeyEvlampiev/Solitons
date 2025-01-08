@@ -2,6 +2,7 @@
 $authors = "Alexey Evlampiev"
 $company = "Solitons"
 $licenseExp = "MPL-2.0"  
+$projectUrl = "https://github.com/AlexeyEvlampiev/Solitons"
 $ticks = ((New-TimeSpan -Start (Get-Date "1/1/2024") -End (Get-Date)).Ticks)
 
 function Ensure-XmlNode {
@@ -85,7 +86,8 @@ function Config-Packages {
             $fileVersionNode = Ensure-XmlNode -XmlDocument $csproj -ParentXPath '/Project/PropertyGroup' -NodeName 'FileVersion'
             $fileVersionNode.InnerText = $version.ToString()
 
-
+            $projectUrlNode = Ensure-XmlNode -XmlDocument $csproj -ParentXPath '/Project/PropertyGroup' -NodeName 'PackageProjectUrl'
+            $projectUrlNode.InnerText = $projectUrl
 
             if ([string]::IsNullOrWhiteSpace($versionSuffix)) {
                 # Remove the node if suffix is empty
@@ -133,9 +135,9 @@ function Unlist-PreviousPrereleases {
             
             # Filter for prerelease versions and take most recent 10
             $prereleaseVersions = $versions | 
-                Where-Object { $_ -match '-alpha|-preview|-beta' } |
+                Where-Object { $_ -match '-alpha' } |
                 Sort-Object -Descending |
-                Select-Object -First 200
+                Select-Object -First 10
             
             foreach ($version in $prereleaseVersions) {
                 Write-Host "Unlisting $packageId version $version..."

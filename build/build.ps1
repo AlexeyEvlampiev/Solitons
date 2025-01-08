@@ -67,7 +67,7 @@ $packages = @(
     "/app/packages/Solitons.Postgres.PgUp.*.nupkg"
 )
 $packages | ForEach-Object {
-    #dotnet nuget push $_ --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json
+    dotnet nuget push $_ --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json
 }
 
 
