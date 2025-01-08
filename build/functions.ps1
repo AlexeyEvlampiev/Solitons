@@ -133,9 +133,9 @@ function Unlist-PreviousPrereleases {
             
             # Filter for prerelease versions and take most recent 10
             $prereleaseVersions = $versions | 
-                Where-Object { $_ -match '-alpha|-preview' } |
+                Where-Object { $_ -match '-alpha|-preview|-beta' } |
                 Sort-Object -Descending |
-                Select-Object -First 50
+                Select-Object -First 200
             
             foreach ($version in $prereleaseVersions) {
                 Write-Host "Unlisting $packageId version $version..."
