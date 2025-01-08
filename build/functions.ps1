@@ -108,3 +108,47 @@ function Config-Packages {
 
 # Example usage:
 #Config-Packages -staging 'Alpha' -searchRoot "." 
+
+
+
+function Unlist-PreviousPrereleases {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string[]]$PackageIds
+    )
+    
+    # Only unlist for Alpha or Preview environments
+    if ($env:STAGING_TYPE -notin @("Alpha", "Preview")) {
+        Write-Host "Skipping prerelease unlisting for staging type: $env:STAGING_TYPE"
+        return
+    }
+
+    Write-Host "Unlisting previous prereleases for staging type: $env:STAGING_TYPE"
+    
+    foreach ($packageId in $PackageIds) {
+        try {
+            # Query NuGet API for package versions
+            $versionsUrl = "https://api.nuget.org/v3-flatcontainer/$packageId/index.json"
+            $versions = (Invoke-RestMethod -Uri $versionsUrl -ErrorAction Stop).versions
+            
+            # Filter for prerelease versions
+            $prereleaseVersions = $versions | Where-Object { $_ -match '-alpha|-preview' }
+            
+            foreach ($version in $prereleaseVersions) {
+                Write-Host "Unlisting $packageId version $version..."
+                
+                # Unlist the package version
+                $result = dotnet nuget delete $packageId $version --source https://api.nuget.org/v3/index.json --api-key $env:NUGET_API_KEY --non-interactive
+                
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Host "Successfully unlisted $packageId version $version"
+                } else {
+                    Write-Warning "Failed to unlist $packageId version $version"
+                }
+            }
+        }
+        catch {
+            Write-Error "Error processing package $packageId : $_"
+        }
+    }
+}
