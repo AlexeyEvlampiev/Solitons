@@ -136,15 +136,12 @@ function Unlist-PreviousPrereleases {
             foreach ($version in $prereleaseVersions) {
                 Write-Host "Unlisting $packageId version $version..."
                 
-                # Add --force-english-output to get consistent error messages
-                # Add --non-interactive to avoid hanging on prompts
-                # Add --force to skip confirmation
+                # Using only supported flags
                 $result = dotnet nuget delete $packageId $version `
-                    --source https://api.nuget.org/v3/index.json `
-                    --api-key $env:NUGET_API_KEY `
+                    -s https://api.nuget.org/v3/index.json `
+                    -k $env:NUGET_API_KEY `
                     --non-interactive `
-                    --force-english-output `
-                    --force 2>&1
+                    --force-english-output 2>&1
 
                 # Check for specific error messages
                 if ($result -match "already unlisted") {
