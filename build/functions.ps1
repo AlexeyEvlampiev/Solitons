@@ -135,7 +135,7 @@ function Unlist-PreviousPrereleases {
             
             # Filter for prerelease versions and take most recent 10
             $prereleaseVersions = $versions | 
-                Where-Object { $_ -match '-alpha' } |
+                Where-Object { $_ -match '-' } |
                 Sort-Object -Descending |
                 Select-Object -First 10
             

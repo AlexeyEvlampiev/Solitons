@@ -1,4 +1,4 @@
-name: .NET CI/CD for Solitons.SQLite
+name: DEV:Solitons
 
 on:
   push:
@@ -6,46 +6,26 @@ on:
   pull_request:
     branches: [ preview ]
 
+
+
+env:
+  POSTGRES_CONNECTION: ${{ secrets.SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING }}
+  NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+  STAGING_TYPE: PreView
+
 jobs:
-  build-and-publish:
+  build:
     runs-on: ubuntu-latest
-    env:
-      projectpath: ./src/Solitons.SQLite/Solitons.SQLite.csproj
-      buildconfiguration: release
-      outputpath: pkgout
-      runId: ${{github.run_id}}
-      nugetsource: https://api.nuget.org/v3/index.json
+    
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-    - name: Setup .NET 8
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: '8.x'
-
-    - name: Cache NuGet packages
-      uses: actions/cache@v2
-      with:
-        path: ~/.nuget/packages
-        key: nuget-${{ hashFiles('**/*.csproj') }}
-        restore-keys: nuget-
-
-    - name: Restore dependencies
-      run: dotnet restore ${{env.projectpath}}
-
-    - name: Build
-      run: dotnet build ${{env.projectpath}} --no-restore --configuration ${{env.buildconfiguration}}
-
-    - name: Test
-      run: dotnet test ${{env.projectpath}} --no-build --verbosity normal
-
-    - name: Pack
-      env:
-        versionsuffix: 'preview.${{env.runId}}'
-      run: dotnet pack ${{env.projectpath}} --configuration ${{env.buildconfiguration}} --output ${{env.outputpath}} --version-suffix ${{env.versionsuffix}} --no-build --no-restore
-
-    - name: Push to NuGet
-      env:
-        NUGET_API_KEY: ${{secrets.NUGET_API_KEY}}
-      run: dotnet nuget push ${{env.outputpath}}/*.nupkg --api-key ${{env.NUGET_API_KEY}} --source ${{env.nugetsource}} --skip-duplicate
+    - name: Build and Publish to NuGet
+      shell: pwsh
+      run: |
+        docker build -t solitons-build `
+          --build-arg STAGING_TYPE=${{ env.STAGING_TYPE }} `
+          --build-arg SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING="${{ env.POSTGRES_CONNECTION }}" `
+          --build-arg NUGET_API_KEY="${{ env.NUGET_API_KEY }}" `
+          .

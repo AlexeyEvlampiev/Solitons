@@ -2,26 +2,23 @@ name: DEV:Solitons
 
 on:
   push:
-    branches: [ main ]
+    branches: [ develop, preview, main ]
   pull_request:
-    branches: [ main ]
+    branches: [ ]
 
 
 
 env:
   POSTGRES_CONNECTION: ${{ secrets.SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING }}
   NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-  STAGING_TYPE: Live
+  STAGING_TYPE: Alpha
 
 jobs:
   build:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Build and Publish to NuGet
+    - name: Unlist pre-releases
       shell: pwsh
       run: |
         docker build -t solitons-build `
