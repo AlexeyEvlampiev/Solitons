@@ -1,4 +1,4 @@
-name: DEV:Solitons
+name: PROD:Solitons
 
 on:
   push:

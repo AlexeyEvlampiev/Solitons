@@ -1,4 +1,4 @@
-name: DEV:Solitons
+name: Unlist Pre-releases
 
 on:
   push:
@@ -9,20 +9,15 @@ on:
 
 
 env:
-  POSTGRES_CONNECTION: ${{ secrets.SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING }}
   NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-  STAGING_TYPE: Alpha
-
 jobs:
-  build:
+  unlist:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Unlist pre-releases
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Unlist
       shell: pwsh
-      run: |
-        docker build -t solitons-build `
-          --build-arg STAGING_TYPE=${{ env.STAGING_TYPE }} `
-          --build-arg SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING="${{ env.POSTGRES_CONNECTION }}" `
-          --build-arg NUGET_API_KEY="${{ env.NUGET_API_KEY }}" `
-          .
+      run: ./build/on-push.ps1   

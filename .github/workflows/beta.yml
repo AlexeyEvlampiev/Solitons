@@ -1,4 +1,4 @@
-name: DEV:Solitons
+name: TEST:Solitons
 
 on:
   push:

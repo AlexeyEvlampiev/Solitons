@@ -1,9 +1,4 @@
-# Assert STAGING_TYPE environment variable is set
-if (-not $env:STAGING_TYPE) {
-    throw "STAGING_TYPE environment variable must be set"
-}
 
-# Execute commands
 $functionsPath = Join-Path $PSScriptRoot "functions.ps1"
  . $functionsPath
 
