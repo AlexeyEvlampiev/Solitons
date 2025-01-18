@@ -119,10 +119,12 @@ function Unlist-PreviousPrereleases {
     )
     
     # Only unlist for Alpha or Preview environments
+    <#
     if ($env:STAGING_TYPE -notin @("Alpha", "Preview")) {
         Write-Host "Skipping prerelease unlisting for staging type: $env:STAGING_TYPE"
         return
     }
+    #>
 
     Write-Host "Unlisting previous prereleases for staging type: $env:STAGING_TYPE"
     Write-Host "Will attempt to unlist up to 10 most recent prerelease versions per package"
