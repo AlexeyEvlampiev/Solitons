@@ -111,7 +111,6 @@ function Config-Packages {
 # Example usage:
 #Config-Packages -staging 'Alpha' -searchRoot "." 
 
-
 function Unlist-PreviousPrereleases {
     [CmdletBinding()]
     param(
@@ -130,30 +129,26 @@ function Unlist-PreviousPrereleases {
         if (-not $env:NUGET_API_KEY) {
             throw "NUGET_API_KEY environment variable is not set"
         }
+
+        # Get NuGet service index once for all packages
+        $serviceIndex = Invoke-RestMethod -Uri $NuGetSource -ErrorAction Stop
+        $packageBaseAddress = ($serviceIndex.resources | 
+            Where-Object { $_.'@type' -eq 'PackageBaseAddress/3.0.0' }).'@id'
     }
     
     Process {
         foreach ($packageId in $PackageIds) {
+            Write-Host "Processing package: $packageId"
+            
             try {
-                Write-Verbose "Processing package: $packageId"
+                # Query package versions using package base address
+                $versionsUrl = "$($packageBaseAddress)$($packageId.ToLower())/index.json"
+                $response = Invoke-RestMethod -Uri $versionsUrl -ErrorAction Stop
+                $versions = $response.versions
                 
-                # Use NuGet.org search API
-                $searchUrl = "https://azuresearch-na.nuget.org/query?q=packageid:$packageId&prerelease=true"
-                $searchResult = Invoke-RestMethod -Uri $searchUrl -ErrorAction Stop
-                
-                if (-not $searchResult.data) {
-                    Write-Warning "No packages found for $packageId"
-                    continue
-                }
-                
-                $package = $searchResult.data[0]
-                $versions = $package.versions | 
-                    Where-Object { $_.version -match '-' } | # Only prerelease versions
-                    Select-Object -ExpandProperty version
-                
-                Write-Verbose "Found versions: $($versions -join ', ')"
-                
-                $prereleaseVersions = $versions |
+                # Filter for prerelease versions
+                $prereleaseVersions = $versions | 
+                    Where-Object { $_ -match '-alpha|-beta|-preview|-rc' } | 
                     Sort-Object -Descending |
                     Select-Object -First $MaxVersionsToUnlist
                 
@@ -162,41 +157,65 @@ function Unlist-PreviousPrereleases {
                     continue
                 }
                 
-                Write-Host "Found prerelease versions for $packageId : $($prereleaseVersions -join ', ')"
+                Write-Host "Found $($prereleaseVersions.Count) prerelease versions for $packageId"
                 
                 foreach ($version in $prereleaseVersions) {
-                    Write-Host "Unlisting $packageId version $version..."
+                    $success = $false
+                    $attempts = 0
+                    $maxAttempts = 3
                     
-                    try {
-                        $result = dotnet nuget delete $packageId $version `
-                            -s $NuGetSource `
-                            -k $env:NUGET_API_KEY `
-                            --non-interactive `
-                            --force-english-output `
-                            --verbosity detailed 2>&1
+                    while (-not $success -and $attempts -lt $maxAttempts) {
+                        $attempts++
+                        Write-Host "Attempt $attempts of $maxAttempts to unlist $packageId $version..."
+                        
+                        try {
+                            $result = dotnet nuget delete $packageId $version `
+                                -s $NuGetSource `
+                                -k $env:NUGET_API_KEY `
+                                --non-interactive 2>&1
                             
-                        if ($LASTEXITCODE -eq 0) {
-                            Write-Host "Successfully unlisted $packageId version $version" -ForegroundColor Green
-                        } else {
-                            Write-Warning "Failed to unlist $packageId version $version. Error: $result"
-                            Write-Verbose "Full result: $result"
-                            if ($result -match "unauthorized") {
-                                throw "Unauthorized access. Please check your NUGET_API_KEY permissions."
+                            if ($LASTEXITCODE -eq 0) {
+                                Write-Host "Successfully unlisted $packageId $version" -ForegroundColor Green
+                                $success = $true
+                            }
+                            else {
+                                $errorMessage = $result -join "`n"
+                                
+                                if ($errorMessage -match "403.*Quota Exceeded") {
+                                    Write-Host "Rate limit hit. Waiting 3 minutes..." -ForegroundColor Yellow
+                                    Start-Sleep -Seconds 180
+                                    continue
+                                }
+                                elseif ($errorMessage -match "already unlisted") {
+                                    Write-Host "Package already unlisted" -ForegroundColor Blue
+                                    $success = $true
+                                }
+                                elseif ($errorMessage -match "(unauthorized|403)") {
+                                    throw "Unauthorized access. Check NUGET_API_KEY permissions."
+                                }
+                                else {
+                                    Write-Host "Failed to unlist. Error: $errorMessage" -ForegroundColor Red
+                                    Start-Sleep -Seconds 5
+                                }
                             }
                         }
-                    }
-                    catch {
-                        Write-Error "Error unlisting version $version : $_"
-                        continue
+                        catch {
+                            Write-Warning "Error unlisting $packageId $version : $_"
+                            Start-Sleep -Seconds 5
+                        }
                     }
                     
-                    Start-Sleep -Milliseconds (Get-Random -Minimum 500 -Maximum 1500)
+                    # Add delay between versions
+                    Start-Sleep -Seconds 2
                 }
             }
             catch {
-                Write-Warning "Error processing package $packageId : $_"
-                Write-Verbose "Full error details: $($_.Exception.Message)"
-                continue
+                if ($_.Exception.Response.StatusCode -eq 404) {
+                    Write-Warning "Package $packageId not found on NuGet.org"
+                }
+                else {
+                    Write-Error "Error processing package $packageId : $_"
+                }
             }
         }
     }
