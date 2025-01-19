@@ -34,82 +34,6 @@ function Ensure-XmlNode {
 
 
 
-
-
-function Config-Packages {
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateSet('Alpha', 'PreView', 'Live')]
-        [string]$staging,
-        [string]$searchRoot = "."
-    )
-
-   
-    $versionSuffix = switch ($staging) {
-        'Alpha'   { "alpha.$ticks" }
-        'PreView' { "beta.$ticks" }
-        'Live'    { "" }
-    }
-
-    # Find all csproj files starting with 'Solitons'
-    Get-ChildItem -Path . -Filter "Solitons*.csproj" -Recurse | ForEach-Object {
-        [xml]$csproj = Get-Content $_.FullName
-        
-        # Process only if PackageId is defined
-        if ($csproj.Project.PropertyGroup.PackageId) {
-            "Processing: $($_.Name)"
-
-            # Ensure required nodes exist and set their values
-            $versionPrefixNode = Ensure-XmlNode -XmlDocument $csproj -ParentXPath '/Project/PropertyGroup' -NodeName 'VersionPrefix'
-            $versionPrefixNode.InnerText = $version.ToString()
-
-
-            $versionSuffixNode = Ensure-XmlNode -XmlDocument $csproj -ParentXPath '/Project/PropertyGroup' -NodeName 'VersionSuffix'
-            $versionSuffixNode.InnerText = $versionSuffix
-
-            $licenseNode = Ensure-XmlNode -XmlDocument $csproj -ParentXPath '/Project/PropertyGroup' -NodeName 'PackageLicenseExpression'
-            $licenseNode.InnerText = $licenseExp
-
-            $authorsNode = Ensure-XmlNode -XmlDocument $csproj -ParentXPath '/Project/PropertyGroup' -NodeName 'Authors'
-            $authorsNode.InnerText = $authors
-
-            $companyNode = Ensure-XmlNode -XmlDocument $csproj -ParentXPath '/Project/PropertyGroup' -NodeName 'Company'
-            $companyNode.InnerText = $company
-
-            $licenseAcceptanceNode = Ensure-XmlNode -XmlDocument $csproj -ParentXPath '/Project/PropertyGroup' -NodeName 'PackageRequireLicenseAcceptance' -InitialValue "True"
-            $licenseAcceptanceNode.InnerText = "True"
-
-  
-            $assemblyVersionNode = Ensure-XmlNode -XmlDocument $csproj -ParentXPath '/Project/PropertyGroup' -NodeName 'AssemblyVersion'
-            $assemblyVersionNode.InnerText = $version.ToString()
-
-            $fileVersionNode = Ensure-XmlNode -XmlDocument $csproj -ParentXPath '/Project/PropertyGroup' -NodeName 'FileVersion'
-            $fileVersionNode.InnerText = $version.ToString()
-
-            $projectUrlNode = Ensure-XmlNode -XmlDocument $csproj -ParentXPath '/Project/PropertyGroup' -NodeName 'PackageProjectUrl'
-            $projectUrlNode.InnerText = $projectUrl
-
-            if ([string]::IsNullOrWhiteSpace($versionSuffix)) {
-                # Remove the node if suffix is empty
-                if ($versionSuffixNode -ne $null) {
-                    $versionSuffixNode.ParentNode.RemoveChild($versionSuffixNode)
-                }
-            } else {
-                $versionSuffixNode.InnerText = $versionSuffix
-            }
-
-
-            # Save the changes back to the csproj file
-            $csproj.Save($_.FullName)
-            Write-Host "Updated $($_.Name)"
-        } else {
-            Write-Host "$($_.Name) does not have a defined PackageId."
-        }
-    }
-}
-
-# Example usage:
-#Config-Packages -staging 'Alpha' -searchRoot "." 
 function Unlist-PreviousPrereleases {
     [CmdletBinding()]
     param(
@@ -129,12 +53,14 @@ function Unlist-PreviousPrereleases {
             throw "NUGET_API_KEY environment variable is not set"
         }
 
-        # Get NuGet service index
+        # Get NuGet service index once for all packages
         $serviceIndex = Invoke-RestMethod -Uri $NuGetSource -ErrorAction Stop
-        
-        # Get search query service URL
-        $searchQueryService = ($serviceIndex.resources | 
-            Where-Object { $_.'@type' -eq 'SearchQueryService/3.0.0-beta' }).'@id'
+        $packageBaseAddress = ($serviceIndex.resources | 
+            Where-Object { $_.'@type' -eq 'PackageBaseAddress/3.0.0' }).'@id'
+            
+        # Get registration base URL for checking package listing status
+        $registrationBase = ($serviceIndex.resources |
+            Where-Object { $_.'@type' -eq 'RegistrationsBaseUrl/3.0.0' }).'@id'
     }
     
     Process {
@@ -142,33 +68,38 @@ function Unlist-PreviousPrereleases {
             Write-Host "Processing package: $packageId"
             
             try {
-                # Query for listed versions only using search service
-                $searchUrl = "${searchQueryService}?q=packageid:${packageId}&prerelease=true&semVerLevel=2.0.0"
-                $searchResponse = Invoke-RestMethod -Uri $searchUrl -ErrorAction Stop
+                # Query package versions using package base address
+                $versionsUrl = "$($packageBaseAddress)$($packageId.ToLower())/index.json"
+                $response = Invoke-RestMethod -Uri $versionsUrl -ErrorAction Stop
+                $versions = $response.versions
                 
-                if ($searchResponse.data.Count -eq 0) {
-                    Write-Warning "No listed versions found for $packageId"
-                    continue
-                }
-
-                # Get all versions from the package details
-                $package = $searchResponse.data[0]
-                $listedVersions = $package.versions | 
-                    Where-Object { $_.version -match '-alpha|-beta|-preview|-rc' } |
-                    Select-Object -ExpandProperty version
-
-                if (-not $listedVersions) {
-                    Write-Warning "No listed prerelease versions found for $packageId"
-                    continue
-                }
-
-                $prereleaseVersions = $listedVersions | 
+                # Filter for prerelease versions
+                $prereleaseVersions = $versions | 
+                    Where-Object { $_ -match '-alpha|-beta|-preview|-rc' } | 
                     Sort-Object -Descending |
                     Select-Object -First $MaxVersionsToUnlist
-
-                Write-Host "Found $($prereleaseVersions.Count) listed prerelease versions for $packageId"
+                
+                if (-not $prereleaseVersions) {
+                    Write-Warning "No prerelease versions found for $packageId"
+                    continue
+                }
+                
+                Write-Host "Found $($prereleaseVersions.Count) prerelease versions for $packageId"
                 
                 foreach ($version in $prereleaseVersions) {
+                    # Check if the version is listed
+                    $registrationUrl = "$registrationBase$($packageId.ToLower())/$version.json"
+                    try {
+                        $registration = Invoke-RestMethod -Uri $registrationUrl -ErrorAction Stop
+                        if (-not $registration.listed) {
+                            Write-Host "Skipping $packageId $version - already unlisted" -ForegroundColor Blue
+                            continue
+                        }
+                    }
+                    catch {
+                        Write-Warning "Could not check listing status for $packageId $version, will attempt to unlist anyway"
+                    }
+
                     $success = $false
                     $attempts = 0
                     $maxAttempts = 3
