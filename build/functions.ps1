@@ -126,7 +126,7 @@ function Unlist-PreviousPrereleases {
     }
     #>
 
-    Write-Host "Unlisting previous prereleases for staging type: $env:STAGING_TYPE"
+    #Write-Host "Unlisting previous prereleases for staging type: $env:STAGING_TYPE"
     Write-Host "Will attempt to unlist up to 10 most recent prerelease versions per package"
     
     foreach ($packageId in $PackageIds) {
