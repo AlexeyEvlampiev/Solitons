@@ -110,7 +110,6 @@ function Config-Packages {
 
 # Example usage:
 #Config-Packages -staging 'Alpha' -searchRoot "." 
-
 function Unlist-PreviousPrereleases {
     [CmdletBinding()]
     param(
@@ -130,10 +129,12 @@ function Unlist-PreviousPrereleases {
             throw "NUGET_API_KEY environment variable is not set"
         }
 
-        # Get NuGet service index once for all packages
+        # Get NuGet service index
         $serviceIndex = Invoke-RestMethod -Uri $NuGetSource -ErrorAction Stop
-        $packageBaseAddress = ($serviceIndex.resources | 
-            Where-Object { $_.'@type' -eq 'PackageBaseAddress/3.0.0' }).'@id'
+        
+        # Get search query service URL
+        $searchQueryService = ($serviceIndex.resources | 
+            Where-Object { $_.'@type' -eq 'SearchQueryService/3.0.0-beta' }).'@id'
     }
     
     Process {
@@ -141,23 +142,31 @@ function Unlist-PreviousPrereleases {
             Write-Host "Processing package: $packageId"
             
             try {
-                # Query package versions using package base address
-                $versionsUrl = "$($packageBaseAddress)$($packageId.ToLower())/index.json"
-                $response = Invoke-RestMethod -Uri $versionsUrl -ErrorAction Stop
-                $versions = $response.versions
+                # Query for listed versions only using search service
+                $searchUrl = "${searchQueryService}?q=packageid:${packageId}&prerelease=true&semVerLevel=2.0.0"
+                $searchResponse = Invoke-RestMethod -Uri $searchUrl -ErrorAction Stop
                 
-                # Filter for prerelease versions
-                $prereleaseVersions = $versions | 
-                    Where-Object { $_ -match '-alpha|-beta|-preview|-rc' } | 
-                    Sort-Object -Descending |
-                    Select-Object -First $MaxVersionsToUnlist
-                
-                if (-not $prereleaseVersions) {
-                    Write-Warning "No prerelease versions found for $packageId"
+                if ($searchResponse.data.Count -eq 0) {
+                    Write-Warning "No listed versions found for $packageId"
                     continue
                 }
-                
-                Write-Host "Found $($prereleaseVersions.Count) prerelease versions for $packageId"
+
+                # Get all versions from the package details
+                $package = $searchResponse.data[0]
+                $listedVersions = $package.versions | 
+                    Where-Object { $_.version -match '-alpha|-beta|-preview|-rc' } |
+                    Select-Object -ExpandProperty version
+
+                if (-not $listedVersions) {
+                    Write-Warning "No listed prerelease versions found for $packageId"
+                    continue
+                }
+
+                $prereleaseVersions = $listedVersions | 
+                    Sort-Object -Descending |
+                    Select-Object -First $MaxVersionsToUnlist
+
+                Write-Host "Found $($prereleaseVersions.Count) listed prerelease versions for $packageId"
                 
                 foreach ($version in $prereleaseVersions) {
                     $success = $false
