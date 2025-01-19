@@ -26,6 +26,6 @@ RUN pwsh -Command ". ./build/build.ps1"
 
 
 # Final stage to hold the packages
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
-WORKDIR /packages
-COPY --from=build /app/packages .
+# FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+# WORKDIR /packages
+# COPY --from=build /app/packages .
