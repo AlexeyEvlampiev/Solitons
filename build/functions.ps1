@@ -1,9 +1,9 @@
-﻿$version = [Version]::Parse("1.1.0")
+﻿$version = [Version]::Parse("1.1.1")
 $authors = "Alexey Evlampiev"
 $company = "Solitons"
 $licenseExp = "MPL-2.0"  
 $projectUrl = "https://github.com/AlexeyEvlampiev/Solitons"
-$ticks = ((New-TimeSpan -Start (Get-Date "1/1/2024") -End (Get-Date)).Ticks)
+$ticks = ((New-TimeSpan -Start (Get-Date "1/1/2025") -End (Get-Date)).Ticks)
 
 function Ensure-XmlNode {
     param (
