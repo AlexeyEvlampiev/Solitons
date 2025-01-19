@@ -144,7 +144,7 @@ function Unlist-PreviousPrereleases {
                 
                 # Filter for prerelease versions and take most recent ones
                 $prereleaseVersions = $versions | 
-                    Where-Object { $_ -match '-' } |
+                    Where-Object { $_ -match '-(?:alpha|beta|preview|rc)' } |
                     Sort-Object -Descending |
                     Select-Object -First $MaxVersionsToUnlist
                 
