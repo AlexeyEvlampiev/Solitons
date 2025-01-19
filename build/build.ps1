@@ -12,7 +12,7 @@ Get-ChildItem -Directory | Select-Object Name
 
 Write-Host "Preprocessing source code for $env:STAGING_TYPE release..."
 Config-Packages -staging $env:STAGING_TYPE -searchRoot './src/'
-
+<#
 @"
 
   _         _ _    _ 
@@ -52,7 +52,7 @@ $projects | ForEach-Object {
     dotnet pack $_ -c Release -o /app/packages
 }
 
-
+#>
 
  @"
   _   _       _ _     _   

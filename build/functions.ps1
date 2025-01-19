@@ -113,62 +113,81 @@ function Config-Packages {
 
 
 function Unlist-PreviousPrereleases {
+    [CmdletBinding()]  # Add CmdletBinding for better error handling
     param(
         [Parameter(Mandatory=$true)]
-        [string[]]$PackageIds
+        [ValidateNotNullOrEmpty()]  # Add validation
+        [string[]]$PackageIds,
+        
+        [Parameter()]
+        [int]$MaxVersionsToUnlist = 10,  # Make this configurable
+        
+        [Parameter()]
+        [string]$NuGetSource = "https://api.nuget.org/v3/index.json"
     )
     
-    # Only unlist for Alpha or Preview environments
-    <#
-    if ($env:STAGING_TYPE -notin @("Alpha", "Preview")) {
-        Write-Host "Skipping prerelease unlisting for staging type: $env:STAGING_TYPE"
-        return
+    Begin {
+        # Validate NUGET_API_KEY environment variable
+        if (-not $env:NUGET_API_KEY) {
+            throw "NUGET_API_KEY environment variable is not set"
+        }
     }
-    #>
-
-    #Write-Host "Unlisting previous prereleases for staging type: $env:STAGING_TYPE"
-    Write-Host "Will attempt to unlist up to 10 most recent prerelease versions per package"
     
-    foreach ($packageId in $PackageIds) {
-        try {
-            # Query NuGet API for package versions
-            $versionsUrl = "https://api.nuget.org/v3-flatcontainer/$packageId/index.json"
-            $versions = (Invoke-RestMethod -Uri $versionsUrl -ErrorAction Stop).versions
-            
-            # Filter for prerelease versions and take most recent 10
-            $prereleaseVersions = $versions | 
-                Where-Object { $_ -match '-' } |
-                Sort-Object -Descending |
-                Select-Object -First 10
-            
-            foreach ($version in $prereleaseVersions) {
-                Write-Host "Unlisting $packageId version $version..."
+    Process {
+        foreach ($packageId in $PackageIds) {
+            try {
+                Write-Verbose "Processing package: $packageId"
                 
-                $result = dotnet nuget delete $packageId $version `
-                    -s https://api.nuget.org/v3/index.json `
-                    -k $env:NUGET_API_KEY `
-                    --non-interactive `
-                    --force-english-output 2>&1
-
-                if ($LASTEXITCODE -eq 0) {
-                    Write-Host "Successfully unlisted $packageId version $version"
-                } else {
-                    Write-Warning "Failed to unlist $packageId version $version. Error: $result"
-                    if ($result -match "unauthorized") {
-                        Write-Error "Unauthorized access. Please check your NUGET_API_KEY permissions."
-                        return
-                    }
+                # Query NuGet API for package versions
+                $versionsUrl = "https://api.nuget.org/v3-flatcontainer/$packageId/index.json"
+                $versions = (Invoke-RestMethod -Uri $versionsUrl -ErrorAction Stop).versions
+                
+                # Filter for prerelease versions and take most recent ones
+                $prereleaseVersions = $versions | 
+                    Where-Object { $_ -match '-' } |
+                    Sort-Object -Descending |
+                    Select-Object -First $MaxVersionsToUnlist
+                
+                if (-not $prereleaseVersions) {
+                    Write-Warning "No prerelease versions found for $packageId"
+                    continue
                 }
                 
-                # Small delay between operations
-                Start-Sleep -Seconds 1
+                foreach ($version in $prereleaseVersions) {
+                    Write-Host "Unlisting $packageId version $version..."
+                    
+                    try {
+                        $result = dotnet nuget delete $packageId $version `
+                            -s $NuGetSource `
+                            -k $env:NUGET_API_KEY `
+                            --non-interactive `
+                            --force-english-output 2>&1
+                            
+                        if ($LASTEXITCODE -eq 0) {
+                            Write-Host "Successfully unlisted $packageId version $version" -ForegroundColor Green
+                        } else {
+                            Write-Warning "Failed to unlist $packageId version $version. Error: $result"
+                            if ($result -match "unauthorized") {
+                                throw "Unauthorized access. Please check your NUGET_API_KEY permissions."
+                            }
+                        }
+                    }
+                    catch {
+                        Write-Error "Error unlisting version $version : $_"
+                        throw
+                    }
+                    
+                    # Add progressive delay between operations to avoid rate limiting
+                    Start-Sleep -Milliseconds (Get-Random -Minimum 500 -Maximum 1500)
+                }
             }
-        }
-        catch {
-            Write-Error "Error processing package $packageId : $_"
-            if ($_.Exception.Message -match "404") {
-                Write-Warning "Package $packageId not found on NuGet. Skipping."
-                continue
+            catch {
+                if ($_.Exception.Message -match "404") {
+                    Write-Warning "Package $packageId not found on NuGet. Skipping."
+                    continue
+                }
+                Write-Error "Error processing package $packageId : $_"
+                throw
             }
         }
     }
