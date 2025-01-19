@@ -1,1 +1,0 @@
-﻿return Solitons.Postgres.PgUp.Program.Main();
