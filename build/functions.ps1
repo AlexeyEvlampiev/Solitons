@@ -130,14 +130,10 @@ function Unlist-PreviousPrereleases {
             throw "NUGET_API_KEY environment variable is not set"
         }
 
-        # Get NuGet service index once for all packages
+        # Get NuGet service index
         $serviceIndex = Invoke-RestMethod -Uri $NuGetSource -ErrorAction Stop
         $packageBaseAddress = ($serviceIndex.resources | 
             Where-Object { $_.'@type' -eq 'PackageBaseAddress/3.0.0' }).'@id'
-            
-        # Get registration base URL for checking package listing status
-        $registrationBase = ($serviceIndex.resources |
-            Where-Object { $_.'@type' -eq 'RegistrationsBaseUrl/3.0.0' }).'@id'
     }
     
     Process {
@@ -145,38 +141,25 @@ function Unlist-PreviousPrereleases {
             Write-Host "Processing package: $packageId"
             
             try {
-                # Query package versions using package base address
+                # Query package versions
                 $versionsUrl = "$($packageBaseAddress)$($packageId.ToLower())/index.json"
                 $response = Invoke-RestMethod -Uri $versionsUrl -ErrorAction Stop
                 $versions = $response.versions
                 
-                # Filter for prerelease versions
+                # Filter for prerelease versions and take top N
                 $prereleaseVersions = $versions | 
                     Where-Object { $_ -match '-alpha|-beta|-preview|-rc' } | 
                     Sort-Object -Descending |
                     Select-Object -First $MaxVersionsToUnlist
                 
                 if (-not $prereleaseVersions) {
-                    Write-Warning "No prerelease versions found for $packageId"
+                    Write-Host "No prerelease versions found for $packageId"
                     continue
                 }
                 
                 Write-Host "Found $($prereleaseVersions.Count) prerelease versions for $packageId"
                 
                 foreach ($version in $prereleaseVersions) {
-                    # Check if the version is listed
-                    $registrationUrl = "$registrationBase$($packageId.ToLower())/$version.json"
-                    try {
-                        $registration = Invoke-RestMethod -Uri $registrationUrl -ErrorAction Stop
-                        if (-not $registration.listed) {
-                            Write-Host "Skipping $packageId $version - already unlisted" -ForegroundColor Blue
-                            continue
-                        }
-                    }
-                    catch {
-                        Write-Warning "Could not check listing status for $packageId $version, will attempt to unlist anyway"
-                    }
-
                     $success = $false
                     $attempts = 0
                     $maxAttempts = 3
