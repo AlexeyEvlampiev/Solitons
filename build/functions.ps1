@@ -137,24 +137,23 @@ function Unlist-PreviousPrereleases {
             try {
                 Write-Verbose "Processing package: $packageId"
                 
-                # Use NuGet.org API v2 endpoint for better package detection
-                $searchUrl = "https://www.nuget.org/api/v2/package-versions/$packageId"
-                $versions = Invoke-RestMethod -Uri $searchUrl -ErrorAction Stop
+                # Use NuGet.org search API
+                $searchUrl = "https://azuresearch-na.nuget.org/query?q=packageid:$packageId&prerelease=true"
+                $searchResult = Invoke-RestMethod -Uri $searchUrl -ErrorAction Stop
                 
-                if (-not $versions) {
-                    # Fallback to v3 API if v2 returns no results
-                    $v3Url = "https://api.nuget.org/v3-flatcontainer/$packageId/index.json"
-                    $versions = (Invoke-RestMethod -Uri $v3Url -ErrorAction Stop).versions
+                if (-not $searchResult.data) {
+                    Write-Warning "No packages found for $packageId"
+                    continue
                 }
+                
+                $package = $searchResult.data[0]
+                $versions = $package.versions | 
+                    Where-Object { $_.version -match '-' } | # Only prerelease versions
+                    Select-Object -ExpandProperty version
                 
                 Write-Verbose "Found versions: $($versions -join ', ')"
                 
-                # Improved prerelease version detection
-                $prereleaseVersions = $versions | 
-                    Where-Object { 
-                        $_ -match '-' -and  # Match any prerelease identifier
-                        (-not [string]::IsNullOrWhiteSpace($_))
-                    } |
+                $prereleaseVersions = $versions |
                     Sort-Object -Descending |
                     Select-Object -First $MaxVersionsToUnlist
                 
@@ -169,7 +168,6 @@ function Unlist-PreviousPrereleases {
                     Write-Host "Unlisting $packageId version $version..."
                     
                     try {
-                        # Add -Verbose to see more details about the operation
                         $result = dotnet nuget delete $packageId $version `
                             -s $NuGetSource `
                             -k $env:NUGET_API_KEY `
@@ -189,7 +187,7 @@ function Unlist-PreviousPrereleases {
                     }
                     catch {
                         Write-Error "Error unlisting version $version : $_"
-                        continue  # Continue with next version instead of throwing
+                        continue
                     }
                     
                     Start-Sleep -Milliseconds (Get-Random -Minimum 500 -Maximum 1500)
@@ -198,7 +196,7 @@ function Unlist-PreviousPrereleases {
             catch {
                 Write-Warning "Error processing package $packageId : $_"
                 Write-Verbose "Full error details: $($_.Exception.Message)"
-                continue  # Continue with next package instead of throwing
+                continue
             }
         }
     }
