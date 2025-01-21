@@ -124,4 +124,7 @@
   <data name="CliDescription" xml:space="preserve">
     <value>PgUp: Efficient PostgreSQL migrations. Focused on simple, transaction-safe schema changes using SQL. No additional languages or frameworks—just straightforward migrations built for PostgreSQL.</value>
   </data>
+  <data name="DangerousOperationAscii" xml:space="preserve">
+    <value />
+  </data>
 </root>

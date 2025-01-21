@@ -2,6 +2,7 @@
 using System.Reactive.Linq;
 using Npgsql;
 using Solitons.CommandLine;
+using Solitons.Postgres.PgUp.CommandLine;
 using Solitons.Postgres.PgUp.Core.Formatting;
 using Solitons.Reactive;
 
@@ -70,12 +71,16 @@ public sealed class PgUpDatabaseManager
 
             if (overwrite)
             {
+                Console.WriteLine(PgUpResource.DangerousOperationAscii);
                 if (false == forceOverwrite)
                 {
-                    var confirmed = CliPrompt.GetYesNoAnswer(
-                        "This will overwrite the existing database, resulting in complete data loss. " +
-                        "Are you sure you want to proceed? (yes/no)");
-                    if (!confirmed)
+                    var confirmationMessage =
+                        $"This action will overwrite the existing database '{project.DatabaseName}', resulting in the permanent loss of all data. " +
+                        "Are you sure you want to proceed? Type 'yes' to confirm or 'no' to cancel.";
+
+                    bool isConfirmed = CliPrompt.GetYesNoAnswer(confirmationMessage);
+
+                    if (!isConfirmed)
                     {
                         throw PgUpExitException.OperationCancelled();
                     }

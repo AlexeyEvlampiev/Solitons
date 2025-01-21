@@ -83,5 +83,14 @@ namespace Solitons.Postgres.PgUp.CommandLine {
                 return ResourceManager.GetString("CliDescription", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to .
+        /// </summary>
+        internal static string DangerousOperationAscii {
+            get {
+                return ResourceManager.GetString("DangerousOperationAscii", resourceCulture);
+            }
+        }
     }
 }
