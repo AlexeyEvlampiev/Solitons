@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.Reactive.Linq;
 using Npgsql;
 using Solitons.CommandLine;
@@ -10,6 +11,9 @@ namespace Solitons.Postgres.PgUp.Core;
 
 public sealed class PgUpDatabaseManager
 {
+    private const int InitialCountdownValue = 5;
+    private const int CountdownDelayMilliseconds = 1000;
+
     private readonly IPgUpProject _project;
     private readonly IPgUpSession _session;
     private readonly NpgsqlConnectionStringBuilder _connectionStringBuilder;
@@ -72,17 +76,25 @@ public sealed class PgUpDatabaseManager
             if (overwrite)
             {
                 Console.WriteLine(PgUpResource.DangerousOperationAscii);
+                Console.WriteLine(@$"This action will overwrite the existing database '{project.DatabaseName}', resulting in the permanent loss of all data. ");
                 if (false == forceOverwrite)
                 {
-                    var confirmationMessage =
-                        $"This action will overwrite the existing database '{project.DatabaseName}', resulting in the permanent loss of all data. " +
-                        "Are you sure you want to proceed? Type 'yes' to confirm or 'no' to cancel.";
-
+                    var confirmationMessage = "Are you sure you want to proceed? Type 'yes' to confirm or 'no' to cancel.";
                     bool isConfirmed = CliPrompt.GetYesNoAnswer(confirmationMessage);
 
                     if (!isConfirmed)
                     {
                         throw PgUpExitException.OperationCancelled();
+                    }
+                }
+                else
+                {
+                    Console.WriteLine();
+                    for (int counter = InitialCountdownValue; counter >= 0; --counter)
+                    {
+                        Console.Write('\r');
+                        Console.Write($@"{counter,-3}");
+                        await Task.Delay(CountdownDelayMilliseconds);
                     }
                 }
 

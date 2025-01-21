@@ -85,7 +85,13 @@ namespace Solitons.Postgres.PgUp.CommandLine {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to .
+        ///   Looks up a localized string similar to   
+        ///  _____
+        /// /     \
+        ///| () () |
+        /// \  ^  /
+        ///  |||||
+        ///.
         /// </summary>
         internal static string DangerousOperationAscii {
             get {

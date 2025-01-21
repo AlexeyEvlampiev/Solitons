@@ -17,10 +17,7 @@ internal sealed class PgUpExitException(string message) : CliExitException(messa
     }
 
 
-    public static PgUpExitException OperationCancelled()
-    {
-        throw new NotImplementedException();
-    }
+    public static PgUpExitException OperationCancelled() => new("Operation cancelled.");
 
     public static PgUpExitException InvalidConnectionString(Exception innerException)
     {
