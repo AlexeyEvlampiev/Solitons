@@ -1,0 +1,7 @@
+﻿Package: pgup
+Version: 1.0.0
+Section: utils
+Priority: optional
+Architecture: amd64
+Maintainer: Alexey Evlampiev alexey.evlampiev@gmail.com
+Description: A self-contained CLI application designed for seamless, zero-downtime deployment of PostgreSQL databases. PgUp's core philosophy centers around minimizing downtime and maintaining database integrity during complex deployments. It leverages PostgreSQL's advanced transactional capabilities to ensure atomicity and consistency, making it an essential tool for mission-critical environments where availability and reliability are paramount.

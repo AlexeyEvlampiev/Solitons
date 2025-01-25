@@ -13,6 +13,9 @@ Get-ChildItem -Directory | Select-Object Name
 Write-Host "Preprocessing source code for $env:STAGING_TYPE release..."
 Config-Packages -staging $env:STAGING_TYPE -searchRoot './src/'
 
+Write-Host "Preprocessing debian control files"
+Update-AllDebianControlFiles -searchRoot './src/'
+
 @"
 
   _         _ _    _ 
@@ -23,12 +26,39 @@ Config-Packages -staging $env:STAGING_TYPE -searchRoot './src/'
                        
 "@
 dotnet restore solitons.sln
+if ($LASTEXITCODE -ne 0) { throw "Restore failed" }
+
 dotnet build solitons.sln -c Release --no-restore
+if ($LASTEXITCODE -ne 0) { throw "Build failed" }
 
 # Build the Linux executable for Solitons.Postgres.PgUp.Native
 Write-Host "Publishing Linux executable for Solitons.Postgres.PgUp.Native project..."
 dotnet publish ./src/Solitons.Postgres.PgUp.Native/Solitons.Postgres.PgUp.Native.csproj -c Release -r linux-x64 --self-contained true /p:PublishSingleFile=true
+if ($LASTEXITCODE -ne 0) { throw "PgUp publish failed" }
 Write-Host "Linux executable build completed successfully!"
+
+# Define variables
+$debianDir = "./src/Solitons.Postgres.PgUp.Native/debian"
+$outputDir = "./src/Solitons.Postgres.PgUp.Native/bin/Release/linux-x64"
+
+# Create necessary directories
+Write-Host "Creating directories for Debian package..."
+mkdir "$outputDir/DEBIAN" -Force | Out-Null
+
+# Copy control file
+Write-Host "Copying control file..."
+Copy-Item "$debianDir/control" "$outputDir/DEBIAN/control"
+
+# Add the built CLI app to the package
+Write-Host "Copying built executable to package..."
+mkdir "$outputDir/usr/local/bin" -Force | Out-Null
+Copy-Item "$outputDir/publish/pgup" "$outputDir/usr/local/bin/pgup"
+
+# Build the .deb package
+Write-Host "Building the Debian package..."
+$packagePath = "$outputDir/pgup_$($version)_amd64.deb"
+dpkg-deb --build "$outputDir" $packagePath
+Write-Host "Debian package created at $packagePath"
 
 
 @"
@@ -101,3 +131,4 @@ $packages | ForEach-Object {
 }
 
 
+# cloudsmith push deb your-org/your-repo/any-distro/any-version pgup_1.0.0_amd64.deb

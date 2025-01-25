@@ -111,6 +111,56 @@ function Config-Packages {
 # Example usage:
 #Config-Packages -staging 'Alpha' -searchRoot "." 
 
+
+
+
+
+
+function Update-AllDebianControlFiles {
+    param (
+        [string]$searchRoot = "."
+    )
+    # Ensure required variables are defined
+    if (-not $version -or -not $authors -or -not $company) {
+        Write-Error "Required variables (version, authors, company) are not defined."
+        return
+    }
+
+    # Discover all Debian control files under the source directory. The control files should be found in /debian/control subfolders
+    $controlFiles = Get-ChildItem -Path $searchRoot -Filter "control" -Recurse | 
+                Where-Object { $_.Directory.Name -eq "debian" }
+
+    if ($controlFiles.Count -eq 0) {
+        Write-Warning "No Debian control files found in the source directory."
+        return
+    }
+
+    foreach ($controlFile in $controlFiles) {
+        Write-Host "Processing control file: $($controlFile.FullName)"
+
+        # Read the control file content
+        $controlContent = Get-Content -Path $controlFile.FullName
+
+        $controlContent = $controlContent -replace "^Version: .*", "Version: $($version.ToString())"
+        $controlContent = $controlContent -replace "^Maintainer: .*", "Maintainer: $authors <$company>"      
+
+        # Save updated content back to the control file
+        Set-Content -Path $controlFile.FullName -Value $controlContent
+        Write-Host "Updated control file: $($controlFile.FullName)"
+    }
+}
+
+# Call the function in your build.ps1
+#Update-AllDebianControlFiles
+
+
+
+
+
+
+
+
+
 function Unlist-PreviousPrereleases {
     [CmdletBinding()]
     param(
