@@ -1,6 +1,9 @@
 # Base build image
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 
+# Install necessary tools for Debian package creation
+RUN apt-get update && apt-get install -y dpkg-dev debhelper
+
 # Define build arguments
 ARG STAGING_TYPE=Alpha
 ARG SOLITONS_TEST_POSTGRES_SERVER_CONNECTION_STRING
@@ -23,9 +26,3 @@ COPY test/ test/
 COPY build/ build/
 
 RUN pwsh -Command ". ./build/build.ps1"
-
-
-# Final stage to hold the packages
-# FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
-# WORKDIR /packages
-# COPY --from=build /app/packages .

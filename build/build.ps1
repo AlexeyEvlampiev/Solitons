@@ -25,6 +25,12 @@ Config-Packages -staging $env:STAGING_TYPE -searchRoot './src/'
 dotnet restore solitons.sln
 dotnet build solitons.sln -c Release --no-restore
 
+# Build the Linux executable for Solitons.Postgres.PgUp.Native
+Write-Host "Publishing Linux executable for Solitons.Postgres.PgUp.Native project..."
+dotnet publish ./src/Solitons.Postgres.PgUp.Native/Solitons.Postgres.PgUp.Native.csproj -c Release -r linux-x64 --self-contained true /p:PublishSingleFile=true
+Write-Host "Linux executable build completed successfully!"
+
+
 @"
   _____       _   
  |_   _|__ __| |_ 
